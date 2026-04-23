@@ -1,4 +1,6 @@
-# 🃏 Online Texas Hold'em Poker - Multiplayer Real-Time Game
+
+markdown
+# 🃏 Elite Texas Hold'em Poker - Multiplayer Real-Time Game
 
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
@@ -7,60 +9,69 @@
 
 **[برای مطالعه فارسی به پایین بروید](#-نسخه-فارسی)**
 
+---
+
 ## 🇬🇧 English Version
 
 ### 🎮 About the Game
 
-A fully functional online Texas Hold'em poker game that supports 2–9 real players. It includes:
-- Standard Texas Hold'em rules (Pre-flop, Flop, Turn, River, Showdown)
-- Real-time multiplayer via WebSocket (server‑authoritative)
-- Side betting for folded players (with 50% profit)
-- Tournament scoring system (chip reset & score increment when one player takes all)
-- Modern animated table, chat system, turn timer, hand analyzer (beginner mode), chip animations, and winner effects
-- No external images or sounds – pure CSS, HTML, and JavaScript
+A fully functional online Texas Hold'em poker game that supports **2–9 real players**.  
+All features are implemented from scratch without any external images or sounds – only pure CSS, HTML, and JavaScript.
+
+**Main Features:**
+
+- ✅ Standard Texas Hold'em rules (Pre‑flop, Flop, Turn, River, Showdown)  
+- ✅ Real‑time multiplayer via WebSocket (server‑authoritative)  
+- ✅ **Side betting** for folded players (50% profit on won bets)  
+- ✅ Tournament scoring system – chips reset & score increment when one player takes all  
+- ✅ Modern animated table, chat system, turn timer, hand analyzer (beginner mode), chip animations, winner effects  
+- ✅ No external images or sounds – 100% self‑contained  
+
+---
 
 ### 🚀 Quick Start
 
 #### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- A terminal / command prompt
+
+- [Node.js](https://nodejs.org/) v18 or higher  
+- A terminal / command prompt  
 
 #### Installation & Running
 
 **1. Clone the repository**
 
-git clone https://github.com/YOUR_USERNAME/poker-online.git
-cd poker-online
+```bash
+git clone https://github.com/opadips/Elite-Poker
+cd Elite-Poker
+```
 2. Install dependencies & run (Windows)
-Simply double-click start-poker.bat
+Simply double‑click start-poker.bat
 
 3. Run on Linux/macOS
+
+```bash
 chmod +x start-poker.sh
 ./start-poker.sh
-
+```
 4. Open your browser
 Go to http://localhost:5173
 
-Note: The first run may take a few minutes to install dependencies. Two terminal windows will appear (backend + frontend). Do not close them.
+  Note: The first run may take a few minutes to install dependencies.
+  Two terminal windows will appear (backend + frontend). Do not close them while playing.
 
-🕹️ How to Play
-Enter a name (max 15 characters) and join the table.
+ ### 🕹️ How to Play
+Step	Action
+- 1️⃣	Enter a name (max 15 characters) and join the table.
+- 2️⃣	First hand: all players must click Ready to start.
+- 3️⃣	After the first hand, next hands start automatically.
+- 4️⃣	Use the action buttons: Fold, Check, Call, Raise (percentage of pot), All‑in.
+- 5️⃣	Side bet: If you fold, you can bet on another active player to win the hand (max 50% of your chips, profit 50%).
+- 6️⃣	Chat: Click the 💬 button to toggle – messages auto‑hide after 5 seconds.
+- 7️⃣	Beginner mode: Check "🐶 من نوب سگم" to get simple hand advice.
+- 8️⃣	Turn timer: 15 seconds – auto‑check or auto‑fold if you don't act in time.
 
-First hand: all players must click Ready to start.
-
-After the first hand, next hands start automatically.
-
-Actions: Fold, Check, Call, Raise (percentage of pot), All-in.
-
-Side bet: If you fold, you can bet on another player to win (max 50% of your chips, profit 50%).
-
-Chat: Click the 💬 button to toggle, messages auto-hide after 5 seconds.
-
-Beginner mode: Check "🐶 من نوب سگم" to get simple hand advice.
-
-Turn timer: 15 seconds, auto-check or auto-fold.
-
-📂 Project Structure
+### 📂 Project Structure
+```text
 Elite-Poker/
 ├── backend/           # Node.js + WebSocket server
 │   ├── game/          # Poker game logic (hand evaluation, side pots, scoring)
@@ -70,107 +81,96 @@ Elite-Poker/
 ├── start-poker.bat    # Windows one‑click start script
 ├── start-poker.sh     # Linux/macOS start script
 └── README.md          # This file
-🛠️ Manual Run (if scripts do not work)
+```
+### 🛠️ Manual Run (if scripts do not work)
+Backend:
+
+```bash
 cd backend
 npm install
 npm start
+```
 Frontend (in another terminal):
+
+```bash
 cd frontend
 npm install
 npm run dev
-Then open http://localhost:5173.
-🌐 Multiplayer on Local Network
-Find your local IP (e.g., 192.168.1.100 via ipconfig or ifconfig).
+```
+Then open http://localhost:5173
 
-(You can also use VPNs like 'Radmin VPN', 'Packet Raft', 'Electro', and many more. They work by creating virtual connections and giving you an IP address from a certain range.On other devices, open )
+### 🌐 Multiplayer on Local Network / VPN
 
-http://YOUR_IP:5173
+- 1-Find your local IP address (e.g., 192.168.1.100 via ipconfig on Windows or ifconfig on Linux).
 
-Make sure Windows Firewall allows ports 3000 and 5173.
+- 2-On other devices, open http://YOUR_IP:5173 (e.g., http://192.168.1.100:5173).
 
-🤝 Contributing
-Feel free to fork, open issues, or submit pull requests. All contributions are welcome.
+- 3-Firewall: Make sure Windows Firewall (or your OS firewall) allows incoming connections on ports 3000 and 5173.
 
-📄 License
-This project is licensed under the MIT License – see the LICENSE file.
+- 4-You can also use VPN software like Radmin VPN, Packet Raft, Electro, etc. They create a virtual network and give you an IP address from a certain range.
+- 
+### 🤝 Contributing
+Feel free to fork the repo, open issues, or submit pull requests.
+All contributions are welcome – whether bug fixes, new features, or documentation improvements.
 
--------------------------------------------
-🇮🇷 نسخه فارسی
+### 📄 License
+This project is licensed under the MIT License – see the LICENSE file for details.
 
-🚀شروع
+## 🇮🇷 نسخه-فارسی
+### 🎮 درباره بازی
+
+از ۲ تا ۹ بازیکن واقعی پشتیبانی می‌کند. بیشتر هم میشه اما باگ ظاهری داره حوصلم نمیشه درستش کنم ولی میتونید بیشتر هم بیارید
+
+## ویژگی‌های اصلی:
+
+- ✅ قوانین استاندارد پوکر (پیش‌فلاپ، فلاپ، ترن، ریور، showdown)
+
+- ✅ چندنفره زنده با WebSocket (معماری server‑authoritative)
+
+- ✅ شرط‌بندی جانبی برای بازیکنانی که فولد کرده‌اند (سود ۵۰٪ در صورت برنده شدن شرط)
+
+- ✅ سیستم امتیازدهی تورنمنتی – وقتی یک بازیکن همه چیپ‌ها را می‌برد، چیپ‌ها ریست و +۱ امتیاز می‌گیرد
+
+- ✅ میز مدرن انیمیشن‌دار، سیستم چت، تایمر نوبت، تحلیلگر دست (حالت مبتدی)، انیمیشن چیپ و افکت برنده
+
+- ✅ بدون عکس یا صدای خارجی – کاملاً مستقل
+
+### 🚀 شروع سریع
 پیش‌نیازها
-Node.js (نسخه ۱۸ یا بالاتر)
+Node.js نسخه ۱۸ یا بالاتر
 
- کلون مخزن 
+ترمینال یا خط فرمان
 
-git clone https://github.com/YOUR_USERNAME/poker-online.git
-cd poker-online
+نصب و اجرا
+1. کلون مخزن
 
-2. نصب وابستگی‌ها و اجرا (ویندوز)
-روی start-poker.bat دابل کلیک کنید.
+```bash
+git clone https://github.com/opadips/Elite-Poker
+cd Elite-Poker
+```
+راستش بقیه اینم حوصله ترجمه ندارم راه اندازیش اون بالا نوشتم خودتون بخونید خیلی ساده شده
 
-3. اجرا در لینوکس/مک
+### چند تا از از قابلیت هایی که خودم حس کردم جالبه ادد کردم : 
 
-chmod +x start-poker.sh
-./start-poker.sh
+- side bet : کسانی که فولد دادن میتونن روی برنده راند از بین افرادی که هنوز توی میز هستن بت ببندن 
 
-4. مرورگر را باز کنید
-به آدرس http://localhost:5173 بروید.
+- حالت "🐶 من نوب سگم" رو میتونید روشن کنید اگه نوب سگید برای افراد نوب سگ
 
-نکته: اولین بار چند دقیقه طول می‌کشد تا وابستگی‌ها نصب شوند. دو پنجره ترمینال باز می‌شود (بک‌اند + فرانت‌اند). آن‌ها را نبندید.
+- قابلیت چت!!!! دیگه چی میخوای خدایی کجا دیدی این یکیو
 
-🕹️ نحوه بازی
-نام (حداکثر ۱۵ کاراکتر) وارد کرده و به میز بپیوندید.
+- تست شده با نت ملی، الکترو، پکت رفت
 
-دست اول: همه بازیکنان باید دکمه Ready را بزنند.
+- اگه باگ یا ایده ای یا هرچیزی هم بود بگید برای بهتر شدن 
 
-بعد از دست اول، دست‌های بعدی خودکار شروع می‌شوند.
+```text
 
-دکمه های : فولد، چک، کال، رایز (درصدی از پات)، آل‌این.
+Opadips@gmail.com
 
-side bet : کسانی که فولد دادن میتونن روی برنده راند از بین افرادی که هنوز توی میز هستن بت ببندن 
+```
 
-قابلیت چت!!!! دیگه چی میخوای خدایی
+### والبته اینکه بدون من بازی نکنید 😄 ممنون
 
-حالت "🐶 من نوب سگم" رو میتونید روشن کنید اگه نوب سگید برای افراد نوب سگ
 
-تایمر نوبت: ۱۵ ثانیه، در صورت عدم اقدام خودکار چک یا فولد می‌کند.
 
-📂 ساختار پروژه
 
-poker-online/
-├── backend/           # سرور Node.js + WebSocket
-│   ├── game/          # منطق بازی (ارزیابی دست، پات‌های جانبی، امتیازات)
-│   └── server.js      # سرور WebSocket، تایمر خودکار، پخش چت
-├── frontend/          # React + Vite + Tailwind CSS
-│   └── src/           # کامپوننت‌ها، استایل‌ها، اتصال WebSocket
-├── start-poker.bat    # اسکریپت یک‌کلیک ویندوز
-├── start-poker.sh     # اسکریپت یک‌کلیک لینوکس/مک
-└── README.md          # سلام <---شما اینجایید
 
-🛠️ اجرای دستی (اگر اسکریپت کار نکرد)
-بک‌اند:
-
-cd backend
-npm install
-npm start
-
-فرانت‌اند (در ترمینال دیگر):
-
-cd frontend
-
-npm install
-npm run dev
-سپس http://localhost:5173 را باز کنید.
-
-🌐 قابلیت لن و اجرا 
-
-تست شده با نت ملی با الکترو و پکت رفت
-در دستگاه‌های دیگر آدرس http://IP_SERVER:5173 را باز کنید.
-فایروال ویندوز پورت‌های 3000 و 5173 را باز کند. یا خاموش کنید
-
-🤝 مشارکت
-
-اگه باگ یا ایده ای بود اطلاع بدید برای بهتر شدن بازی 
-
-و اینکه بدون من بازی نکنید ممنون
