@@ -19,8 +19,9 @@ export default function GameTable({ ws, playerId }) {
   const [sideBetWin, setSideBetWin] = useState(null);
   const [showChat, setShowChat] = useState(true);
   const tableContainerRef = useRef(null);
+  const tableRef = useRef(null); // مرجع به المان میز (دایره بیضی)
   const playerRefs = useRef({});
-  const lastWinnerRef = useRef(null); // برای جلوگیری از تکرار نمایش
+  const lastWinnerRef = useRef(null);
 
   const addChipAnimation = (fromPlayerId, value) => {
     const playerEl = playerRefs.current[fromPlayerId];
@@ -49,7 +50,6 @@ export default function GameTable({ ws, playerId }) {
               winnerCards: winnerPlayer.holeCards,
               winnerName: winnerPlayer.name
             });
-            // نمایش نام دست در مرکز میز
             setWinningHandName(data.state.winner.handName);
             setTimeout(() => {
               setWinnerEffect(null);
@@ -73,26 +73,29 @@ export default function GameTable({ ws, playerId }) {
     };
   }, [ws]);
 
+  // به‌روزرسانی موقعیت بازیکنان بر اساس ابعاد واقعی میز (نه کل کانتینر)
   const updatePositions = useCallback(() => {
-    if (!gameState || !tableContainerRef.current) return;
-    const container = tableContainerRef.current;
-    const rect = container.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const radius = Math.min(width, height) * 0.35;
-    const centerX = width / 2;
-    const centerY = height / 2;
+    if (!gameState || !tableRef.current) return;
+    const tableRect = tableRef.current.getBoundingClientRect();
+    const tableWidth = tableRect.width;
+    const tableHeight = tableRect.height;
+    const a = tableWidth / 2;   // شعاع افقی (نصف عرض میز)
+    const b = tableHeight / 2;  // شعاع عمودی (نصف ارتفاع میز)
+    const centerX = tableRect.left + a;
+    const centerY = tableRect.top + b;
     const total = gameState.players.length;
     const newPositions = {};
     gameState.players.forEach((_, idx) => {
+      // زاویه: شروع از بالا ( -PI/2 ) و پخش یکنواخت
       const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
+      const x = centerX + a * Math.cos(angle);
+      const y = centerY + b * Math.sin(angle);
       newPositions[gameState.players[idx].id] = { x, y };
     });
     setPlayerPositions(newPositions);
   }, [gameState]);
 
+  // در صورت تغییر سایز پنجره یا تغییر state، موقعیت‌ها مجدداً محاسبه شوند
   useEffect(() => {
     updatePositions();
     window.addEventListener('resize', updatePositions);
@@ -150,7 +153,6 @@ export default function GameTable({ ws, playerId }) {
 
       {showChat && <Chat ws={ws} playerName={currentPlayer?.name || '?'} />}
 
-      {/* متن برنده در مرکز میز – فونت کوچک‌تر، ثابت، جذاب */}
       {winningHandName && (
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap">
           <div className="relative text-center">
@@ -199,7 +201,11 @@ export default function GameTable({ ws, playerId }) {
       )}
 
       <div ref={tableContainerRef} className="relative w-full h-full">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[70%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm">
+        {/* المان میز بیضی شکل - با رفرنس برای محاسبه ابعاد واقعی */}
+        <div
+          ref={tableRef}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[70%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm"
+        >
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
             <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg">
               💰 Pot: {gameState.totalPot}
@@ -211,6 +217,7 @@ export default function GameTable({ ws, playerId }) {
           </div>
         </div>
 
+        {/* بازیکنان - موقعیت آنها بر اساس ابعاد واقعی میز محاسبه می‌شود */}
         {gameState.players.map((p, idx) => {
           const pos = playerPositions[p.id];
           if (!pos) return null;

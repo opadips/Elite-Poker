@@ -123,7 +123,7 @@ wss.on('connection', (ws) => {
       else if (msg.type === 'toggleBeginner') {
         const client = clients.get(ws);
         if (client) {
-          broadcastSystemMessage(`🐶 ${client.name} is a noob!`);
+          broadcastSystemMessage(`🐶 noob sag detected ${client.name}`);
         }
       }
       else if (msg.type === 'chat') {
