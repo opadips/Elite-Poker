@@ -20,12 +20,12 @@ export class Game {
     this.handInProgress = false;
     this.actedPlayers = new Set();
     this.scores = {};
-
     this.sideBets = [];
     this.sideBetsPot = 0;
     this.sideBetResults = [];
-
     this.firstHandStarted = false;
+    this.paused = false;
+    this._nextHandTimer = null;
   }
 
   addPlayer(name, isSpectator = true) {
@@ -76,7 +76,7 @@ export class Game {
     if (this.handInProgress) return { success: false, message: 'Game already in progress' };
     player.ready = !player.ready;
     console.log(`${player.name} is now ${player.ready ? 'ready' : 'not ready'}`);
-    
+
     const active = this.getActivePlayers();
     if (active.length >= 2 && active.every(p => p.ready) && !this.handInProgress && !this.firstHandStarted) {
       console.log('All active players ready for first hand! Starting...');
@@ -123,14 +123,14 @@ export class Game {
     const dealerIdxInActive = activeIds.indexOf(this.dealerIndex);
     const sbIdxInActive = (dealerIdxInActive + 1) % activePlayers.length;
     const bbIdxInActive = (dealerIdxInActive + 2) % activePlayers.length;
-    
+
     const sb = activePlayers[sbIdxInActive];
     const bb = activePlayers[bbIdxInActive];
-    
+
     this.postBlind(sb, this.smallBlind);
     this.postBlind(bb, this.bigBlind);
     this.currentBet = this.bigBlind;
-    
+
     console.log(`SB: ${sb.name} (${this.smallBlind}), BB: ${bb.name} (${this.bigBlind})`);
     this.currentPlayerIndex = activePlayers[(bbIdxInActive + 1) % activePlayers.length].id;
     console.log(`First to act: ${this.players.find(p => p.id === this.currentPlayerIndex)?.name}`);
@@ -147,6 +147,7 @@ export class Game {
   }
 
   playerAction(playerId, action, amount = 0) {
+    if (this.paused) return;
     if (!this.waitingForAction) return;
     const player = this.players.find(p => p.id === playerId);
     if (!player || player.folded || player.isAllIn || player.isSpectator) return;
@@ -219,6 +220,7 @@ export class Game {
       this.actedPlayers.add(player.id);
       this.nextPlayer();
     }
+
     if (!this.handInProgress) return;
     this.checkRoundComplete();
   }
@@ -255,10 +257,10 @@ export class Game {
     if (allAllIn) {
       console.log('All players all-in (or single player). Revealing remaining cards and determining winner...');
       this.waitingForAction = false;
-      
+
       if (this.currentRound === 'preflop') {
         this.communityCards = [this.deck.draw(), this.deck.draw(), this.deck.draw()];
-        console.log(`Flop: ${this.communityCards.map(c=>c.rank+c.suit).join(', ')}`);
+        console.log(`Flop: ${this.communityCards.map(c => c.rank + c.suit).join(', ')}`);
         this.currentRound = 'flop';
       }
       if (this.currentRound === 'flop') {
@@ -307,22 +309,19 @@ export class Game {
     if (this.currentRound === 'preflop') {
       this.currentRound = 'flop';
       this.communityCards = [this.deck.draw(), this.deck.draw(), this.deck.draw()];
-      console.log(`Flop: ${this.communityCards.map(c=>c.rank+c.suit).join(', ')}`);
+      console.log(`Flop: ${this.communityCards.map(c => c.rank + c.suit).join(', ')}`);
       this.resetBettingRound();
-    }
-    else if (this.currentRound === 'flop') {
+    } else if (this.currentRound === 'flop') {
       this.currentRound = 'turn';
       this.communityCards.push(this.deck.draw());
       console.log(`Turn: ${this.communityCards[3].rank}${this.communityCards[3].suit}`);
       this.resetBettingRound();
-    }
-    else if (this.currentRound === 'turn') {
+    } else if (this.currentRound === 'turn') {
       this.currentRound = 'river';
       this.communityCards.push(this.deck.draw());
       console.log(`River: ${this.communityCards[4].rank}${this.communityCards[4].suit}`);
       this.resetBettingRound();
-    }
-    else if (this.currentRound === 'river') {
+    } else if (this.currentRound === 'river') {
       this.currentRound = 'showdown';
       this.evaluateWinnerWithSidePots();
       this.endHand();
@@ -368,7 +367,7 @@ export class Game {
       console.log(`${p.name} hand: ${hand.name}`);
     }
 
-    const sorted = [...activePlayers].sort((a,b) => a.totalBet - b.totalBet);
+    const sorted = [...activePlayers].sort((a, b) => a.totalBet - b.totalBet);
     let prev = 0;
     const pots = [];
     for (let i = 0; i < sorted.length; i++) {
@@ -384,7 +383,7 @@ export class Game {
     }
     let sumPots = pots.reduce((s, p) => s + p.amount, 0);
     if (sumPots < this.pot && pots.length > 0) {
-      pots[pots.length-1].amount += (this.pot - sumPots);
+      pots[pots.length - 1].amount += (this.pot - sumPots);
     }
 
     const winnings = {};
@@ -428,7 +427,7 @@ export class Game {
       players: results.map(r => ({ name: r.name, cards: this.players.find(p => p.name === r.name)?.holeCards || [] }))
     };
     console.log(`Winner: ${this.winner.names} with ${this.winner.handName}, wins ${this.winner.winnings}`);
-    
+
     const mainWinner = results[0] ? this.players.find(p => p.name === results[0].name) : null;
     const sideBetResultsTemp = this.payoutSideBets(mainWinner);
     this.sideBetResults = sideBetResultsTemp;
@@ -450,7 +449,7 @@ export class Game {
     if (amount < 10) return { success: false, message: 'Minimum bet 10 chips' };
     if (amount > maxBet) return { success: false, message: `Maximum bet is 50% of your chips (${maxBet})` };
     if (bettor.chips < amount) return { success: false, message: 'Insufficient chips' };
-    
+
     bettor.chips -= amount;
     this.sideBetsPot += amount;
     this.sideBets.push({ bettorId, targetPlayerId, amount, roundPlaced: this.currentRound });
@@ -495,7 +494,42 @@ export class Game {
     this.pot = 0;
     this.winner = null;
     this.dealerIndex = 0;
+    this.paused = false; // 
+    if (this._nextHandTimer) {
+      clearTimeout(this._nextHandTimer);
+      this._nextHandTimer = null;
+    }
     console.log('Lobby reset by admin.');
+  }
+
+  pause() {
+    if (this.paused) return;
+    this.paused = true;
+    if (this._nextHandTimer) {
+      clearTimeout(this._nextHandTimer);
+      this._nextHandTimer = null;
+    }
+    console.log('Game paused.');
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    console.log('Game resumed.');
+    if (!this.handInProgress) {
+      const active = this.getActivePlayers();
+      if (active.length >= 2) {
+        console.log('Scheduling hand start after resume...');
+        this._nextHandTimer = setTimeout(() => {
+          const stillActive = this.getActivePlayers();
+          if (stillActive.length >= 2 && !this.handInProgress) {
+            console.log('Auto-starting next hand after resume.');
+            this.startHand();
+          }
+          this._nextHandTimer = null;
+        }, 4000);
+      }
+    }
   }
 
   endHand() {
@@ -524,15 +558,19 @@ export class Game {
       console.log('No players with chips. Waiting for someone to sit in.');
     }
 
-    setTimeout(() => {
-      const active = this.players.filter(p => !p.isSpectator);
-      if (active.length >= 2 && !this.handInProgress) {
-        console.log('Auto-starting next hand...');
-        this.startHand();
-      } else if (active.length === 1 && this.players.length > 1) {
-        console.log('Only one player left. Waiting for more players or reset.');
-      }
-    }, 4000);
+    // تنظیم تایمر شروع دست بعدی (در صورت عدم توقف)
+    if (!this.paused) {
+      this._nextHandTimer = setTimeout(() => {
+        const active = this.players.filter(p => !p.isSpectator);
+        if (active.length >= 2 && !this.handInProgress) {
+          console.log('Auto-starting next hand...');
+          this.startHand();
+        } else if (active.length === 1 && this.players.length > 1) {
+          console.log('Only one player left. Waiting for more players or reset.');
+        }
+        this._nextHandTimer = null;
+      }, 4000);
+    }
   }
 
   getState() {
@@ -559,7 +597,8 @@ export class Game {
       currentBet: this.currentBet,
       sideBetResults: this.sideBetResults,
       handInProgress: this.handInProgress,
-      firstHandStarted: this.firstHandStarted
+      firstHandStarted: this.firstHandStarted,
+      paused: this.paused, // ⭐ وضعیت پاز
     };
   }
 }

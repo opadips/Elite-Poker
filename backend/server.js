@@ -1,3 +1,4 @@
+// server.js
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
@@ -28,7 +29,7 @@ function broadcastSystemMessage(message) {
 }
 
 function broadcastChat(senderName, message) {
-  const chatMsg = JSON.stringify({ type: 'chat', sender: senderName, message: message, timestamp: Date.now() });
+  const chatMsg = JSON.stringify({ type: 'chat', sender: senderName, message, timestamp: Date.now() });
   for (const [ws] of clients.entries()) {
     if (ws.readyState === 1) ws.send(chatMsg);
   }
@@ -50,16 +51,18 @@ function clearTimer(ws) {
 }
 
 function setAutoActionTimer(ws, playerId) {
+  if (game.paused) return;
   clearTimer(ws);
   const client = clients.get(ws);
   if (!client) return;
-  
+
   const timeoutId = setTimeout(() => {
+    if (game.paused) return;
     const player = game.players.find(p => p.id === playerId);
     if (!player || player.folded || player.isAllIn) return;
     const currentTurnPlayer = game.getState().currentPlayerId;
     if (currentTurnPlayer !== playerId) return;
-    
+
     const toCall = game.currentBet - player.currentBet;
     if (toCall === 0) {
       console.log(`⏰ Timeout (20s): ${player.name} auto-check`);
@@ -70,18 +73,27 @@ function setAutoActionTimer(ws, playerId) {
     }
     broadcastGameState();
     client.timeoutId = null;
-  }, 20000); // 20 ثانیه
-  
+  }, 20000);
+
   client.timeoutId = timeoutId;
+}
+
+function clearAllTimers() {
+  for (const [ws, client] of clients.entries()) {
+    if (client.timeoutId) {
+      clearTimeout(client.timeoutId);
+      client.timeoutId = null;
+    }
+  }
 }
 
 wss.on('connection', (ws) => {
   console.log('Client connected');
-  
+
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
-      
+
       if (msg.type === 'join') {
         const { name } = msg;
         if (!name || name.trim() === '') {
@@ -112,10 +124,12 @@ wss.on('connection', (ws) => {
       }
       else if (msg.type === 'resetLobby') {
         game.resetLobby();
+        clearAllTimers(); //
         broadcastGameState();
         broadcastSystemMessage(`🔄 Lobby has been reset by admin. All players restarted.`);
       }
       else if (msg.type === 'action') {
+        if (game.paused) return; // 
         const client = clients.get(ws);
         if (!client) return;
         const { action, amount } = msg;
@@ -150,6 +164,7 @@ wss.on('connection', (ws) => {
         }
       }
       else if (msg.type === 'sideBet') {
+        if (game.paused) return; // ⭐
         const client = clients.get(ws);
         if (!client) return;
         const { targetId, amount } = msg;
@@ -161,12 +176,35 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'sideBetResult', message: result.message, success: false }));
         }
       }
+      // ⭐ Pause / Resume
+      else if (msg.type === 'pause') {
+        if (!game.paused) {
+          game.pause();
+          clearAllTimers();
+          broadcastGameState();
+          broadcastSystemMessage('⏸️ Game paused by a player.');
+        }
+      }
+      else if (msg.type === 'resume') {
+        if (game.paused) {
+          game.resume();
+          if (game.waitingForAction) {
+            const currentId = game.getState().currentPlayerId;
+            const targetWs = [...clients.entries()].find(([_, c]) => c.playerId === currentId)?.[0];
+            if (targetWs) {
+              setAutoActionTimer(targetWs, currentId);
+            }
+          }
+          broadcastGameState();
+          broadcastSystemMessage('▶️ Game resumed.');
+        }
+      }
     } catch (err) {
       console.error('Error parsing message:', err);
       ws.send(JSON.stringify({ type: 'error', message: 'Invalid message' }));
     }
   });
-  
+
   ws.on('close', () => {
     const client = clients.get(ws);
     if (client) {

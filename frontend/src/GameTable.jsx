@@ -9,7 +9,16 @@ import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
 import { cardDeal, chipClick, winnerFanfare, timerBeep } from './hooks/useSound';
-import './styles/animations.css'; // ⭐ انیمیشن‌های جدید
+import './styles/animations.css';
+
+const cardBackOptions = [
+  { id: 'default', name: 'Classic', icon: '🃏' },
+  { id: 'galaxy', name: 'Galaxy', icon: '🌌' },
+  { id: 'gold', name: 'Royal Gold', icon: '👑' },
+  { id: 'matrix', name: 'Matrix', icon: '💚' },
+  { id: 'ocean', name: 'Ocean', icon: '🌊' },
+  { id: 'ruby', name: 'Ruby', icon: '💎' },
+];
 
 export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [gameState, setGameState] = useState(null);
@@ -26,6 +35,11 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [timerResetTrigger, setTimerResetTrigger] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [cardBack, setCardBack] = useState(() => {
+    return localStorage.getItem('pokerCardBack') || 'default';
+  });
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isPaused, setIsPaused] = useState(false);
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
@@ -37,7 +51,9 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
     { id: 'cyberpunk', name: 'Cyberpunk', icon: '💠', color: 'bg-purple-800' },
     { id: 'fantasy', name: 'Fantasy', icon: '✨', color: 'bg-amber-700' },
-    { id: 'midnight', name: 'Midnight', icon: '🌙', color: 'bg-blue-900' }
+    { id: 'midnight', name: 'Midnight', icon: '🌙', color: 'bg-blue-900' },
+    { id: 'neonjungle', name: 'Neon Jungle', icon: '🌿', color: 'bg-green-950' },
+    { id: 'void', name: 'Void Pulse', icon: '🌀', color: 'bg-indigo-950' },
   ];
 
   const addChipAnimation = (fromPlayerId, value) => {
@@ -56,6 +72,14 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   useEffect(() => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      if (data.type === 'chat') {
+        setChatMessages(prev => [...prev, { sender: data.sender, text: data.message, isSystem: false }]);
+      } else if (data.type === 'system') {
+        setChatMessages(prev => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
+        setSystemMessage(data.text);
+        setTimeout(() => setSystemMessage(null), 3000);
+      }
+
       if (data.type === 'gameState') {
         const newCommLength = data.state.communityCards?.length || 0;
         const oldLength = prevCommunityLengthRef.current;
@@ -65,12 +89,13 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
             newIndices.push(i);
           }
           setNewCardIndices(newIndices);
-          if (soundEnabled) cardDeal(); // ✅ شرط صدا
+          if (soundEnabled) cardDeal();
           setTimeout(() => setNewCardIndices([]), 600);
         }
         prevCommunityLengthRef.current = newCommLength;
         
         setGameState(data.state);
+        setIsPaused(data.state.paused || false);
         if (data.state.winner && data.state.winner !== lastWinnerRef.current) {
           lastWinnerRef.current = data.state.winner;
           const winnerPlayer = data.state.players?.find(p => p.name === data.state.winner.names);
@@ -81,16 +106,13 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               winnerName: winnerPlayer.name
             });
             setWinningHandName(data.state.winner.handName);
-            if (soundEnabled) winnerFanfare(); // ✅ شرط صدا
+            if (soundEnabled) winnerFanfare();
             setTimeout(() => {
               setWinnerEffect(null);
               setWinningHandName(null);
             }, 3000);
           }
         }
-      } else if (data.type === 'system') {
-        setSystemMessage(data.text);
-        setTimeout(() => setSystemMessage(null), 3000);
       } else if (data.type === 'sideBetWin') {
         setSideBetWin({
           bettorName: data.bettorName,
@@ -155,7 +177,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   };
 
   const handleTimerBeep = () => {
-    if (soundEnabled) timerBeep(); // ✅ شرط صدا
+    if (soundEnabled) timerBeep();
   };
 
   if (!gameState) return <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>;
@@ -165,21 +187,22 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const toCall = myTurn && currentPlayer ? (gameState.currentBet - (currentPlayer.currentBet || 0)) : 0;
 
   const handleAction = (type, amount = 0) => {
+    if (isPaused) return;
     if (type === 'fold') ws.send(JSON.stringify({ type: 'action', action: 'fold' }));
     else if (type === 'check') ws.send(JSON.stringify({ type: 'action', action: 'check' }));
     else if (type === 'call') {
       addChipAnimation(playerId, toCall);
-      if (soundEnabled) chipClick(); // ✅ شرط صدا
+      if (soundEnabled) chipClick();
       ws.send(JSON.stringify({ type: 'action', action: 'call' }));
     }
     else if (type === 'raise') {
       addChipAnimation(playerId, amount);
-      if (soundEnabled) chipClick(); // ✅ شرط صدا
+      if (soundEnabled) chipClick();
       ws.send(JSON.stringify({ type: 'action', action: 'raise', amount }));
     }
     else if (type === 'allin') {
       addChipAnimation(playerId, currentPlayer?.chips);
-      if (soundEnabled) chipClick(); // ✅ شرط صدا
+      if (soundEnabled) chipClick();
       ws.send(JSON.stringify({ type: 'action', action: 'allin' }));
     }
   };
@@ -203,6 +226,23 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     setShowSettings(false);
   };
 
+  const handleCardBackChange = (backId) => {
+    setCardBack(backId);
+    localStorage.setItem('pokerCardBack', backId);
+  };
+
+  const handleSendChat = (text) => {
+    ws.send(JSON.stringify({ type: 'chat', message: text }));
+  };
+
+  const togglePause = () => {
+    if (isPaused) {
+      ws.send(JSON.stringify({ type: 'resume' }));
+    } else {
+      ws.send(JSON.stringify({ type: 'pause' }));
+    }
+  };
+
   const activePlayersList = gameState.players.filter(p => !p.isSpectator);
 
   return (
@@ -216,6 +256,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         💬
       </button>
 
+      {/* تنظیمات */}
       <div className="fixed top-4 right-20 z-40">
         <button
           onClick={() => setShowSettings(!showSettings)}
@@ -225,40 +266,95 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           ⚙️
         </button>
         {showSettings && (
-          <div className="absolute right-0 mt-2 w-64 bg-gray-800/95 backdrop-blur-md rounded-lg shadow-xl border border-amber-700/50 z-50 animate-fadeInSlideDown origin-top-right">
-            <div className="py-2">
-              <div className="px-4 py-2 text-sm text-amber-400 border-b border-amber-700/50 font-bold">🎨 Select Theme</div>
-              <div className="px-3 py-2 grid grid-cols-2 gap-2">
+          <div className="absolute right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700 z-50 animate-fadeInSlideDown origin-top-right overflow-hidden">
+            <div className="px-5 py-3 bg-gray-800/50 border-b border-gray-700 flex items-center gap-2">
+              <span className="text-xl">⚙️</span>
+              <span className="text-white font-bold text-sm">Settings</span>
+            </div>
+
+            <div className="px-4 py-3 border-b border-gray-700/50">
+              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>🎨</span> Theme
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 {themes.map(t => (
                   <button
                     key={t.id}
-                    onClick={() => {
-                      onThemeChange(t.id);
-                      setShowSettings(false);
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                      theme === t.id 
-                        ? 'bg-amber-500 text-black shadow-md scale-105' 
-                        : 'bg-gray-700 text-white hover:bg-gray-600'
+                    onClick={() => { onThemeChange(t.id); setShowSettings(false); }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                      theme === t.id
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 shadow-sm'
+                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-transparent'
                     }`}
                   >
-                    <span className="text-xl">{t.icon}</span>
-                    <span className="text-sm">{t.name}</span>
+                    <span className="text-lg">{t.icon}</span>
+                    {t.name}
                   </button>
                 ))}
               </div>
-              <div className="border-t border-amber-700/50 my-1"></div>
+            </div>
+
+            <div className="px-4 py-3 border-b border-gray-700/50">
+              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>🃏</span> Card Back
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {cardBackOptions.map(back => (
+                  <button
+                    key={back.id}
+                    onClick={() => handleCardBackChange(back.id)}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                      cardBack === back.id
+                        ? 'bg-amber-500/20 border border-amber-500/50'
+                        : 'bg-gray-800 border border-transparent hover:bg-gray-700'
+                    }`}
+                  >
+                    <span className="text-xl">{back.icon}</span>
+                    <span className="text-xs text-gray-300">{back.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-4 py-3 border-b border-gray-700/50">
+              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>🔊</span> Sound
+              </div>
               <button
                 onClick={() => setSoundEnabled(prev => !prev)}
-                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700/50 transition flex items-center gap-2"
+                className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${
+                  soundEnabled ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'
+                }`}
               >
+                <span className="text-sm font-medium">{soundEnabled ? 'ON' : 'OFF'}</span>
                 <span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
-                {soundEnabled ? 'Sound ON' : 'Sound OFF'}
               </button>
-              <div className="border-t border-amber-700/50 my-1"></div>
+            </div>
+
+            <div className="px-4 py-3 border-b border-gray-700/50">
+              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>⏯️</span> Game Control
+              </div>
+              <button
+                onClick={togglePause}
+                className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${
+                  isPaused
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                    : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                }`}
+              >
+                <span className="text-sm font-medium">{isPaused ? '▶️ Resume' : '⏸️ Pause'}</span>
+                <span className="text-lg">{isPaused ? '▶️' : '⏸️'}</span>
+              </button>
+            </div>
+
+            <div className="px-4 py-3">
+              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>🔄</span> Lobby
+              </div>
               <button
                 onClick={() => setResetConfirm(true)}
-                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-900/30 transition flex items-center gap-2"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 transition-all text-sm font-medium"
               >
                 <span>🔄</span> Reset Lobby
               </button>
@@ -279,9 +375,21 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
 
       <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
-      {showChat && <Chat ws={ws} playerName={currentPlayer?.name || '?'} />}
+      {showChat && (
+        <Chat
+          messages={chatMessages}
+          playerName={currentPlayer?.name || '?'}
+          onSendMessage={handleSendChat}
+        />
+      )}
 
-      {gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && (
+      {isPaused && (
+        <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center pointer-events-none">
+          <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">⏸️ GAME PAUSED</div>
+        </div>
+      )}
+
+      {!isPaused && gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
           <TurnTimer 
             duration={20} 
@@ -387,7 +495,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               className="absolute transition-all duration-300"
               style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
             >
-
               {isWinner && (
                 <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
                   <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text" style={{ color: 'var(--winner-text)' }}>🏆 WINNER! 🏆</div>
@@ -414,7 +521,13 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 <div className="text-green-400 text-center">💰 {p.chips}</div>
                 <div className="flex justify-center gap-1 mt-2">
                   {p.holeCards?.map((card, ci) => (
-                    <Card key={ci} rank={isSelf ? card.rank : '?'} suit={isSelf ? card.suit : '?'} hidden={!isSelf} />
+                    <Card 
+                      key={ci} 
+                      rank={isSelf ? card.rank : '?'} 
+                      suit={isSelf ? card.suit : '?'} 
+                      hidden={!isSelf} 
+                      cardBack={cardBack}
+                    />
                   ))}
                 </div>
                 <div className="flex justify-center gap-1 mt-2 text-xs">
@@ -445,7 +558,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} onComplete={() => removeChipAnimation(chip.id)} />
       ))}
 
-      {myTurn && (
+      {myTurn && !isPaused && (
         <ActionButtons
           onFold={() => handleAction('fold')}
           onCheck={() => handleAction('check')}

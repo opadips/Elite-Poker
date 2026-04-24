@@ -1,7 +1,7 @@
+// src/components/Chat.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function Chat({ ws, playerName }) {
-  const [messages, setMessages] = useState([]);
+export default function Chat({ messages, playerName, onSendMessage }) {
   const [input, setInput] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -38,28 +38,14 @@ export default function Chat({ ws, playerName }) {
     startHideTimer();
   };
 
-  useEffect(() => {
-    const handleMessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'chat') {
-        setMessages(prev => [...prev, { sender: data.sender, text: data.message, timestamp: data.timestamp }]);
-        resetActivity();
-      } else if (data.type === 'system') {
-        setMessages(prev => [...prev, { sender: 'SYSTEM', text: data.text, timestamp: Date.now(), isSystem: true }]);
-        resetActivity();
-      }
-    };
-    ws.addEventListener('message', handleMessage);
-    return () => ws.removeEventListener('message', handleMessage);
-  }, [ws]);
-
+  // اسکرول خودکار وقتی پیام‌ها تغییر کنند
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    ws.send(JSON.stringify({ type: 'chat', message: input }));
+    onSendMessage(input.trim());
     setInput('');
     resetActivity();
   };

@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect } from 'react';
 import GameTable from './GameTable.jsx';
 
@@ -10,7 +11,15 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('pokerTheme', theme);
-    document.documentElement.classList.remove('theme-classic', 'theme-cyberpunk', 'theme-fantasy', 'theme-midnight');
+    // حذف تمام کلاس‌های تم
+    document.documentElement.classList.remove(
+      'theme-classic',
+      'theme-cyberpunk',
+      'theme-fantasy',
+      'theme-midnight',
+      'theme-neonjungle',   // جایگزین casino
+      'theme-void'
+    );
     document.documentElement.classList.add(`theme-${theme}`);
   }, [theme]);
 
