@@ -35,16 +35,15 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [timerResetTrigger, setTimerResetTrigger] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [cardBack, setCardBack] = useState(() => {
-    return localStorage.getItem('pokerCardBack') || 'default';
-  });
+  const [cardBack, setCardBack] = useState(() => localStorage.getItem('pokerCardBack') || 'default');
   const [chatMessages, setChatMessages] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [achievementToast, setAchievementToast] = useState(null);
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
   const playerRefs = useRef({});
-  const lastWinnerRef = useRef(null); 
+  const lastWinnerRef = useRef(null);
   const prevCommunityLengthRef = useRef(0);
 
   const themes = [
@@ -78,6 +77,9 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setChatMessages(prev => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
         setSystemMessage(data.text);
         setTimeout(() => setSystemMessage(null), 3000);
+      } else if (data.type === 'achievement') {
+        setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
+        setTimeout(() => setAchievementToast(null), 4000);
       }
 
       if (data.type === 'gameState') {
@@ -97,7 +99,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setGameState(data.state);
         setIsPaused(data.state.paused || false);
         
-        // مقایسه بر اساس نام برنده به جای شیء برای جلوگیری از پخش مکرر صدا
         if (data.state.winner && data.state.winner.names !== lastWinnerRef.current) {
           lastWinnerRef.current = data.state.winner.names;
           const winnerPlayer = data.state.players?.find(p => p.name === data.state.winner.names);
@@ -296,6 +297,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               </div>
             </div>
 
+            {/* Card Back */}
             <div className="px-4 py-3 border-b border-gray-700/50">
               <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
                 <span>🃏</span> Card Back
@@ -423,22 +425,37 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         </div>
       )}
 
+      {achievementToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-bold px-6 py-3 rounded-full shadow-2xl animate-fadeInSlideDown flex items-center gap-2">
+          <span className="text-2xl">🎖️</span>
+          <div>
+            <div className="text-sm">{achievementToast.player}</div>
+            <div className="text-xs">{achievementToast.name}: {achievementToast.desc}</div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md rounded-xl px-3 py-2 border border-amber-700/40 flex items-center gap-2 text-white text-sm">
         <label htmlFor="handInfoToggle" className="cursor-pointer">🐶 من نوب سگم</label>
         <input type="checkbox" id="handInfoToggle" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} />
       </div>
 
       {showHandInfo && currentPlayer && !currentPlayer.folded && !currentPlayer.isSpectator && (
-        <HandInfo holeCards={currentPlayer.holeCards} communityCards={gameState.communityCards} round={gameState.currentRound} playerName={currentPlayer.name} />
+        <HandInfo 
+         holeCards={currentPlayer.holeCards}
+         communityCards={gameState.communityCards}
+         round={gameState.currentRound}
+         playerName={currentPlayer.name}
+         opponentsCount={activePlayersList.filter(p => p.id !== playerId && !p.folded).length}
+        />
       )}
-
       {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
         <BettingPanel
           ws={ws}
           playerId={playerId}
           players={gameState.players}
           currentRound={gameState.currentRound}
-          chipAmount={currentPlayer.chips}
+         chipAmount={currentPlayer.chips}
         />
       )}
 
@@ -471,7 +488,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   className={newCardIndices.includes(i) ? 'card-reveal-spin' : ''}
                   style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.15}s` : '0s' }}
                 >
-                  <Card rank={card.rank} suit={card.suit} />
+                  <Card rank={card.rank} suit={card.suit} isCommunity={true} />
                 </div>
               ))}
               {gameState.communityCards.length === 0 && <div className="text-white text-sm">Flop</div>}
@@ -499,7 +516,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                     <div className="flex gap-1 justify-center mt-1">
                       {winnerEffect.winnerCards.map((card, ci) => (
                         <div key={ci} className="animate-spin-once">
-                          <Card rank={card.rank} suit={card.suit} />
                         </div>
                       ))}
                     </div>
@@ -516,6 +532,18 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
                 <div className="font-bold text-white text-center text-lg">{p.name}</div>
                 <div className="text-green-400 text-center">💰 {p.chips}</div>
+                {/* Action tracker */}
+                {p.lastAction?.type && (
+                  <div className={`text-xs text-center ${
+                    p.lastAction.type === 'fold' ? 'text-red-400' :
+                    p.lastAction.type === 'check' ? 'text-gray-400' :
+                    p.lastAction.type === 'call' ? 'text-green-400' :
+                    p.lastAction.type === 'raise' ? 'text-orange-400' :
+                    p.lastAction.type === 'allin' ? 'text-red-500 animate-pulse' : 'text-white'
+                  }`}>
+                    {p.lastAction.type.toUpperCase()}{p.lastAction.amount > 0 ? ` ${p.lastAction.amount}` : ''}
+                  </div>
+                )}
                 <div className="flex justify-center gap-1 mt-2">
                   {p.holeCards?.map((card, ci) => (
                     <Card 
@@ -524,6 +552,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                       suit={isSelf ? card.suit : '?'} 
                       hidden={!isSelf} 
                       cardBack={cardBack}
+                      isSelf={isSelf}
                     />
                   ))}
                 </div>

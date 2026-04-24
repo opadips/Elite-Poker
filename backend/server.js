@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const game = new Game();
-const clients = new Map(); // ws -> { playerId, name, timeoutId }
+const clients = new Map();
 
 function broadcastGameState() {
   const state = game.getState();
@@ -32,6 +32,13 @@ function broadcastChat(senderName, message) {
   const chatMsg = JSON.stringify({ type: 'chat', sender: senderName, message, timestamp: Date.now() });
   for (const [ws] of clients.entries()) {
     if (ws.readyState === 1) ws.send(chatMsg);
+  }
+}
+
+function broadcastAchievement(achievement) {
+  const achMsg = JSON.stringify({ type: 'achievement', ...achievement });
+  for (const [ws] of clients.entries()) {
+    if (ws.readyState === 1) ws.send(achMsg);
   }
 }
 
@@ -124,12 +131,12 @@ wss.on('connection', (ws) => {
       }
       else if (msg.type === 'resetLobby') {
         game.resetLobby();
-        clearAllTimers(); //
+        clearAllTimers();
         broadcastGameState();
         broadcastSystemMessage(`🔄 Lobby has been reset by admin. All players restarted.`);
       }
       else if (msg.type === 'action') {
-        if (game.paused) return; // 
+        if (game.paused) return;
         const client = clients.get(ws);
         if (!client) return;
         const { action, amount } = msg;
@@ -164,7 +171,7 @@ wss.on('connection', (ws) => {
         }
       }
       else if (msg.type === 'sideBet') {
-        if (game.paused) return; // ⭐
+        if (game.paused) return;
         const client = clients.get(ws);
         if (!client) return;
         const { targetId, amount } = msg;
@@ -176,7 +183,6 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'sideBetResult', message: result.message, success: false }));
         }
       }
-      // ⭐ Pause / Resume
       else if (msg.type === 'pause') {
         if (!game.paused) {
           game.pause();
@@ -227,6 +233,12 @@ setInterval(() => {
     const hand = state.winner.handName;
     const winnerNames = state.winner.names;
     broadcastChat('SYSTEM', `🏆 ${winnerNames} won ${totalWinning} chips with ${hand}! 🏆`);
+
+    const newAchievements = game.checkAchievements();
+    for (const ach of newAchievements) {
+      broadcastAchievement(ach);
+      broadcastSystemMessage(`🎖️ ${ach.playerName} earned: ${ach.name} – ${ach.desc}`);
+    }
   }
   if (state.sideBetResults && state.sideBetResults !== lastSideBetMessage) {
     lastSideBetMessage = state.sideBetResults;

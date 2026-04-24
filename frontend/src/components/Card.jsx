@@ -9,9 +9,7 @@ const cardBacks = {
   ocean: 'bg-gradient-to-br from-blue-800 to-cyan-600 border-cyan-400',
   ruby: 'bg-gradient-to-br from-red-800 to-rose-900 border-red-500',
 };
-
-export default function Card({ rank, suit, hidden = false, cardBack = 'default' }) {
-  if (hidden) {
+export default function Card({ rank, suit, hidden = false, cardBack = 'default', isSelf = false, isCommunity = false }) {  if (hidden) {
     const backStyle = cardBacks[cardBack] || cardBacks.default;
     return (
       <div className={`w-14 h-20 rounded-md shadow-md border-2 flex items-center justify-center ${backStyle}`}>
@@ -21,9 +19,16 @@ export default function Card({ rank, suit, hidden = false, cardBack = 'default' 
       </div>
     );
   }
+
   const isRed = suit === '♥' || suit === '♦';
+  
   return (
-    <div className="card w-14 h-20 rounded-md shadow-md flex flex-col items-center justify-between p-1 font-bold transform transition-transform hover:scale-105 bg-white">
+    <div
+      className={`card w-14 h-20 rounded-md shadow-md flex flex-col items-center justify-between p-1 font-bold transition-transform cursor-pointer select-none bg-white text-black
+        ${isCommunity ? 'community-card hover:scale-150 hover:z-20 hover:shadow-2xl' : ''}
+        ${isSelf ? 'self-card ring-2 ring-yellow-300 shadow-md shadow-yellow-500/50' : ''}
+      `}
+    >
       <div className="text-sm">{rank}</div>
       <div className={`text-2xl ${isRed ? 'suit-red' : 'suit-black'}`}>{suit}</div>
       <div className="text-sm rotate-180">{rank}</div>

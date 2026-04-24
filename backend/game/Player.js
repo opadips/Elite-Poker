@@ -1,3 +1,4 @@
+// backend/game/Player.js
 export class Player {
   constructor(id, name) {
     this.id = id;
@@ -9,7 +10,16 @@ export class Player {
     this.isAllIn = false;
     this.ready = false;
     this.totalBet = 0;
-    this.isSpectator = true; //
+    this.isSpectator = true;
+    this.lastAction = { type: '', amount: 0 };
+    this.stats = {
+      handsPlayed: 0,
+      potsWon: 0,
+      losses: 0,
+      biggestPot: 0,
+      bestHand: '',
+    };
+    this.achievements = [];
   }
 
   resetForNewHand() {
@@ -18,5 +28,6 @@ export class Player {
     this.currentBet = 0;
     this.isAllIn = false;
     this.totalBet = 0;
+    this.lastAction = { type: '', amount: 0 };
   }
 }

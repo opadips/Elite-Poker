@@ -3,6 +3,17 @@ import { Player } from './Player.js';
 import { Deck } from './Deck.js';
 import { HandEvaluator } from './HandEvaluator.js';
 
+const ACHIEVEMENTS = {
+  FIRST_BLOOD: { id: 'first_blood', name: 'First Blood', desc: 'Win your first pot!' },
+  HAT_TRICK: { id: 'hat_trick', name: 'Hat Trick', desc: 'Win 3 pots in a row!' },
+  HIGH_ROLLER: { id: 'high_roller', name: 'High Roller', desc: 'Win a pot of 500+ chips!' },
+  ROYAL_TOUCH: { id: 'royal_touch', name: 'Royal Touch', desc: 'Win with a Royal Flush!' },
+  BLUFF_MASTER: { id: 'bluff_master', name: 'Bluff Master', desc: 'Win with High Card!' },
+  ALL_IN_KING: { id: 'all_in_king', name: 'All‑In King', desc: 'Win while being all‑in!' },
+  SHERIFF: { id: 'sheriff', name: 'Sheriff', desc: 'Eliminate a player!' },
+  VETERAN: { id: 'veteran', name: 'Veteran', desc: 'Play 10 hands!' },
+};
+
 export class Game {
   constructor() {
     this.players = [];
@@ -26,6 +37,7 @@ export class Game {
     this.firstHandStarted = false;
     this.paused = false;
     this._nextHandTimer = null;
+    this._consecutiveWins = {}; // 
   }
 
   addPlayer(name, isSpectator = true) {
@@ -113,6 +125,7 @@ export class Game {
       p.isAllIn = false;
       p.totalBet = 0;
       p.holeCards = [this.deck.draw(), this.deck.draw()];
+      p.lastAction = { type: '', amount: 0 };
       console.log(`${p.name} cards: ${p.holeCards[0].rank}${p.holeCards[0].suit} ${p.holeCards[1].rank}${p.holeCards[1].suit}`);
     }
 
@@ -155,6 +168,8 @@ export class Game {
 
     const toCall = this.currentBet - player.currentBet;
     console.log(`${player.name} action: ${action}, toCall=${toCall}, chips=${player.chips}`);
+
+    player.lastAction = { type: action, amount: amount || 0 };
 
     if (action === 'fold') {
       player.folded = true;
@@ -417,6 +432,21 @@ export class Game {
       if (player) {
         player.chips += win.amount;
         results.push({ name: player.name, amount: win.amount, handName: win.handName });
+        player.stats.handsPlayed += 1;
+        player.stats.potsWon += 1;
+        if (win.amount > player.stats.biggestPot) player.stats.biggestPot = win.amount;
+        if (!player.stats.bestHand || this.compareHands(win.handName, player.stats.bestHand) < 0) {
+          player.stats.bestHand = win.handName;
+        }
+        if (!this._consecutiveWins[pid]) this._consecutiveWins[pid] = 0;
+        this._consecutiveWins[pid] += 1;
+      }
+    }
+    for (let p of activePlayers) {
+      if (!winnings[p.id]) {
+        p.stats.handsPlayed += 1;
+        p.stats.losses += 1;
+        this._consecutiveWins[p.id] = 0;
       }
     }
 
@@ -431,6 +461,57 @@ export class Game {
     const mainWinner = results[0] ? this.players.find(p => p.name === results[0].name) : null;
     const sideBetResultsTemp = this.payoutSideBets(mainWinner);
     this.sideBetResults = sideBetResultsTemp;
+  }
+
+  compareHands(handA, handB) {
+    const order = ['Royal Flush', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'One Pair', 'High Card'];
+    const idxA = order.indexOf(handA);
+    const idxB = order.indexOf(handB);
+    if (idxA === -1) idxA = 999;
+    if (idxB === -1) idxB = 999;
+    return idxA - idxB;
+  }
+
+  checkAchievements() {
+    const newAchievements = [];
+    for (let player of this.players) {
+      if (player.isSpectator) continue;
+      const stats = player.stats;
+      // First Blood
+      if (stats.potsWon === 1 && !player.achievements.includes('first_blood')) {
+        player.achievements.push('first_blood');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.FIRST_BLOOD });
+      }
+      // Hat Trick
+      if (this._consecutiveWins[player.id] >= 3 && !player.achievements.includes('hat_trick')) {
+        player.achievements.push('hat_trick');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.HAT_TRICK });
+      }
+      // High Roller
+      if (stats.biggestPot >= 500 && !player.achievements.includes('high_roller')) {
+        player.achievements.push('high_roller');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.HIGH_ROLLER });
+      }
+      // Royal Touch
+      if (stats.bestHand === 'Royal Flush' && !player.achievements.includes('royal_touch')) {
+        player.achievements.push('royal_touch');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.ROYAL_TOUCH });
+      }
+      // Bluff Master
+      if (stats.potsWon > 0 && stats.bestHand === 'High Card' && !player.achievements.includes('bluff_master')) {
+        player.achievements.push('bluff_master');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.BLUFF_MASTER });
+      }
+      if (player.isAllIn && player.chips > 0 && !player.achievements.includes('all_in_king')) {
+        player.achievements.push('all_in_king');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.ALL_IN_KING });
+      }
+      if (stats.handsPlayed >= 10 && !player.achievements.includes('veteran')) {
+        player.achievements.push('veteran');
+        newAchievements.push({ playerName: player.name, ...ACHIEVEMENTS.VETERAN });
+      }
+    }
+    return newAchievements;
   }
 
   placeSideBet(bettorId, targetPlayerId, amount) {
@@ -494,7 +575,7 @@ export class Game {
     this.pot = 0;
     this.winner = null;
     this.dealerIndex = 0;
-    this.paused = false; // 
+    this.paused = false;
     if (this._nextHandTimer) {
       clearTimeout(this._nextHandTimer);
       this._nextHandTimer = null;
@@ -539,6 +620,13 @@ export class Game {
 
     const playersToSpectate = this.players.filter(p => !p.isSpectator && p.chips === 0);
     for (let p of playersToSpectate) {
+      const winnerNames = this.winner?.names?.split(', ') || [];
+      for (let wName of winnerNames) {
+        const winner = this.players.find(p2 => p2.name === wName);
+        if (winner && !winner.achievements.includes('sheriff')) {
+          winner.achievements.push('sheriff');
+        }
+      }
       p.isSpectator = true;
       p.ready = false;
       console.log(`${p.name} has 0 chips and became spectator.`);
@@ -558,7 +646,6 @@ export class Game {
       console.log('No players with chips. Waiting for someone to sit in.');
     }
 
-    // تنظیم تایمر شروع دست بعدی (در صورت عدم توقف)
     if (!this.paused) {
       this._nextHandTimer = setTimeout(() => {
         const active = this.players.filter(p => !p.isSpectator);
@@ -585,7 +672,9 @@ export class Game {
         isAllIn: p.isAllIn,
         score: this.scores[p.id] || 0,
         ready: p.ready,
-        isSpectator: p.isSpectator
+        isSpectator: p.isSpectator,
+        lastAction: p.lastAction,
+        stats: p.stats,
       })),
       communityCards: this.communityCards,
       totalPot: this.pot,
@@ -598,7 +687,7 @@ export class Game {
       sideBetResults: this.sideBetResults,
       handInProgress: this.handInProgress,
       firstHandStarted: this.firstHandStarted,
-      paused: this.paused, // ⭐ وضعیت پاز
+      paused: this.paused,
     };
   }
 }
