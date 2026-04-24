@@ -9,6 +9,7 @@ import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
 import { cardDeal, chipClick, winnerFanfare, timerBeep } from './hooks/useSound';
+import './styles/animations.css'; // ⭐ انیمیشن‌های جدید
 
 export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [gameState, setGameState] = useState(null);
@@ -24,7 +25,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [showSettings, setShowSettings] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [timerResetTrigger, setTimerResetTrigger] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(true); // ⭐ state جدید
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
@@ -104,7 +105,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setTimeout(() => setSystemMessage(null), 2000);
       }
     };
-  }, [ws, soundEnabled]); // وابستگی به soundEnabled اضافه شد
+  }, [ws, soundEnabled]);
 
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
@@ -246,7 +247,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   </button>
                 ))}
               </div>
-              {/* ⭐ دکمه قطع/وصل صدا */}
               <div className="border-t border-amber-700/50 my-1"></div>
               <button
                 onClick={() => setSoundEnabled(prev => !prev)}
@@ -255,7 +255,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 <span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
                 {soundEnabled ? 'Sound ON' : 'Sound OFF'}
               </button>
-              {/* دکمه Reset Lobby */}
               <div className="border-t border-amber-700/50 my-1"></div>
               <button
                 onClick={() => setResetConfirm(true)}
@@ -364,8 +363,8 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               {gameState.communityCards.map((card, i) => (
                 <div
                   key={i}
-                  className={newCardIndices.includes(i) ? 'animate-cardReveal' : ''}
-                  style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.2}s` : '0s' }}
+                  className={newCardIndices.includes(i) ? 'card-reveal-spin' : ''}
+                  style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.15}s` : '0s' }}
                 >
                   <Card rank={card.rank} suit={card.suit} />
                 </div>
