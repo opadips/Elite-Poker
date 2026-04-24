@@ -5,7 +5,6 @@ export default function TurnTimer({ duration = 20, onTimeout, resetTrigger }) {
   const intervalRef = useRef(null);
   const timeoutCalledRef = useRef(false);
 
-  // پاک کردن تایمر
   const clearTimer = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -13,7 +12,6 @@ export default function TurnTimer({ duration = 20, onTimeout, resetTrigger }) {
     }
   };
 
-  // شروع مجدد تایمر
   const startTimer = () => {
     clearTimer();
     timeoutCalledRef.current = false;
@@ -33,13 +31,11 @@ export default function TurnTimer({ duration = 20, onTimeout, resetTrigger }) {
     }, 1000);
   };
 
-  // هر بار resetTrigger تغییر کند (نوبت جدید یا اکشن)، تایمر ریست شود
   useEffect(() => {
     startTimer();
     return () => clearTimer();
   }, [resetTrigger]);
 
-  // اگر زمان به صفر رسید و تابع timeout صدا زده شد، دیگر کاری نکن
   return (
     <div className={`text-center text-sm font-mono font-bold px-2 py-1 rounded-full shadow-md
       ${timeLeft <= 3 ? 'bg-red-600 text-white animate-pulse' : 'bg-black/60 text-yellow-300'}`}>

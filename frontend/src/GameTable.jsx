@@ -127,7 +127,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     return () => window.removeEventListener('resize', updatePositions);
   }, [updatePositions]);
 
-  // ریست تایمر در هر بار تغییر نوبت (یا هر اقدامی که باعث تغییر state شود)
   useEffect(() => {
     if (gameState && gameState.currentPlayerId === playerId && gameState.waitingForAction) {
       setTimerResetTrigger(prev => prev + 1);
@@ -169,7 +168,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       addChipAnimation(playerId, currentPlayer?.chips);
       ws.send(JSON.stringify({ type: 'action', action: 'allin' }));
     }
-    // بعد از هر اکشن، تایمر ریست می‌شود (در سرور و فرانت)
   };
 
   const onToggleBeginner = (checked) => {
@@ -204,7 +202,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         💬
       </button>
 
-      {/* دکمه تنظیمات (چرخ دنده) با منوی کشویی */}
       <div className="fixed top-4 right-20 z-40">
         <button
           onClick={() => setShowSettings(!showSettings)}
@@ -248,7 +245,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         )}
       </div>
 
-      {/* تأییدیه Reset Lobby */}
       {resetConfirm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn" onClick={() => setResetConfirm(false)}>
           <div className="bg-gray-800 p-6 rounded-xl text-center" onClick={e => e.stopPropagation()}>
@@ -263,7 +259,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
 
       {showChat && <Chat ws={ws} playerName={currentPlayer?.name || '?'} />}
 
-      {/* نمایش تایمر در بالای صفحه - فقط زمانی که نوبت من است */}
       {gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
           <TurnTimer 
@@ -369,9 +364,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               className="absolute transition-all duration-300"
               style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
             >
-              {isActive && gameState.waitingForAction && (
-                {/* تایمر قدیمی که بالای سر بازیکن بود را حذف کردیم، چون تایمر مرکزی داریم */}
-              )}
 
               {isWinner && (
                 <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">

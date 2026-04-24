@@ -6,13 +6,17 @@ export class Player {
     this.holeCards = [];
     this.folded = false;
     this.currentBet = 0;
-    this.hasActed = false;
+    this.isAllIn = false;
+    this.ready = false;
+    this.totalBet = 0;
+    this.isSpectator = true; //
   }
 
   resetForNewHand() {
     this.holeCards = [];
     this.folded = false;
     this.currentBet = 0;
-    this.hasActed = false;
+    this.isAllIn = false;
+    this.totalBet = 0;
   }
 }

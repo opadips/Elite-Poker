@@ -1,6 +1,6 @@
 
 markdown
-# 🃏 Elite Texas Hold'em Poker - Multiplayer Real-Time Game
+# 🃏 Elite Texas Holdem Poker - game server and web client
 
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
@@ -29,7 +29,7 @@ All features are implemented from scratch without any external images or sounds 
 
 ---
 
-### 🚀 Quick Start
+### 🚀 Quick Start / 1 click install & run!
 
 #### Prerequisites
 

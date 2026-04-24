@@ -62,15 +62,15 @@ function setAutoActionTimer(ws, playerId) {
     
     const toCall = game.currentBet - player.currentBet;
     if (toCall === 0) {
-      console.log(`⏰ Timeout: ${player.name} auto-check`);
+      console.log(`⏰ Timeout (20s): ${player.name} auto-check`);
       game.playerAction(playerId, 'check');
     } else {
-      console.log(`⏰ Timeout: ${player.name} auto-fold`);
+      console.log(`⏰ Timeout (20s): ${player.name} auto-fold`);
       game.playerAction(playerId, 'fold');
     }
     broadcastGameState();
     client.timeoutId = null;
-  }, 15000);
+  }, 20000); // 20 ثانیه
   
   client.timeoutId = timeoutId;
 }
@@ -92,11 +92,28 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'error', message: 'Name too long (max 15 chars)' }));
           return;
         }
-        const playerId = game.addPlayer(name.trim());
+        const playerId = game.addPlayer(name.trim(), true);
         clients.set(ws, { playerId, name: name.trim(), timeoutId: null });
         ws.send(JSON.stringify({ type: 'joined', playerId }));
         broadcastGameState();
-        broadcastSystemMessage(`✨ ${name.trim()} joined the table!`);
+        broadcastSystemMessage(`✨ ${name.trim()} joined as spectator!`);
+      }
+      else if (msg.type === 'sitIn') {
+        const client = clients.get(ws);
+        if (!client) return;
+        const result = game.sitIn(client.playerId);
+        if (result.success) {
+          ws.send(JSON.stringify({ type: 'sitInSuccess' }));
+          broadcastSystemMessage(`🎮 ${client.name} sat in the game!`);
+          broadcastGameState();
+        } else {
+          ws.send(JSON.stringify({ type: 'error', message: result.message }));
+        }
+      }
+      else if (msg.type === 'resetLobby') {
+        game.resetLobby();
+        broadcastGameState();
+        broadcastSystemMessage(`🔄 Lobby has been reset by admin. All players restarted.`);
       }
       else if (msg.type === 'action') {
         const client = clients.get(ws);
@@ -111,8 +128,8 @@ wss.on('connection', (ws) => {
         if (!client) return;
         const result = game.toggleReady(client.playerId);
         if (result.success) {
-          broadcastGameState(); // وضعیت جدید ready را پخش می‌کند
-          if (game.handInProgress === false && game.players.length >= 2 && game.players.every(p => p.ready)) {
+          broadcastGameState();
+          if (game.handInProgress === false && game.getActivePlayers().length >= 2 && game.getActivePlayers().every(p => p.ready)) {
             broadcastSystemMessage('All players ready! Game starting...');
             broadcastGameState();
           }
@@ -162,18 +179,24 @@ wss.on('connection', (ws) => {
   });
 });
 
-let previousWinner = null;
+let lastWinnerMessage = null;
+let lastSideBetMessage = null;
 setInterval(() => {
   const state = game.getState();
-  if (state.winner && state.winner !== previousWinner) {
-    if (state.sideBetResults && state.sideBetResults.length > 0) {
-      for (let res of state.sideBetResults) {
-        const totalWin = res.amount + res.profit;
-        broadcastChat('SYSTEM', `🎉 ${res.bettorName} won ${totalWin} chips from side bet on ${res.targetName}!`);
-        broadcastSideBetWin(res.bettorName, res.targetName, res.amount, res.profit);
-      }
+  if (state.winner && state.winner !== lastWinnerMessage) {
+    lastWinnerMessage = state.winner;
+    const totalWinning = state.winner.winnings;
+    const hand = state.winner.handName;
+    const winnerNames = state.winner.names;
+    broadcastChat('SYSTEM', `🏆 ${winnerNames} won ${totalWinning} chips with ${hand}! 🏆`);
+  }
+  if (state.sideBetResults && state.sideBetResults !== lastSideBetMessage) {
+    lastSideBetMessage = state.sideBetResults;
+    for (let res of state.sideBetResults) {
+      const totalWin = res.amount + res.profit;
+      broadcastChat('SYSTEM', `🎉 ${res.bettorName} won ${totalWin} chips from side bet on ${res.targetName}! 🎉`);
+      broadcastSideBetWin(res.bettorName, res.targetName, res.amount, res.profit);
     }
-    previousWinner = state.winner;
   }
 }, 500);
 
