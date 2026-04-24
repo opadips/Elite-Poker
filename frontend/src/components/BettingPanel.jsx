@@ -2,31 +2,39 @@ import React, { useState } from 'react';
 
 export default function BettingPanel({ ws, playerId, players, currentRound, chipAmount }) {
   const [selectedTarget, setSelectedTarget] = useState('');
-  const [betAmount, setBetAmount] = useState(10);
+  const [betAmount, setBetAmount] = useState('');
   const [message, setMessage] = useState('');
   const [hasBet, setHasBet] = useState(false);
 
-  // فقط در صورتی که بازیکن فولد کرده باشد و راند ریور شروع نشده باشد
   const isEligible = (currentRound !== 'river' && currentRound !== 'showdown');
 
   const handlePlaceBet = () => {
+    let amount = parseInt(betAmount);
+    if (isNaN(amount)) amount = 10;
     if (!selectedTarget) {
       setMessage('Select a player to bet on');
       return;
     }
-    if (betAmount < 10) {
+    if (amount < 10) {
       setMessage('Minimum bet is 10 chips');
       return;
     }
     const maxBet = Math.floor(chipAmount * 0.5);
-    if (betAmount > maxBet) {
+    if (amount > maxBet) {
       setMessage(`Maximum bet is 50% of your chips (${maxBet})`);
       return;
     }
-    ws.send(JSON.stringify({ type: 'sideBet', targetId: selectedTarget, amount: betAmount }));
+    ws.send(JSON.stringify({ type: 'sideBet', targetId: selectedTarget, amount: amount }));
     setHasBet(true);
     setMessage('Bet placed!');
     setTimeout(() => setMessage(''), 3000);
+  };
+
+  const setPercentage = (percent) => {
+    let amount = Math.floor(chipAmount * percent / 100);
+    if (amount < 10) amount = 10;
+    else if (amount > Math.floor(chipAmount * 0.5)) amount = Math.floor(chipAmount * 0.5);
+    setBetAmount(amount.toString());
   };
 
   if (!isEligible) return null;
@@ -35,7 +43,7 @@ export default function BettingPanel({ ws, playerId, players, currentRound, chip
   const activePlayers = players.filter(p => !p.folded && !p.isAllIn && p.id !== playerId);
 
   return (
-    <div className="fixed bottom-24 left-4 z-20 bg-black/70 backdrop-blur-md rounded-xl p-3 border border-purple-500/50 w-64 text-white text-sm">
+    <div className="fixed bottom-24 left-4 z-20 bg-black/70 backdrop-blur-md rounded-xl p-3 border border-purple-500/50 w-72 text-white text-sm">
       <div className="text-purple-400 font-bold text-center mb-2">🎲 Side Bet (50% profit)</div>
       <select
         className="w-full bg-gray-800 rounded p-1 mb-2 text-white"
@@ -45,20 +53,23 @@ export default function BettingPanel({ ws, playerId, players, currentRound, chip
         <option value="">Select player to win...</option>
         {activePlayers.map(p => <option key={p.id} value={p.id}>{p.name} (💰{p.chips})</option>)}
       </select>
-      <input
-        type="number"
-        min="10"
-        max={Math.floor(chipAmount * 0.5)}
-        value={betAmount}
-        onChange={(e) => setBetAmount(parseInt(e.target.value) || 10)}
-        className="w-full bg-gray-800 rounded p-1 mb-2 text-white"
-      />
-      <button
-        onClick={handlePlaceBet}
-        className="w-full bg-purple-700 hover:bg-purple-600 py-1 rounded font-bold"
-      >
-        Place Bet
-      </button>
+      <div className="flex gap-2 mb-2">
+        <button onClick={() => setPercentage(10)} className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs">10%</button>
+        <button onClick={() => setPercentage(20)} className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs">20%</button>
+        <button onClick={() => setPercentage(50)} className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs">50%</button>
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="Amount"
+          value={betAmount}
+          onChange={(e) => setBetAmount(e.target.value)}
+          className="flex-1 bg-gray-800 rounded p-1 text-white"
+        />
+        <button onClick={handlePlaceBet} className="bg-purple-700 hover:bg-purple-600 px-3 py-1 rounded font-bold">
+          Bet
+        </button>
+      </div>
       {message && <div className="text-xs text-center mt-2 text-yellow-300">{message}</div>}
       <div className="text-xs text-gray-400 mt-1">You win 1.5x if your pick wins!</div>
     </div>

@@ -7,7 +7,6 @@ import AnimatedChip from './components/AnimatedChip.jsx';
 import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
-import ThemeSelector from './components/ThemeSelector.jsx';
 
 export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [gameState, setGameState] = useState(null);
@@ -20,11 +19,21 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [sideBetWin, setSideBetWin] = useState(null);
   const [showChat, setShowChat] = useState(true);
   const [newCardIndices, setNewCardIndices] = useState([]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [timerResetTrigger, setTimerResetTrigger] = useState(0);
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
   const playerRefs = useRef({});
   const lastWinnerRef = useRef(null);
   const prevCommunityLengthRef = useRef(0);
+
+  const themes = [
+    { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
+    { id: 'cyberpunk', name: 'Cyberpunk', icon: '💠', color: 'bg-purple-800' },
+    { id: 'fantasy', name: 'Fantasy', icon: '✨', color: 'bg-amber-700' },
+    { id: 'midnight', name: 'Midnight', icon: '🌙', color: 'bg-blue-900' }
+  ];
 
   const addChipAnimation = (fromPlayerId, value) => {
     const playerEl = playerRefs.current[fromPlayerId];
@@ -46,7 +55,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         const newCommLength = data.state.communityCards?.length || 0;
         const oldLength = prevCommunityLengthRef.current;
         if (newCommLength > oldLength) {
-          // فقط کارت‌های جدید را برای انیمیشن مشخص کن
           const newIndices = [];
           for (let i = oldLength; i < newCommLength; i++) {
             newIndices.push(i);
@@ -85,6 +93,9 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           total: data.amount + data.profit
         });
         setTimeout(() => setSideBetWin(null), 4000);
+      } else if (data.type === 'sitInSuccess') {
+        setSystemMessage('You are now in the game!');
+        setTimeout(() => setSystemMessage(null), 2000);
       }
     };
   }, [ws]);
@@ -98,13 +109,14 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     const b = tableHeight / 2;
     const centerX = tableRect.left + a;
     const centerY = tableRect.top + b;
-    const total = gameState.players.length;
+    const total = gameState.players.filter(p => !p.isSpectator).length;
+    const activePlayers = gameState.players.filter(p => !p.isSpectator);
     const newPositions = {};
-    gameState.players.forEach((_, idx) => {
+    activePlayers.forEach((_, idx) => {
       const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
       const x = centerX + a * Math.cos(angle);
       const y = centerY + b * Math.sin(angle);
-      newPositions[gameState.players[idx].id] = { x, y };
+      newPositions[activePlayers[idx].id] = { x, y };
     });
     setPlayerPositions(newPositions);
   }, [gameState]);
@@ -115,10 +127,31 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     return () => window.removeEventListener('resize', updatePositions);
   }, [updatePositions]);
 
+  // ریست تایمر در هر بار تغییر نوبت (یا هر اقدامی که باعث تغییر state شود)
+  useEffect(() => {
+    if (gameState && gameState.currentPlayerId === playerId && gameState.waitingForAction) {
+      setTimerResetTrigger(prev => prev + 1);
+    }
+  }, [gameState?.currentPlayerId, gameState?.waitingForAction, playerId]);
+
+  const onTurnTimeout = () => {
+    if (gameState && gameState.currentPlayerId === playerId && gameState.waitingForAction) {
+      const currentPlayer = gameState.players?.find(p => p.id === playerId);
+      if (currentPlayer && !currentPlayer.isAllIn && !currentPlayer.folded) {
+        const toCall = gameState.currentBet - (currentPlayer.currentBet || 0);
+        if (toCall === 0) {
+          ws.send(JSON.stringify({ type: 'action', action: 'check' }));
+        } else {
+          ws.send(JSON.stringify({ type: 'action', action: 'fold' }));
+        }
+      }
+    }
+  };
+
   if (!gameState) return <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>;
 
   const currentPlayer = gameState.players?.find(p => p.id === playerId);
-  const myTurn = gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && currentPlayer && !currentPlayer.isAllIn;
+  const myTurn = gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && currentPlayer && !currentPlayer.isAllIn && !currentPlayer.isSpectator;
   const toCall = myTurn && currentPlayer ? (gameState.currentBet - (currentPlayer.currentBet || 0)) : 0;
 
   const handleAction = (type, amount = 0) => {
@@ -136,6 +169,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       addChipAnimation(playerId, currentPlayer?.chips);
       ws.send(JSON.stringify({ type: 'action', action: 'allin' }));
     }
+    // بعد از هر اکشن، تایمر ریست می‌شود (در سرور و فرانت)
   };
 
   const onToggleBeginner = (checked) => {
@@ -143,19 +177,25 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     if (checked) ws.send(JSON.stringify({ type: 'toggleBeginner' }));
   };
 
-  const onTurnTimeout = () => {
-    if (myTurn) {
-      if (toCall === 0) handleAction('check');
-      else handleAction('fold');
-    }
-  };
-
   const toggleReady = () => {
     ws.send(JSON.stringify({ type: 'ready' }));
   };
 
+  const sitIn = () => {
+    ws.send(JSON.stringify({ type: 'sitIn' }));
+  };
+
+  const resetLobby = () => {
+    ws.send(JSON.stringify({ type: 'resetLobby' }));
+    setResetConfirm(false);
+    setShowSettings(false);
+  };
+
+  const activePlayersList = gameState.players.filter(p => !p.isSpectator);
+
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
+      {/* دکمه چت */}
       <button
         onClick={() => setShowChat(!showChat)}
         className="fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
@@ -164,13 +204,75 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         💬
       </button>
 
-      <div className="fixed top-4 left-24 z-40">
-        <ThemeSelector currentTheme={theme} onThemeChange={onThemeChange} />
+      {/* دکمه تنظیمات (چرخ دنده) با منوی کشویی */}
+      <div className="fixed top-4 right-20 z-40">
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+          title="Settings"
+        >
+          ⚙️
+        </button>
+        {showSettings && (
+          <div className="absolute right-0 mt-2 w-64 bg-gray-800/95 backdrop-blur-md rounded-lg shadow-xl border border-amber-700/50 z-50 animate-fadeInSlideDown origin-top-right">
+            <div className="py-2">
+              <div className="px-4 py-2 text-sm text-amber-400 border-b border-amber-700/50 font-bold">🎨 Select Theme</div>
+              <div className="px-3 py-2 grid grid-cols-2 gap-2">
+                {themes.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      onThemeChange(t.id);
+                      setShowSettings(false);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      theme === t.id 
+                        ? 'bg-amber-500 text-black shadow-md scale-105' 
+                        : 'bg-gray-700 text-white hover:bg-gray-600'
+                    }`}
+                  >
+                    <span className="text-xl">{t.icon}</span>
+                    <span className="text-sm">{t.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="border-t border-amber-700/50 my-1"></div>
+              <button
+                onClick={() => setResetConfirm(true)}
+                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-900/30 transition flex items-center gap-2"
+              >
+                <span>🔄</span> Reset Lobby
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* تأییدیه Reset Lobby */}
+      {resetConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn" onClick={() => setResetConfirm(false)}>
+          <div className="bg-gray-800 p-6 rounded-xl text-center" onClick={e => e.stopPropagation()}>
+            <p className="text-white mb-4">Reset all scores and chips? This cannot be undone.</p>
+            <button onClick={resetLobby} className="bg-red-600 px-4 py-2 rounded mr-2">Yes, Reset</button>
+            <button onClick={() => setResetConfirm(false)} className="bg-gray-600 px-4 py-2 rounded">Cancel</button>
+          </div>
+        </div>
+      )}
 
       <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
       {showChat && <Chat ws={ws} playerName={currentPlayer?.name || '?'} />}
+
+      {/* نمایش تایمر در بالای صفحه - فقط زمانی که نوبت من است */}
+      {gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
+          <TurnTimer 
+            duration={20} 
+            onTimeout={onTurnTimeout} 
+            resetTrigger={timerResetTrigger}
+          />
+        </div>
+      )}
 
       {winningHandName && (
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap">
@@ -203,11 +305,11 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         <input type="checkbox" id="handInfoToggle" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} />
       </div>
 
-      {showHandInfo && currentPlayer && !currentPlayer.folded && (
+      {showHandInfo && currentPlayer && !currentPlayer.folded && !currentPlayer.isSpectator && (
         <HandInfo holeCards={currentPlayer.holeCards} communityCards={gameState.communityCards} round={gameState.currentRound} playerName={currentPlayer.name} />
       )}
 
-      {currentPlayer && currentPlayer.folded && !gameState.winner && (
+      {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
         <BettingPanel
           ws={ws}
           playerId={playerId}
@@ -215,6 +317,19 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           currentRound={gameState.currentRound}
           chipAmount={currentPlayer.chips}
         />
+      )}
+
+      {currentPlayer && currentPlayer.isSpectator && !gameState.winner && (
+        <div className="fixed bottom-24 left-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
+          <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
+          <button
+            onClick={sitIn}
+            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm"
+          >
+            Sit In (1000 chips)
+          </button>
+          <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
+        </div>
       )}
 
       <div ref={tableContainerRef} className="relative w-full h-full">
@@ -241,7 +356,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           </div>
         </div>
 
-        {gameState.players.map((p, idx) => {
+        {activePlayersList.map((p, idx) => {
           const pos = playerPositions[p.id];
           if (!pos) return null;
           const isActive = gameState.currentPlayerId === p.id;
@@ -255,9 +370,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
             >
               {isActive && gameState.waitingForAction && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-                  <TurnTimer duration={15} onTimeout={onTurnTimeout} />
-                </div>
+                {/* تایمر قدیمی که بالای سر بازیکن بود را حذف کردیم، چون تایمر مرکزی داریم */}
               )}
 
               {isWinner && (
@@ -293,10 +406,10 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   {p.folded && <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">FOLD</span>}
                   {p.isAllIn && <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>}
                 </div>
-                {gameState.dealerIndex === idx && (
+                {gameState.dealerIndex === p.id && (
                   <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">DEALER</div>
                 )}
-                {isSelf && !gameState.firstHandStarted && !gameState.handInProgress && (
+                {isSelf && !gameState.firstHandStarted && !gameState.handInProgress && !p.isSpectator && (
                   <button
                     onClick={toggleReady}
                     className={`mt-2 w-full text-xs font-bold py-1 rounded transition ${p.ready ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-500'}`}
@@ -304,7 +417,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                     {p.ready ? '✓ Ready' : 'Ready'}
                   </button>
                 )}
-                {!isSelf && p.ready && !gameState.firstHandStarted && !gameState.handInProgress && (
+                {!isSelf && p.ready && !gameState.firstHandStarted && !gameState.handInProgress && !p.isSpectator && (
                   <div className="text-center text-green-400 text-[10px] mt-1">✓ Ready</div>
                 )}
               </div>

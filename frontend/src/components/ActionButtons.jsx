@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 export default function ActionButtons({ onFold, onCheck, onCall, onRaise, onAllIn, toCall, minRaise, playerChips, currentPot }) {
-  const [customRaise, setCustomRaise] = useState(minRaise);
+  const [customRaise, setCustomRaise] = useState('');
   const [showPercent, setShowPercent] = useState(false);
 
   const potRaise = (percent) => {
@@ -10,6 +10,15 @@ export default function ActionButtons({ onFold, onCheck, onCall, onRaise, onAllI
     const totalBet = toCall + amount;
     if (totalBet <= playerChips) onRaise(amount);
     else onRaise(playerChips - toCall);
+  };
+
+  const handleCustomRaise = () => {
+    let amount = parseInt(customRaise);
+    if (isNaN(amount)) amount = minRaise;
+    if (amount < minRaise) amount = minRaise;
+    const totalBet = toCall + amount;
+    if (totalBet > playerChips) amount = playerChips - toCall;
+    if (amount >= minRaise && amount <= playerChips) onRaise(amount);
   };
 
   return (
@@ -44,13 +53,12 @@ export default function ActionButtons({ onFold, onCheck, onCall, onRaise, onAllI
       <div className="flex gap-1 bg-gray-800/60 p-1 rounded-xl">
         <input
           type="number"
-          min={minRaise}
-          max={playerChips}
+          placeholder={minRaise.toString()}
           value={customRaise}
-          onChange={(e) => setCustomRaise(Math.min(playerChips, Math.max(minRaise, parseInt(e.target.value) || 0)))}
-          className="w-20 p-1 rounded-lg bg-gray-900 text-white text-center text-sm border border-amber-600"
+          onChange={(e) => setCustomRaise(e.target.value)}
+          className="w-24 p-1 rounded-lg bg-gray-900 text-white text-center text-sm border border-amber-600"
         />
-        <button onClick={() => onRaise(customRaise)} className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-xl font-bold text-sm">Raise</button>
+        <button onClick={handleCustomRaise} className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-xl font-bold text-sm">Raise</button>
       </div>
     </div>
   );

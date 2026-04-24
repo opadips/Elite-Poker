@@ -11,7 +11,6 @@ export default function HandInfo({ holeCards, communityCards, round, playerName 
       return;
     }
 
-    // تحلیل ساده
     const ranks = holeCards.map(c => c.rank);
     const suited = holeCards[0].suit === holeCards[1].suit;
     let strength = '';
@@ -36,7 +35,6 @@ export default function HandInfo({ holeCards, communityCards, round, playerName 
       }
     } 
     else {
-      // بعد از فلاپ: بررسی دست ساخته شده
       const allCards = [...holeCards, ...communityCards];
       const rankCounts = {};
       const suitCounts = {};
@@ -57,7 +55,6 @@ export default function HandInfo({ holeCards, communityCards, round, playerName 
       if (maxSuitCount >= 4) suggestion = 'Flush draw!';
       if (maxSuitCount >= 5) suggestion = 'Flush!';
       
-      // استریت ساده (چک کردن ۵ رتبه متوالی)
       const rankMap = { 'J':11, 'Q':12, 'K':13, 'A':14 };
       const numericRanks = [...new Set(allCards.map(c => rankMap[c.rank] || parseInt(c.rank)))].sort((a,b)=>a-b);
       let straight = false;

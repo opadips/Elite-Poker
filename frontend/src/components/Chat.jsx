@@ -77,7 +77,7 @@ export default function Chat({ ws, playerName }) {
 
   return (
     <div
-      className={`fixed top-4 left-4 z-30 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
+      className={`fixed top-4 left-24 z-30 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[-20px] pointer-events-none'
       }`}
       onMouseEnter={handleMouseEnter}
@@ -86,7 +86,7 @@ export default function Chat({ ws, playerName }) {
       <div className="text-amber-400 font-bold text-center border-b border-amber-700/50 py-1 text-sm cursor-pointer" onClick={resetActivity}>
         💬 Table Chat
       </div>
-      <div className="h-48 overflow-y-auto p-2 text-xs space-y-1">   {/* ارتفاع از 80 به 48 کاهش یافت */}
+      <div className="h-48 overflow-y-auto p-2 text-xs space-y-1">
         {messages.map((msg, idx) => (
           <div key={idx} className={`${msg.isSystem ? 'text-yellow-400' : msg.sender === playerName ? 'text-green-300' : 'text-white'} break-words`}>
             {!msg.isSystem && <span className="font-bold text-amber-400">[{msg.sender}]</span>}{' '}

@@ -1,6 +1,5 @@
-/* themes.css - تعریف تم‌های مختلف */
 
-/* تم کلاسیک (پیش‌فرض) */
+
 .theme-classic {
   --bg-gradient: linear-gradient(135deg, #1a472a 0%, #0a2a1a 100%);
   --table-bg: rgba(120, 70, 30, 0.3);
@@ -15,7 +14,7 @@
   --winner-text: #f1c40f;
 }
 
-/* تم سایبرپانک */
+
 .theme-cyberpunk {
   --bg-gradient: linear-gradient(135deg, #0a0f1a 0%, #1a0f2e 100%);
   --table-bg: rgba(0, 255, 255, 0.15);
@@ -37,7 +36,6 @@
   background: repeating-linear-gradient(45deg, rgba(0,255,255,0.05) 0px, rgba(0,255,255,0.05) 2px, transparent 2px, transparent 8px);
 }
 
-/* تم فانتزی */
 .theme-fantasy {
   --bg-gradient: linear-gradient(135deg, #2d1b4e 0%, #1a0f2e 100%);
   --table-bg: rgba(255, 215, 0, 0.2);
@@ -58,7 +56,6 @@
   box-shadow: 0 0 40px rgba(255,215,0,0.4);
 }
 
-/* تم نیمه‌شب */
 .theme-midnight {
   --bg-gradient: linear-gradient(135deg, #0c1445 0%, #03061a 100%);
   --table-bg: rgba(192, 192, 192, 0.1);
@@ -78,7 +75,6 @@
   border-color: #c0c0c0;
 }
 
-/* انیمیشن‌های پیشرفته برای تم سایبرپانک و فانتزی */
 @keyframes neonPulse {
   0% { text-shadow: 0 0 5px #00ffff; }
   50% { text-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff; }

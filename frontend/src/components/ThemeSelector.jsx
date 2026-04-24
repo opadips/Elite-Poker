@@ -9,7 +9,7 @@ const themes = [
 
 export default function ThemeSelector({ currentTheme, onThemeChange }) {
   return (
-    <div className="fixed top-4 right-4 z-50 bg-black/50 backdrop-blur-md rounded-xl p-2 flex gap-2 border border-amber-700/40">
+    <div className="flex gap-2">
       {themes.map(theme => (
         <button
           key={theme.id}

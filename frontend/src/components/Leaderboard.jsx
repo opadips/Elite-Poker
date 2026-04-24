@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 
 export default function Leaderboard({ players, currentRound }) {
   const [isMinimized, setIsMinimized] = useState(false);
-
-  const sorted = [...players].sort((a, b) => {
+  const activePlayers = players.filter(p => !p.isSpectator);
+  const sorted = [...activePlayers].sort((a, b) => {
     if (a.score !== b.score) return (b.score || 0) - (a.score || 0);
     return b.chips - a.chips;
   });
 
   return (
     <div className={`fixed top-4 left-24 z-30 bg-black/70 backdrop-blur-md rounded-xl shadow-2xl border border-amber-700/50 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-64'}`}>
-      {/* هدر لیدربورد - قابل کلیک برای minimize/expand */}
       <div 
         className="flex justify-between items-center text-amber-400 font-bold border-b border-amber-700/50 px-3 py-2 cursor-pointer hover:bg-amber-900/20"
         onClick={() => setIsMinimized(!isMinimized)}
@@ -35,6 +34,9 @@ export default function Leaderboard({ players, currentRound }) {
                 </div>
               </div>
             ))}
+            {activePlayers.length === 0 && (
+              <div className="text-center text-gray-400 text-xs py-2">No active players</div>
+            )}
           </div>
           <div className="text-[10px] text-center text-gray-400 mt-1 mb-1 border-t border-gray-700 pt-1">
             Score = rounds won

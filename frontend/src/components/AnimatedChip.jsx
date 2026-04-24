@@ -9,7 +9,6 @@ export default function AnimatedChip({ value, fromPosition, onComplete }) {
   });
 
   useEffect(() => {
-    // شروع انیمیشن به سمت مرکز میز (پات)
     const targetX = window.innerWidth / 2;
     const targetY = window.innerHeight / 2;
     const start = { x: fromPosition.x, y: fromPosition.y };
@@ -27,7 +26,6 @@ export default function AnimatedChip({ value, fromPosition, onComplete }) {
         if (onComplete) onComplete();
       }, 500);
     };
-    // کمی تأخیر تا رندر اولیه دیده شود
     setTimeout(animate, 50);
   }, [fromPosition, onComplete]);
 

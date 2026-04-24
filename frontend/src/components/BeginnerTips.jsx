@@ -21,7 +21,6 @@ export default function BeginnerTips({ holeCards, communityCards, round, playerN
       else message = '⚠️ دست ضعیف، فقط در موقعیت خوب بازی کنید.';
     } 
     else {
-      // بررسی دست ساخته شده روی فلاپ/ترن/ریور
       const allCards = [...holeCards, ...communityCards];
       const rankCounts = {};
       const suitCounts = {};
@@ -53,7 +52,6 @@ export default function BeginnerTips({ holeCards, communityCards, round, playerN
       message = `دست فعلی: ${handDesc}. ${drawDesc}`;
     }
 
-    // نکته اضافه بر اساس پات
     const potOdds = toCall > 0 ? (toCall / pot * 100).toFixed(0) : 0;
     if (toCall > 0 && potOdds < 30) {
       message += ` شانس پات خوب (${potOdds}٪ از پات)، ارزش کال دارد.`;
