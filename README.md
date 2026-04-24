@@ -1,5 +1,3 @@
-
-markdown
 # 🃏 Elite Texas Holdem Poker - game server and web client
 
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)

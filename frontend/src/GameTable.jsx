@@ -44,7 +44,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
   const playerRefs = useRef({});
-  const lastWinnerRef = useRef(null);
+  const lastWinnerRef = useRef(null); 
   const prevCommunityLengthRef = useRef(0);
 
   const themes = [
@@ -96,8 +96,10 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         
         setGameState(data.state);
         setIsPaused(data.state.paused || false);
-        if (data.state.winner && data.state.winner !== lastWinnerRef.current) {
-          lastWinnerRef.current = data.state.winner;
+        
+        // مقایسه بر اساس نام برنده به جای شیء برای جلوگیری از پخش مکرر صدا
+        if (data.state.winner && data.state.winner.names !== lastWinnerRef.current) {
+          lastWinnerRef.current = data.state.winner.names;
           const winnerPlayer = data.state.players?.find(p => p.name === data.state.winner.names);
           if (winnerPlayer) {
             setWinnerEffect({
@@ -389,27 +391,22 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         </div>
       )}
 
-      {!isPaused && gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && (
+      {!isPaused && gameState.waitingForAction && !gameState.winner && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
           <TurnTimer 
             duration={20} 
             onTimeout={onTurnTimeout} 
             resetTrigger={timerResetTrigger}
             onBeep={handleTimerBeep}
+            isActive={gameState.currentPlayerId === playerId}
           />
         </div>
       )}
 
       {winningHandName && (
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap">
-          <div className="relative text-center">
-            <span className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] animate-sparkleCenter">
-              {winningHandName}
-            </span>
-            <div className="absolute -top-8 -left-8 text-2xl animate-sparkle">✨</div>
-            <div className="absolute -bottom-6 -right-6 text-2xl animate-sparkle delay-150">✨</div>
-            <div className="absolute top-0 right-0 text-xl animate-sparkle delay-300">⭐</div>
-            <div className="absolute bottom-0 left-0 text-xl animate-sparkle delay-75">⭐</div>
+        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+          <div className="winner-themed text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider whitespace-nowrap">
+            {winningHandName}
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+// src/components/BettingPanel.jsx
 import React, { useState } from 'react';
 
 export default function BettingPanel({ ws, playerId, players, currentRound, chipAmount }) {
@@ -43,8 +44,17 @@ export default function BettingPanel({ ws, playerId, players, currentRound, chip
   const activePlayers = players.filter(p => !p.folded && !p.isAllIn && p.id !== playerId);
 
   return (
-    <div className="fixed bottom-24 left-4 z-20 bg-black/70 backdrop-blur-md rounded-xl p-3 border border-purple-500/50 w-72 text-white text-sm">
-      <div className="text-purple-400 font-bold text-center mb-2">🎲 Side Bet (50% profit)</div>
+    <div
+      className="fixed bottom-24 left-4 z-20 backdrop-blur-md rounded-xl p-3 w-72 text-white text-sm shadow-lg"
+      style={{
+        backgroundColor: 'var(--sidebet-bg)',
+        border: '1px solid var(--sidebet-border)',
+        color: 'var(--sidebet-text)'
+      }}
+    >
+      <div className="font-bold text-center mb-2" style={{ color: 'var(--sidebet-text)' }}>
+        🎲 Side Bet (50% profit)
+      </div>
       <select
         className="w-full bg-gray-800 rounded p-1 mb-2 text-white"
         value={selectedTarget}
@@ -66,7 +76,11 @@ export default function BettingPanel({ ws, playerId, players, currentRound, chip
           onChange={(e) => setBetAmount(e.target.value)}
           className="flex-1 bg-gray-800 rounded p-1 text-white"
         />
-        <button onClick={handlePlaceBet} className="bg-purple-700 hover:bg-purple-600 px-3 py-1 rounded font-bold">
+        <button
+          onClick={handlePlaceBet}
+          className="px-3 py-1 rounded font-bold"
+          style={{ backgroundColor: 'var(--button-primary)', color: 'white' }}
+        >
           Bet
         </button>
       </div>

@@ -1,3 +1,6 @@
+/* ==============================================
+   Classic
+============================================== */
 .theme-classic {
   --bg-gradient: linear-gradient(135deg, #1a472a 0%, #0a2a1a 100%);
   --table-bg: rgba(120, 70, 30, 0.3);
@@ -10,8 +13,15 @@
   --button-secondary: #8e44ad;
   --pot-bg: rgba(0,0,0,0.6);
   --winner-text: #f1c40f;
+  --sidebet-bg: rgba(0,0,0,0.7);
+  --sidebet-border: #8b5a2b;
+  --sidebet-text: #f1c40f;
+  --winner-font: 'Georgia', serif;
 }
 
+/* ==============================================
+   Cyberpunk
+============================================== */
 .theme-cyberpunk {
   --bg-gradient: linear-gradient(135deg, #0a0f1a 0%, #1a0f2e 100%);
   --table-bg: rgba(0, 255, 255, 0.15);
@@ -24,7 +34,10 @@
   --button-secondary: #ff00ff;
   --pot-bg: rgba(0, 0, 0, 0.8);
   --winner-text: #ff00ff;
-  box-shadow: 0 0 20px rgba(0,255,255,0.3);
+  --sidebet-bg: rgba(0,0,0,0.8);
+  --sidebet-border: #00ffff;
+  --sidebet-text: #00ffff;
+  --winner-font: 'Courier New', monospace;
 }
 
 .theme-cyberpunk .game-table {
@@ -33,6 +46,9 @@
   background: repeating-linear-gradient(45deg, rgba(0,255,255,0.05) 0px, rgba(0,255,255,0.05) 2px, transparent 2px, transparent 8px);
 }
 
+/* ==============================================
+   Fantasy
+============================================== */
 .theme-fantasy {
   --bg-gradient: linear-gradient(135deg, #2d1b4e 0%, #1a0f2e 100%);
   --table-bg: rgba(255, 215, 0, 0.2);
@@ -45,6 +61,10 @@
   --button-secondary: #9b59b6;
   --pot-bg: rgba(0,0,0,0.7);
   --winner-text: #ffd700;
+  --sidebet-bg: rgba(0,0,0,0.7);
+  --sidebet-border: #ffd700;
+  --sidebet-text: #ffd700;
+  --winner-font: 'Cinzel', 'Georgia', serif;
 }
 
 .theme-fantasy .game-table {
@@ -53,6 +73,9 @@
   box-shadow: 0 0 40px rgba(255,215,0,0.4);
 }
 
+/* ==============================================
+   Midnight
+============================================== */
 .theme-midnight {
   --bg-gradient: linear-gradient(135deg, #0c1445 0%, #03061a 100%);
   --table-bg: rgba(192, 192, 192, 0.1);
@@ -65,6 +88,10 @@
   --button-secondary: #7f8c8d;
   --pot-bg: rgba(0,0,0,0.6);
   --winner-text: #ecf0f1;
+  --sidebet-bg: rgba(0,0,0,0.6);
+  --sidebet-border: #c0c0c0;
+  --sidebet-text: #ecf0f1;
+  --winner-font: 'Georgia', serif;
 }
 
 .theme-midnight .game-table {
@@ -72,7 +99,9 @@
   border-color: #c0c0c0;
 }
 
-/* ========== Neon Jungle Theme ========== */
+/* ==============================================
+   Neon Jungle
+============================================== */
 .theme-neonjungle {
   --bg-gradient: none;
   --table-bg: rgba(0, 50, 20, 0.4);
@@ -85,6 +114,10 @@
   --button-secondary: #cc00cc;
   --pot-bg: rgba(0,0,0,0.8);
   --winner-text: #ffd700;
+  --sidebet-bg: rgba(0, 20, 0, 0.8);
+  --sidebet-border: #39ff14;
+  --sidebet-text: #aaffaa;
+  --winner-font: 'Impact', 'Arial Black', sans-serif;
 }
 
 .theme-neonjungle body {
@@ -163,7 +196,9 @@
   background: radial-gradient(circle at center, rgba(0,40,0,0.9) 0%, rgba(0,10,0,0.95) 100%);
 }
 
-/* ========== Void Pulse Theme (keep as is) ========== */
+/* ==============================================
+   Void Pulse
+============================================== */
 .theme-void {
   --bg-gradient: none;
   --table-bg: rgba(10, 10, 30, 0.5);
@@ -176,6 +211,10 @@
   --button-secondary: #1e90ff;
   --pot-bg: rgba(0,0,0,0.8);
   --winner-text: #da70d6;
+  --sidebet-bg: rgba(10, 10, 30, 0.8);
+  --sidebet-border: #8a2be2;
+  --sidebet-text: #da70d6;
+  --winner-font: 'Trebuchet MS', 'Lucida Sans', sans-serif;
 }
 
 .theme-void body {
@@ -254,6 +293,26 @@
   background: radial-gradient(ellipse at center, rgba(20,20,60,0.9) 0%, rgba(5,5,20,0.95) 100%);
 }
 
+/* ==============================================
+   Shared winner animation
+============================================== */
+@keyframes winnerFadeInOut {
+  0%   { opacity: 0; transform: scale(0.8); }
+  15%  { opacity: 1; transform: scale(1); }
+  75%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+.winner-themed {
+  animation: winnerFadeInOut 3s ease-out forwards;
+  color: var(--winner-text);
+  font-family: var(--winner-font);
+  text-shadow: 0 0 20px var(--winner-text);
+}
+
+/* ==============================================
+   Other animations (cyberpunk, fantasy)
+============================================== */
 @keyframes neonPulse {
   0% { text-shadow: 0 0 5px #00ffff; }
   50% { text-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff; }
