@@ -1,0 +1,99 @@
+/* themes.css - تعریف تم‌های مختلف */
+
+/* تم کلاسیک (پیش‌فرض) */
+.theme-classic {
+  --bg-gradient: linear-gradient(135deg, #1a472a 0%, #0a2a1a 100%);
+  --table-bg: rgba(120, 70, 30, 0.3);
+  --table-border: #8b5a2b;
+  --card-bg: white;
+  --card-text: black;
+  --card-suit-red: #e74c3c;
+  --card-suit-black: #2c3e50;
+  --button-primary: #2c3e50;
+  --button-secondary: #8e44ad;
+  --pot-bg: rgba(0,0,0,0.6);
+  --winner-text: #f1c40f;
+}
+
+/* تم سایبرپانک */
+.theme-cyberpunk {
+  --bg-gradient: linear-gradient(135deg, #0a0f1a 0%, #1a0f2e 100%);
+  --table-bg: rgba(0, 255, 255, 0.15);
+  --table-border: #00ffff;
+  --card-bg: rgba(10, 20, 40, 0.9);
+  --card-text: #00ffff;
+  --card-suit-red: #ff00ff;
+  --card-suit-black: #00ffff;
+  --button-primary: #00ffff;
+  --button-secondary: #ff00ff;
+  --pot-bg: rgba(0, 0, 0, 0.8);
+  --winner-text: #ff00ff;
+  box-shadow: 0 0 20px rgba(0,255,255,0.3);
+}
+
+.theme-cyberpunk .game-table {
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 30px rgba(0,255,255,0.5);
+  background: repeating-linear-gradient(45deg, rgba(0,255,255,0.05) 0px, rgba(0,255,255,0.05) 2px, transparent 2px, transparent 8px);
+}
+
+/* تم فانتزی */
+.theme-fantasy {
+  --bg-gradient: linear-gradient(135deg, #2d1b4e 0%, #1a0f2e 100%);
+  --table-bg: rgba(255, 215, 0, 0.2);
+  --table-border: #ffd700;
+  --card-bg: #f9eec1;
+  --card-text: #4a2c2c;
+  --card-suit-red: #c0392b;
+  --card-suit-black: #2c3e50;
+  --button-primary: #d4af37;
+  --button-secondary: #9b59b6;
+  --pot-bg: rgba(0,0,0,0.7);
+  --winner-text: #ffd700;
+}
+
+.theme-fantasy .game-table {
+  background: radial-gradient(circle at center, rgba(255,215,0,0.2) 0%, rgba(0,0,0,0) 70%);
+  border-color: #ffd700;
+  box-shadow: 0 0 40px rgba(255,215,0,0.4);
+}
+
+/* تم نیمه‌شب */
+.theme-midnight {
+  --bg-gradient: linear-gradient(135deg, #0c1445 0%, #03061a 100%);
+  --table-bg: rgba(192, 192, 192, 0.1);
+  --table-border: #c0c0c0;
+  --card-bg: #e8eef4;
+  --card-text: #1a2a3a;
+  --card-suit-red: #e74c3c;
+  --card-suit-black: #34495e;
+  --button-primary: #bdc3c7;
+  --button-secondary: #7f8c8d;
+  --pot-bg: rgba(0,0,0,0.6);
+  --winner-text: #ecf0f1;
+}
+
+.theme-midnight .game-table {
+  box-shadow: 0 0 20px rgba(192,192,192,0.3);
+  border-color: #c0c0c0;
+}
+
+/* انیمیشن‌های پیشرفته برای تم سایبرپانک و فانتزی */
+@keyframes neonPulse {
+  0% { text-shadow: 0 0 5px #00ffff; }
+  50% { text-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff; }
+  100% { text-shadow: 0 0 5px #00ffff; }
+}
+
+@keyframes fantasyGlow {
+  0% { filter: drop-shadow(0 0 2px gold); }
+  100% { filter: drop-shadow(0 0 15px gold); }
+}
+
+.theme-cyberpunk .winner-text {
+  animation: neonPulse 1s infinite;
+}
+
+.theme-fantasy .winner-text {
+  animation: fantasyGlow 0.8s ease-in-out infinite alternate;
+}

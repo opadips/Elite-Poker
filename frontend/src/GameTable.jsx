@@ -7,8 +7,9 @@ import AnimatedChip from './components/AnimatedChip.jsx';
 import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
+import ThemeSelector from './components/ThemeSelector.jsx';
 
-export default function GameTable({ ws, playerId }) {
+export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [gameState, setGameState] = useState(null);
   const [winnerEffect, setWinnerEffect] = useState(null);
   const [winningHandName, setWinningHandName] = useState(null);
@@ -18,10 +19,12 @@ export default function GameTable({ ws, playerId }) {
   const [systemMessage, setSystemMessage] = useState(null);
   const [sideBetWin, setSideBetWin] = useState(null);
   const [showChat, setShowChat] = useState(true);
+  const [newCardIndices, setNewCardIndices] = useState([]);
   const tableContainerRef = useRef(null);
-  const tableRef = useRef(null); // مرجع به المان میز (دایره بیضی)
+  const tableRef = useRef(null);
   const playerRefs = useRef({});
   const lastWinnerRef = useRef(null);
+  const prevCommunityLengthRef = useRef(0);
 
   const addChipAnimation = (fromPlayerId, value) => {
     const playerEl = playerRefs.current[fromPlayerId];
@@ -40,6 +43,19 @@ export default function GameTable({ ws, playerId }) {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'gameState') {
+        const newCommLength = data.state.communityCards?.length || 0;
+        const oldLength = prevCommunityLengthRef.current;
+        if (newCommLength > oldLength) {
+          // فقط کارت‌های جدید را برای انیمیشن مشخص کن
+          const newIndices = [];
+          for (let i = oldLength; i < newCommLength; i++) {
+            newIndices.push(i);
+          }
+          setNewCardIndices(newIndices);
+          setTimeout(() => setNewCardIndices([]), 600);
+        }
+        prevCommunityLengthRef.current = newCommLength;
+        
         setGameState(data.state);
         if (data.state.winner && data.state.winner !== lastWinnerRef.current) {
           lastWinnerRef.current = data.state.winner;
@@ -73,20 +89,18 @@ export default function GameTable({ ws, playerId }) {
     };
   }, [ws]);
 
-  // به‌روزرسانی موقعیت بازیکنان بر اساس ابعاد واقعی میز (نه کل کانتینر)
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
     const tableRect = tableRef.current.getBoundingClientRect();
     const tableWidth = tableRect.width;
     const tableHeight = tableRect.height;
-    const a = tableWidth / 2;   // شعاع افقی (نصف عرض میز)
-    const b = tableHeight / 2;  // شعاع عمودی (نصف ارتفاع میز)
+    const a = tableWidth / 2;
+    const b = tableHeight / 2;
     const centerX = tableRect.left + a;
     const centerY = tableRect.top + b;
     const total = gameState.players.length;
     const newPositions = {};
     gameState.players.forEach((_, idx) => {
-      // زاویه: شروع از بالا ( -PI/2 ) و پخش یکنواخت
       const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
       const x = centerX + a * Math.cos(angle);
       const y = centerY + b * Math.sin(angle);
@@ -95,7 +109,6 @@ export default function GameTable({ ws, playerId }) {
     setPlayerPositions(newPositions);
   }, [gameState]);
 
-  // در صورت تغییر سایز پنجره یا تغییر state، موقعیت‌ها مجدداً محاسبه شوند
   useEffect(() => {
     updatePositions();
     window.addEventListener('resize', updatePositions);
@@ -142,7 +155,7 @@ export default function GameTable({ ws, playerId }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-emerald-950 to-stone-900 overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
       <button
         onClick={() => setShowChat(!showChat)}
         className="fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
@@ -150,6 +163,12 @@ export default function GameTable({ ws, playerId }) {
       >
         💬
       </button>
+
+      <div className="fixed top-4 left-24 z-40">
+        <ThemeSelector currentTheme={theme} onThemeChange={onThemeChange} />
+      </div>
+
+      <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
       {showChat && <Chat ws={ws} playerName={currentPlayer?.name || '?'} />}
 
@@ -179,8 +198,6 @@ export default function GameTable({ ws, playerId }) {
         </div>
       )}
 
-      <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
-
       <div className="fixed bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md rounded-xl px-3 py-2 border border-amber-700/40 flex items-center gap-2 text-white text-sm">
         <label htmlFor="handInfoToggle" className="cursor-pointer">🐶 من نوب سگم</label>
         <input type="checkbox" id="handInfoToggle" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} />
@@ -201,23 +218,29 @@ export default function GameTable({ ws, playerId }) {
       )}
 
       <div ref={tableContainerRef} className="relative w-full h-full">
-        {/* المان میز بیضی شکل - با رفرنس برای محاسبه ابعاد واقعی */}
         <div
           ref={tableRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[70%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[70%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm game-table"
         >
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
-            <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg">
+            <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg" style={{ background: 'var(--pot-bg)' }}>
               💰 Pot: {gameState.totalPot}
             </div>
             <div className="flex gap-3 p-4 bg-amber-950/50 rounded-3xl">
-              {gameState.communityCards.map((card, i) => <Card key={i} rank={card.rank} suit={card.suit} />)}
+              {gameState.communityCards.map((card, i) => (
+                <div
+                  key={i}
+                  className={newCardIndices.includes(i) ? 'animate-cardReveal' : ''}
+                  style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.2}s` : '0s' }}
+                >
+                  <Card rank={card.rank} suit={card.suit} />
+                </div>
+              ))}
               {gameState.communityCards.length === 0 && <div className="text-white text-sm">Flop</div>}
             </div>
           </div>
         </div>
 
-        {/* بازیکنان - موقعیت آنها بر اساس ابعاد واقعی میز محاسبه می‌شود */}
         {gameState.players.map((p, idx) => {
           const pos = playerPositions[p.id];
           if (!pos) return null;
@@ -239,7 +262,7 @@ export default function GameTable({ ws, playerId }) {
 
               {isWinner && (
                 <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
-                  <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg">🏆 WINNER! 🏆</div>
+                  <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text" style={{ color: 'var(--winner-text)' }}>🏆 WINNER! 🏆</div>
                   {!isSelf && (
                     <div className="flex gap-1 justify-center mt-1">
                       {winnerEffect.winnerCards.map((card, ci) => (
@@ -256,7 +279,8 @@ export default function GameTable({ ws, playerId }) {
                 ${isActive ? 'ring-4 ring-yellow-400 scale-105 shadow-yellow-500/50' : ''}
                 ${p.folded ? 'opacity-60 grayscale' : ''}
                 ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
-                ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}`}>
+                ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}`}
+                style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
                 <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
                 <div className="font-bold text-white text-center text-lg">{p.name}</div>
                 <div className="text-green-400 text-center">💰 {p.chips}</div>

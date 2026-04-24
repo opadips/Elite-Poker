@@ -169,59 +169,33 @@ export class Game {
       this.nextPlayer();
     }
     this.checkRoundComplete();
-    this.autoCompleteIfAllAllIn();
-  }
-
-  autoCompleteIfAllAllIn() {
-    const activeNotFolded = this.players.filter(p => !p.folded);
-    const allAllIn = activeNotFolded.length > 0 && activeNotFolded.every(p => p.isAllIn);
-    if (allAllIn && this.currentRound !== 'showdown') {
-      console.log('All remaining players are all-in. Auto-completing rounds...');
-      while (this.currentRound !== 'showdown') {
-        this.nextRound();
-      }
-    }
   }
 
   nextPlayer() {
-    let next = (this.currentPlayerIndex + 1) % this.players.length;
+    // یافتن بازیکن بعدی که فولد نکرده و All‑in نبوده و چیپ دارد (برای اکشن)
+    let start = this.currentPlayerIndex;
     let found = false;
     for (let i = 0; i < this.players.length; i++) {
-      const idx = (this.currentPlayerIndex + 1 + i) % this.players.length;
-      if (!this.players[idx].folded && !this.players[idx].isAllIn) {
-        next = idx;
+      const idx = (start + 1 + i) % this.players.length;
+      if (!this.players[idx].folded && !this.players[idx].isAllIn && this.players[idx].chips > 0) {
+        this.currentPlayerIndex = idx;
         found = true;
+        console.log(`Next player: ${this.players[this.currentPlayerIndex]?.name}`);
         break;
       }
     }
-    if (found) {
-      this.currentPlayerIndex = next;
-      console.log(`Next player: ${this.players[this.currentPlayerIndex]?.name}`);
-    } else {
-      this.checkRoundComplete();
+    if (!found) {
+      // هیچ بازیکن فعالی (غیر All‑in) باقی نمانده است => همه All‑in یا فولد شده‌اند
+      console.log('No active players left, completing round...');
+      this.completeRound();
     }
   }
 
-  // متد کمکی برای ارزیابی دست هر بازیکن (حتی با کارت‌های کم)
-  evaluatePlayerHand(player) {
-    const evaluator = new HandEvaluator();
-    // اگر هیچ کارت مشترکی وجود ندارد (preflop) و فقط دو کارت داریم،
-    // باید دست را فقط با همان دو کارت ارزیابی کنیم. HandEvaluator که قبلاً دادیم
-    // با 2 کارت نمی‌تواند کار کند، بنابراین یک منطق ساده می‌نویسیم.
-    if (this.communityCards.length === 0) {
-      const [c1, c2] = player.holeCards;
-      if (c1.rank === c2.rank) return 'Pair';
-      if (c1.rank === 'A' || c2.rank === 'A') return 'Ace High';
-      return 'High Card';
-    }
-    // در غیر این صورت، از ارزیاب اصلی استفاده می‌کنیم که با 2 تا 7 کارت کار می‌کند
-    const hand = evaluator.evaluate(player.holeCards, this.communityCards);
-    return hand.name;
-  }
-
-  checkRoundComplete() {
-    const activePlayers = this.players.filter(p => !p.folded && !p.isAllIn);
+  completeRound() {
+    // اگر همه بازیکنان All‑in یا فولد شده باشند، ولی کارت‌های مشترک کامل نشده، باید خودکار تکمیل شوند
+    const activePlayers = this.players.filter(p => !p.folded && !p.isAllIn && p.chips > 0);
     if (activePlayers.length === 0) {
+      // همه غیرفعال – برنده کسی است که فولد نکرده
       const winner = this.players.find(p => !p.folded);
       if (winner) {
         const handName = this.evaluatePlayerHand(winner);
@@ -232,10 +206,32 @@ export class Game {
           players: [{ name: winner.name, cards: winner.holeCards }]
         };
         this.endHand();
+        return;
+      }
+      // ادامه دادن راندها برای نمایش کارت‌های جدید
+      if (this.currentRound !== 'showdown') {
+        this.nextRound();
+      } else {
+        this.evaluateWinner();
+        this.endHand();
+      }
+    }
+  }
+
+  checkRoundComplete() {
+    const activePlayers = this.players.filter(p => !p.folded && !p.isAllIn && p.chips > 0);
+    if (activePlayers.length === 0) {
+      // همه All‑in یا فولد شده‌اند → راند شرط‌بندی تمام شده، باید کارت‌های بعدی نشان داده شوند
+      if (this.currentRound !== 'showdown') {
+        this.nextRound();
+      } else {
+        this.evaluateWinner();
+        this.endHand();
       }
       return;
     }
     if (activePlayers.length === 1) {
+      // فقط یک بازیکن فعال (غیر All‑in) باقی مانده – او برنده است (سایرین فولد یا All‑in هستند)
       const winner = activePlayers[0];
       const handName = this.evaluatePlayerHand(winner);
       this.winner = {
@@ -253,6 +249,18 @@ export class Game {
     if (allActed && allBetsEqual) {
       this.nextRound();
     }
+  }
+
+  evaluatePlayerHand(player) {
+    const evaluator = new HandEvaluator();
+    if (this.communityCards.length === 0) {
+      const [c1, c2] = player.holeCards;
+      if (c1.rank === c2.rank) return 'Pair';
+      if (c1.rank === 'A' || c2.rank === 'A') return 'Ace High';
+      return 'High Card';
+    }
+    const hand = evaluator.evaluate(player.holeCards, this.communityCards);
+    return hand.name;
   }
 
   nextRound() {
@@ -296,7 +304,7 @@ export class Game {
     let idx = (this.dealerIndex + 1) % this.players.length;
     for (let i = 0; i < this.players.length; i++) {
       const candidate = (this.dealerIndex + 1 + i) % this.players.length;
-      if (!this.players[candidate].folded && !this.players[candidate].isAllIn) {
+      if (!this.players[candidate].folded && !this.players[candidate].isAllIn && this.players[candidate].chips > 0) {
         return candidate;
       }
     }

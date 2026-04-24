@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GameTable from './GameTable.jsx';
 
 export default function App() {
@@ -6,6 +6,13 @@ export default function App() {
   const [ws, setWs] = useState(null);
   const [playerId, setPlayerId] = useState(null);
   const [error, setError] = useState('');
+  const [theme, setTheme] = useState(() => localStorage.getItem('pokerTheme') || 'classic');
+
+  useEffect(() => {
+    localStorage.setItem('pokerTheme', theme);
+    document.documentElement.classList.remove('theme-classic', 'theme-cyberpunk', 'theme-fantasy', 'theme-midnight');
+    document.documentElement.classList.add(`theme-${theme}`);
+  }, [theme]);
 
   const joinGame = () => {
     if (!playerName.trim()) return;
@@ -21,7 +28,6 @@ export default function App() {
     };
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('📨 App message:', data);
       if (data.type === 'error') setError(data.message);
       if (data.type === 'joined') {
         setPlayerId(data.playerId);
@@ -56,5 +62,5 @@ export default function App() {
     );
   }
 
-  return <GameTable ws={ws} playerId={playerId} />;
+  return <GameTable ws={ws} playerId={playerId} theme={theme} onThemeChange={setTheme} />;
 }
