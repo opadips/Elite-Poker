@@ -1,3 +1,4 @@
+// src/GameTable.jsx
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Card from './components/Card.jsx';
 import ActionButtons from './components/ActionButtons.jsx';
@@ -7,6 +8,7 @@ import AnimatedChip from './components/AnimatedChip.jsx';
 import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
+import { cardDeal, chipClick, winnerFanfare, timerBeep } from './hooks/useSound';
 
 export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [gameState, setGameState] = useState(null);
@@ -22,6 +24,8 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [showSettings, setShowSettings] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [timerResetTrigger, setTimerResetTrigger] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true); // ⭐ state جدید
+
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
   const playerRefs = useRef({});
@@ -60,6 +64,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
             newIndices.push(i);
           }
           setNewCardIndices(newIndices);
+          if (soundEnabled) cardDeal(); // ✅ شرط صدا
           setTimeout(() => setNewCardIndices([]), 600);
         }
         prevCommunityLengthRef.current = newCommLength;
@@ -75,6 +80,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               winnerName: winnerPlayer.name
             });
             setWinningHandName(data.state.winner.handName);
+            if (soundEnabled) winnerFanfare(); // ✅ شرط صدا
             setTimeout(() => {
               setWinnerEffect(null);
               setWinningHandName(null);
@@ -98,7 +104,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setTimeout(() => setSystemMessage(null), 2000);
       }
     };
-  }, [ws]);
+  }, [ws, soundEnabled]); // وابستگی به soundEnabled اضافه شد
 
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
@@ -147,6 +153,10 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     }
   };
 
+  const handleTimerBeep = () => {
+    if (soundEnabled) timerBeep(); // ✅ شرط صدا
+  };
+
   if (!gameState) return <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>;
 
   const currentPlayer = gameState.players?.find(p => p.id === playerId);
@@ -158,14 +168,17 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     else if (type === 'check') ws.send(JSON.stringify({ type: 'action', action: 'check' }));
     else if (type === 'call') {
       addChipAnimation(playerId, toCall);
+      if (soundEnabled) chipClick(); // ✅ شرط صدا
       ws.send(JSON.stringify({ type: 'action', action: 'call' }));
     }
     else if (type === 'raise') {
       addChipAnimation(playerId, amount);
+      if (soundEnabled) chipClick(); // ✅ شرط صدا
       ws.send(JSON.stringify({ type: 'action', action: 'raise', amount }));
     }
     else if (type === 'allin') {
       addChipAnimation(playerId, currentPlayer?.chips);
+      if (soundEnabled) chipClick(); // ✅ شرط صدا
       ws.send(JSON.stringify({ type: 'action', action: 'allin' }));
     }
   };
@@ -233,6 +246,16 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   </button>
                 ))}
               </div>
+              {/* ⭐ دکمه قطع/وصل صدا */}
+              <div className="border-t border-amber-700/50 my-1"></div>
+              <button
+                onClick={() => setSoundEnabled(prev => !prev)}
+                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700/50 transition flex items-center gap-2"
+              >
+                <span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
+                {soundEnabled ? 'Sound ON' : 'Sound OFF'}
+              </button>
+              {/* دکمه Reset Lobby */}
               <div className="border-t border-amber-700/50 my-1"></div>
               <button
                 onClick={() => setResetConfirm(true)}
@@ -265,6 +288,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
             duration={20} 
             onTimeout={onTurnTimeout} 
             resetTrigger={timerResetTrigger}
+            onBeep={handleTimerBeep}
           />
         </div>
       )}

@@ -1,6 +1,7 @@
+// src/components/TurnTimer.jsx
 import React, { useEffect, useState, useRef } from 'react';
 
-export default function TurnTimer({ duration = 20, onTimeout, resetTrigger }) {
+export default function TurnTimer({ duration = 20, onTimeout, resetTrigger, onBeep }) {
   const [timeLeft, setTimeLeft] = useState(duration);
   const intervalRef = useRef(null);
   const timeoutCalledRef = useRef(false);
@@ -35,6 +36,13 @@ export default function TurnTimer({ duration = 20, onTimeout, resetTrigger }) {
     startTimer();
     return () => clearTimer();
   }, [resetTrigger]);
+
+  // پخش بوق هشدار در ثانیه‌های پایانی
+  useEffect(() => {
+    if (timeLeft <= 3 && timeLeft > 0 && onBeep) {
+      onBeep();
+    }
+  }, [timeLeft, onBeep]);
 
   return (
     <div className={`text-center text-sm font-mono font-bold px-2 py-1 rounded-full shadow-md
