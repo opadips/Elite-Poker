@@ -1,4 +1,3 @@
-// src/components/BettingPanel.jsx
 import React, { useState } from 'react';
 
 export default function BettingPanel({ ws, playerId, players, currentRound, chipAmount }) {

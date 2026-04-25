@@ -1,4 +1,3 @@
-// src/GameTable.jsx
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Card from './components/Card.jsx';
 import ActionButtons from './components/ActionButtons.jsx';
@@ -51,6 +50,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const lastWinnerRef = useRef(null);
   const prevCommunityLengthRef = useRef(0);
   const bubbleTimersRef = useRef({});
+  const chatAutoCloseRef = useRef(null);
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -97,6 +97,14 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setChatMessages(prev => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
         setSystemMessage(data.text);
         setTimeout(() => setSystemMessage(null), 3000);
+        if (!showChat) {
+          setShowChat(true);
+          if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
+          chatAutoCloseRef.current = setTimeout(() => {
+            setShowChat(false);
+            chatAutoCloseRef.current = null;
+          }, 5000);
+        }
       } else if (data.type === 'achievement') {
         setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
         setTimeout(() => setAchievementToast(null), 4000);
@@ -156,7 +164,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setTimeout(() => setSystemMessage(null), 2000);
       }
     };
-  }, [ws, soundEnabled, gameState]);
+  }, [ws, soundEnabled, gameState, showChat]);
 
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
@@ -318,12 +326,25 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     });
   };
 
+  const handleChatToggle = () => {
+    if (showChat) {
+      if (chatAutoCloseRef.current) {
+        clearTimeout(chatAutoCloseRef.current);
+        chatAutoCloseRef.current = null;
+      }
+      setShowChat(false);
+    } else {
+      if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
+      setShowChat(true);
+    }
+  };
+
   const activePlayersList = gameState.players.filter(p => !p.isSpectator);
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
       <button
-        onClick={() => setShowChat(!showChat)}
+        onClick={handleChatToggle}
         className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
         title={showChat ? "Close chat" : "Open chat"}
         style={{ zIndex: 70 }}

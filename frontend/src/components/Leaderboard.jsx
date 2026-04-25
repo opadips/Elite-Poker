@@ -1,4 +1,3 @@
-// src/components/Leaderboard.jsx
 import React, { useState } from 'react';
 
 export default function Leaderboard({ players, currentRound }) {

@@ -1,4 +1,3 @@
-// server.js
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
@@ -83,10 +82,8 @@ function setAutoActionTimer(ws, playerId) {
 
     const toCall = game.currentBet - player.currentBet;
     if (toCall === 0) {
-      console.log(`⏰ Timeout (20s): ${player.name} auto-check`);
       game.playerAction(playerId, 'check');
     } else {
-      console.log(`⏰ Timeout (20s): ${player.name} auto-fold`);
       game.playerAction(playerId, 'fold');
     }
     broadcastGameState();
@@ -106,8 +103,6 @@ function clearAllTimers() {
 }
 
 wss.on('connection', (ws) => {
-  console.log('Client connected');
-
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
@@ -122,7 +117,6 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'error', message: 'Name too long (max 15 chars)' }));
           return;
         }
-        // جلوگیری از نام تکراری
         const nameExists = game.players.some(p => p.name === name.trim());
         if (nameExists) {
           ws.send(JSON.stringify({ type: 'error', message: 'Name already taken' }));
@@ -171,7 +165,7 @@ wss.on('connection', (ws) => {
         const result = game.toggleReady(client.playerId);
         if (result.success) {
           broadcastGameState();
-          if (game.handInProgress === false && game.getActivePlayers().length >= 2 && game.getActivePlayers().every(p => p.ready)) {
+          if (!game.handInProgress && game.getActivePlayers().length >= 2 && game.getActivePlayers().every(p => p.ready)) {
             broadcastSystemMessage('All players ready! Game starting...');
             broadcastGameState();
           }
@@ -238,7 +232,6 @@ wss.on('connection', (ws) => {
         }
       }
     } catch (err) {
-      console.error('Error parsing message:', err);
       ws.send(JSON.stringify({ type: 'error', message: 'Invalid message' }));
     }
   });
@@ -265,6 +258,7 @@ setInterval(() => {
     const hand = state.winner.handName;
     const winnerNames = state.winner.names;
     broadcastChat('SYSTEM', `🏆 ${winnerNames} won ${totalWinning} chips with ${hand}! 🏆`);
+    broadcastSystemMessage(`🏆 ${winnerNames} wins with ${hand}!`);
 
     const newAchievements = game.checkAchievements();
     for (const ach of newAchievements) {
@@ -277,6 +271,7 @@ setInterval(() => {
     for (let res of state.sideBetResults) {
       const totalWin = res.amount + res.profit;
       broadcastChat('SYSTEM', `🎉 ${res.bettorName} won ${totalWin} chips from side bet on ${res.targetName}! 🎉`);
+      broadcastSystemMessage(`🎲 Side bet: ${res.bettorName} won ${totalWin} chips (bet on ${res.targetName})`);
       broadcastSideBetWin(res.bettorName, res.targetName, res.amount, res.profit);
     }
   }
