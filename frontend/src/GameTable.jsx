@@ -4,7 +4,6 @@ import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
 import HandInfo from './components/HandInfo.jsx';
 import AnimatedChip from './components/AnimatedChip.jsx';
-import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
 import { cardDeal, chipClick, winnerFanfare, timerBeep, allInSound } from './hooks/useSound';
@@ -32,7 +31,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [newCardIndices, setNewCardIndices] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
-  const [timerResetTrigger, setTimerResetTrigger] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [cardBack, setCardBack] = useState(() => localStorage.getItem('pokerCardBack') || 'default');
   const [chatMessages, setChatMessages] = useState([]);
@@ -43,6 +41,8 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [speechBubbles, setSpeechBubbles] = useState([]);
   const [themeExpanded, setThemeExpanded] = useState(false);
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
+  const [turnRemainingSec, setTurnRemainingSec] = useState(0);
+  const [turnCurrentPlayerId, setTurnCurrentPlayerId] = useState(null);
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
@@ -51,6 +51,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const prevCommunityLengthRef = useRef(0);
   const bubbleTimersRef = useRef({});
   const chatAutoCloseRef = useRef(null);
+  const lastBeepSecond = useRef(0);
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -110,6 +111,9 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setTimeout(() => setAchievementToast(null), 4000);
       } else if (data.type === 'allInSound') {
         if (soundEnabled) allInSound();
+      } else if (data.type === 'turnTimer') {
+        setTurnRemainingSec(data.remaining);
+        setTurnCurrentPlayerId(data.currentPlayerId);
       }
 
       if (data.type === 'gameState') {
@@ -166,6 +170,18 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     };
   }, [ws, soundEnabled, gameState, showChat]);
 
+  useEffect(() => {
+    if (turnRemainingSec > 0 && soundEnabled) {
+      const currentSec = Math.ceil(turnRemainingSec);
+      if (currentSec <= 5 && currentSec !== lastBeepSecond.current) {
+        timerBeep();
+        lastBeepSecond.current = currentSec;
+      }
+    } else {
+      lastBeepSecond.current = 0;
+    }
+  }, [turnRemainingSec, soundEnabled]);
+
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
     const tableRect = tableRef.current.getBoundingClientRect();
@@ -204,30 +220,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   }, [updatePositions]);
 
   useEffect(() => {
-    if (gameState && gameState.waitingForAction && gameState.currentPlayerId) {
-      setTimerResetTrigger(prev => prev + 1);
-    }
-  }, [gameState?.currentPlayerId, gameState?.waitingForAction]);
-
-  const onTurnTimeout = () => {
-    if (gameState && gameState.currentPlayerId === playerId && gameState.waitingForAction) {
-      const currentPlayer = gameState.players?.find(p => p.id === playerId);
-      if (currentPlayer && !currentPlayer.isAllIn && !currentPlayer.folded) {
-        const toCall = gameState.currentBet - (currentPlayer.currentBet || 0);
-        if (toCall === 0) {
-          ws.send(JSON.stringify({ type: 'action', action: 'check' }));
-        } else {
-          ws.send(JSON.stringify({ type: 'action', action: 'fold' }));
-        }
-      }
-    }
-  };
-
-  const handleTimerBeep = () => {
-    if (soundEnabled) timerBeep();
-  };
-
-  useEffect(() => {
     if (winnerEffect?.winnerId && gameState) {
       const winnerEl = playerRefs.current[winnerEffect.winnerId];
       if (winnerEl) {
@@ -247,6 +239,13 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       }
     }
   }, [winnerEffect, gameState]);
+
+  const getTimerColor = (sec) => {
+    if (sec > 15) return '#3b82f6';
+    if (sec > 10) return '#22c55e';
+    if (sec > 5) return '#eab308';
+    return '#ef4444';
+  };
 
   if (!gameState) return <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>;
 
@@ -478,7 +477,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} className="w-4 h-4" />
-                <span className="text-white text-sm">Enable Hand Info & Equity</span>
+                <span className="text-white text-sm">🐶من نوب سگم</span>
               </label>
             </div>
 
@@ -604,17 +603,6 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
             <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg" style={{ background: 'var(--pot-bg)' }}>
               💰 Pot: {gameState.totalPot}
             </div>
-            {!isPaused && gameState.waitingForAction && !gameState.winner && (
-              <div className="timer-inline" style={{ top: '-42px' }}>
-                <TurnTimer 
-                  duration={20} 
-                  onTimeout={onTurnTimeout} 
-                  resetTrigger={timerResetTrigger}
-                  onBeep={handleTimerBeep}
-                  isActive={gameState.currentPlayerId === playerId}
-                />
-              </div>
-            )}
             <div className="flex gap-3 p-4 bg-amber-950/50 rounded-3xl">
               {gameState.communityCards.map((card, i) => (
                 <div
@@ -638,87 +626,108 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           const isSelf = p.id === playerId;
           const canReveal = !gameState.handInProgress && gameState.winner && isSelf && !p.folded && !p.revealed;
           const isReady = p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
+          const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
 
           return (
             <div
               key={p.id}
               ref={el => playerRefs.current[p.id] = el}
-              className="absolute transition-all duration-300"
+              className="absolute transition-all duration-300 flex items-center"
               style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
             >
-              {isWinner && (
-                <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
-                  <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text" style={{ color: 'var(--winner-text)' }}>🏆 WINNER! 🏆</div>
-                  {!isSelf && (
-                    <div className="flex gap-1 justify-center mt-1">
-                      {winnerEffect.winnerCards.map((card, ci) => (
-                        <div key={ci} className="animate-spin-once">
-                          <Card rank={card.rank} suit={card.suit} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {isTimerActive && (
+                <div className="flex flex-col items-center mr-2 z-20">
+                  <div className="text-[10px] text-white mb-1 font-mono">
+                    {Math.ceil(turnRemainingSec)}s
+                  </div>
+                  <div className="w-2 h-16 bg-gray-800 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className="w-full transition-all duration-300 ease-linear"
+                      style={{
+                        height: `${(turnRemainingSec / 20) * 100}%`,
+                        backgroundColor: getTimerColor(turnRemainingSec),
+                        borderRadius: '0 0 999px 999px'
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
-              {speechBubbles.filter(b => b.playerId === p.id).map(bubble => (
-                <div key={bubble.id} className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn">
-                  <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">
-                    {bubble.text}
+              <div>
+                {isWinner && (
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
+                    <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text" style={{ color: 'var(--winner-text)' }}>🏆 WINNER! 🏆</div>
+                    {!isSelf && (
+                      <div className="flex gap-1 justify-center mt-1">
+                        {winnerEffect.winnerCards.map((card, ci) => (
+                          <div key={ci} className="animate-spin-once">
+                            <Card rank={card.rank} suit={card.suit} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                )}
 
-              <div className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
-                ${isActive ? 'ring-4 ring-yellow-400 scale-105 shadow-yellow-500/50' : ''}
-                ${p.folded ? 'opacity-60 grayscale' : ''}
-                ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
-                ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
-                ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
-                style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
-                <div className="font-bold text-white text-center text-lg">{p.name}</div>
-                <div className="text-green-400 text-center">💰 {p.chips}</div>
-                {p.lastAction?.type && (
-                  <div className={`text-xs text-center ${
-                    p.lastAction.type === 'fold' ? 'text-red-400' :
-                    p.lastAction.type === 'check' ? 'text-gray-400' :
-                    p.lastAction.type === 'call' ? 'text-green-400' :
-                    p.lastAction.type === 'raise' ? 'text-orange-400' :
-                    p.lastAction.type === 'allin' ? 'text-red-500 animate-pulse' : 'text-white'
-                  }`}>
-                    {p.lastAction.type.toUpperCase()}{p.lastAction.amount > 0 ? ` ${p.lastAction.amount}` : ''}
+                {speechBubbles.filter(b => b.playerId === p.id).map(bubble => (
+                  <div key={bubble.id} className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn">
+                    <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">
+                      {bubble.text}
+                    </div>
                   </div>
-                )}
-                <div className="flex justify-center gap-1 mt-2">
-                  {p.holeCards?.map((card, ci) => (
-                    <Card 
-                      key={ci} 
-                      rank={isSelf || p.revealed ? card.rank : '?'} 
-                      suit={isSelf || p.revealed ? card.suit : '?'} 
-                      hidden={!(isSelf || p.revealed)} 
-                      cardBack={cardBack}
-                      isSelf={isSelf}
-                      revealAnim={p.revealed && !isSelf}
+                ))}
+
+                <div className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
+                  ${isActive ? 'ring-4 ring-yellow-400 scale-105 shadow-yellow-500/50' : ''}
+                  ${p.folded ? 'opacity-60 grayscale' : ''}
+                  ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
+                  ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
+                  ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
+                  style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+                  <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
+                  <div className="font-bold text-white text-center text-lg">{p.name}</div>
+                  <div className="text-green-400 text-center">💰 {p.chips}</div>
+                  {p.lastAction?.type && (
+                    <div className={`text-xs text-center ${
+                      p.lastAction.type === 'fold' ? 'text-red-400' :
+                      p.lastAction.type === 'check' ? 'text-gray-400' :
+                      p.lastAction.type === 'call' ? 'text-green-400' :
+                      p.lastAction.type === 'raise' ? 'text-orange-400' :
+                      p.lastAction.type === 'allin' ? 'text-red-500 animate-pulse' : 'text-white'
+                    }`}>
+                      {p.lastAction.type.toUpperCase()}{p.lastAction.amount > 0 ? ` ${p.lastAction.amount}` : ''}
+                    </div>
+                  )}
+                  <div className="flex justify-center gap-1 mt-2">
+                    {p.holeCards?.map((card, ci) => (
+                      <Card 
+                        key={ci} 
+                        rank={isSelf || p.revealed ? card.rank : '?'} 
+                        suit={isSelf || p.revealed ? card.suit : '?'} 
+                        hidden={!(isSelf || p.revealed)} 
+                        cardBack={cardBack}
+                        isSelf={isSelf}
+                        revealAnim={p.revealed && !isSelf}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-center gap-1 mt-2 text-xs">
+                    {p.folded && <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">FOLD</span>}
+                    {p.isAllIn && <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>}
+                  </div>
+                  {gameState.dealerIndex === p.id && (
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">DEALER</div>
+                  )}
+                  {isSelf && showHandInfo && !p.folded && !p.isSpectator && (
+                    <HandInfo 
+                      holeCards={p.holeCards}
+                      communityCards={gameState.communityCards}
+                      round={gameState.currentRound}
+                      playerName={p.name}
+                      opponentsCount={activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length}
                     />
-                  ))}
+                  )}
                 </div>
-                <div className="flex justify-center gap-1 mt-2 text-xs">
-                  {p.folded && <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">FOLD</span>}
-                  {p.isAllIn && <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>}
-                </div>
-                {gameState.dealerIndex === p.id && (
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">DEALER</div>
-                )}
-                {isSelf && showHandInfo && !p.folded && !p.isSpectator && (
-                  <HandInfo 
-                    holeCards={p.holeCards}
-                    communityCards={gameState.communityCards}
-                    round={gameState.currentRound}
-                    playerName={p.name}
-                    opponentsCount={activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length}
-                  />
-                )}
               </div>
             </div>
           );

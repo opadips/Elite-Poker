@@ -12,6 +12,10 @@ const wss = new WebSocketServer({ server });
 const game = new Game();
 const clients = new Map();
 
+let turnStartTime = null;
+let timerBroadcastInterval = null;
+let lastTurnPlayerId = null;
+
 game.onStateChange = () => {
   broadcastGameState();
 };
@@ -59,6 +63,36 @@ function broadcastAllInSound() {
   }
 }
 
+function broadcastTurnTimer() {
+  if (!turnStartTime || game.paused) return;
+  const elapsed = (Date.now() - turnStartTime) / 1000;
+  const remaining = Math.max(0, 20 - elapsed);
+  const currentPlayerId = game.getState().currentPlayerId;
+  const msg = JSON.stringify({ type: 'turnTimer', remaining, currentPlayerId });
+  for (const [ws] of clients.entries()) {
+    if (ws.readyState === 1) ws.send(msg);
+  }
+  if (remaining <= 0) {
+    stopTurnTimerBroadcast();
+  }
+}
+
+function startTurnTimerBroadcast(playerId) {
+  stopTurnTimerBroadcast();
+  turnStartTime = Date.now();
+  lastTurnPlayerId = playerId;
+  timerBroadcastInterval = setInterval(broadcastTurnTimer, 500);
+}
+
+function stopTurnTimerBroadcast() {
+  if (timerBroadcastInterval) {
+    clearInterval(timerBroadcastInterval);
+    timerBroadcastInterval = null;
+  }
+  turnStartTime = null;
+  lastTurnPlayerId = null;
+}
+
 function clearTimer(ws) {
   const client = clients.get(ws);
   if (client?.timeoutId) {
@@ -73,12 +107,20 @@ function setAutoActionTimer(ws, playerId) {
   const client = clients.get(ws);
   if (!client) return;
 
+  startTurnTimerBroadcast(playerId);
+
   const timeoutId = setTimeout(() => {
     if (game.paused) return;
     const player = game.players.find(p => p.id === playerId);
-    if (!player || player.folded || player.isAllIn) return;
+    if (!player || player.folded || player.isAllIn) {
+      stopTurnTimerBroadcast();
+      return;
+    }
     const currentTurnPlayer = game.getState().currentPlayerId;
-    if (currentTurnPlayer !== playerId) return;
+    if (currentTurnPlayer !== playerId) {
+      stopTurnTimerBroadcast();
+      return;
+    }
 
     const toCall = game.currentBet - player.currentBet;
     if (toCall === 0) {
@@ -87,6 +129,7 @@ function setAutoActionTimer(ws, playerId) {
       game.playerAction(playerId, 'fold');
     }
     broadcastGameState();
+    stopTurnTimerBroadcast();
     client.timeoutId = null;
   }, 20000);
 
@@ -98,6 +141,24 @@ function clearAllTimers() {
     if (client.timeoutId) {
       clearTimeout(client.timeoutId);
       client.timeoutId = null;
+    }
+  }
+  stopTurnTimerBroadcast();
+}
+
+function ensureTurnTimer() {
+  const state = game.getState();
+  if (!state.handInProgress || state.winner || state.paused || !state.waitingForAction) {
+    stopTurnTimerBroadcast();
+    return;
+  }
+  const currentId = state.currentPlayerId;
+  if (currentId && currentId !== lastTurnPlayerId) {
+    const targetWs = [...clients.entries()].find(([_, c]) => c.playerId === currentId)?.[0];
+    if (targetWs) {
+      setAutoActionTimer(targetWs, currentId);
+    } else {
+      startTurnTimerBroadcast(currentId);
     }
   }
 }
@@ -152,12 +213,16 @@ wss.on('connection', (ws) => {
         const client = clients.get(ws);
         if (!client) return;
         const { action, amount } = msg;
-        setAutoActionTimer(ws, client.playerId);
         game.playerAction(client.playerId, action, amount);
         if (action === 'allin') {
           broadcastAllInSound();
         }
         broadcastGameState();
+        if (!game.handInProgress || game.winner) {
+          stopTurnTimerBroadcast();
+        } else {
+          ensureTurnTimer();
+        }
       }
       else if (msg.type === 'ready') {
         const client = clients.get(ws);
@@ -220,15 +285,11 @@ wss.on('connection', (ws) => {
         if (game.paused) {
           const client = clients.get(ws);
           game.resume();
-          if (game.waitingForAction) {
-            const currentId = game.getState().currentPlayerId;
-            const targetWs = [...clients.entries()].find(([_, c]) => c.playerId === currentId)?.[0];
-            if (targetWs) {
-              setAutoActionTimer(targetWs, currentId);
-            }
-          }
           broadcastGameState();
           broadcastSystemMessage(`▶️ Game resumed by ${client?.name || 'unknown'}.`);
+          if (game.waitingForAction) {
+            ensureTurnTimer();
+          }
         }
       }
     } catch (err) {
@@ -275,6 +336,8 @@ setInterval(() => {
       broadcastSideBetWin(res.bettorName, res.targetName, res.amount, res.profit);
     }
   }
+
+  ensureTurnTimer();
 }, 500);
 
 setInterval(broadcastGameState, 2000);
