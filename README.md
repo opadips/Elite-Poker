@@ -1,119 +1,155 @@
-# 🃏 Elite Texas Holdem Poker - Game Server & Web Client
+# 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
-[![WebSocket](https://img.shields.io/badge/WebSocket-live-orange)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+A full‑featured Texas Hold'em poker game with **real‑time multiplayer**,  
+advanced animations, dynamic sound, multi‑theme support, and a live hand‑equity tracker.
 
-**[برای مطالعه فارسی به پایین بروید](#-نسخه-فارسی)**
-
----
-
-## 🇬🇧 English Version
-
-### 🎮 About the Game
-
-A fully functional online Texas Hold'em poker game that supports **2–9 real players**.  
-All features are implemented from scratch without any external images or sounds – only pure CSS, HTML, and JavaScript.
-
-**Main Features:**
-- ✅ Standard Texas Hold'em rules (Pre‑flop, Flop, Turn, River, Showdown)
-- ✅ Real‑time multiplayer via WebSocket (server‑authoritative)
-- ✅ **Side betting** for folded players (50% profit on won bets)
-- ✅ Tournament scoring system – chips reset & score increment when one player takes all
-- ✅ Modern animated table, chat system, turn timer, hand analyzer (beginner mode), chip animations, winner effects
-- ✅ No external images or sounds – 100% self‑contained
+[![License](https://img.shields.io/badge/license-MIT-green)](https://img.shields.io/badge/license-MIT-green)
+[![Node](https://img.shields.io/badge/node-%3E%3D16-brightgreen)](https://img.shields.io/badge/node-%3E%3D16-brightgreen)
+[![React](https://img.shields.io/badge/react-18-blue)](https://img.shields.io/badge/react-18-blue)
 
 ---
 
-### 🚀 Quick Start / 1 Click Install & Run!
+## ✨ Features
 
-#### Prerequisites
-- [Node.js](https://nodejs.org/) v18 or higher
-- A terminal / command prompt
+### 🎮 Core Gameplay
+* Full Texas Hold'em rules (preflop/flop/turn/river, blinds, side pots)
+* Real‑time multiplayer via **WebSocket** (2–9 players)
+* **Spectator mode** – watch the game and sit in with 1000 chips
+* **Side betting** – folded players can bet on active players to win extra chips
+* **Tournament scoring** – rounds won are displayed on a leaderboard
 
-#### Installation & Running
+### 🎨 Visual & UX
+* **6 stunning themes** with dynamic CSS backgrounds (no external files):
+    * `Classic` · `Cyberpunk` · `Fantasy` · `Midnight` · `Neon Jungle` · `Void Pulse`
+* **Card back customization** (6 designs) – saved in `localStorage`
+* **Advanced animations**:
+    * Card reveal with 3D spin (community cards)
+    * Chip movement with parabolic arc and bounce
+    * Winner hand text with per‑theme font & color, fade‑in‑out effect
+    * FOLD / ALL‑IN visual indicators, action tracker for last move
 
-**1. Clone the repository**
-```bash
-git clone https://github.com/opadips/Elite-Poker
-cd Elite-Poker
-```
+### 🔊 Sound Effects
+* **Pure Web Audio API** – no audio files required
+* Sounds for card dealing, chips clicking, winning fanfare, and timer beep
+* Sound on/off toggle in settings (with visual feedback)
 
-**2. Install dependencies & run (Windows)**  
-Simply double‑click `start-poker.bat`
+### ⏯️ Game Control
+* **Pause / Resume** – pause the game anytime (pauses auto‑fold timers)
+* **Auto‑action timer** (20s) – auto‑check or auto‑fold if a player times out, visible to all players
+* **Reset lobby** – admin can reset all chips and scores
 
-**3. Run on Linux/macOS**
-```bash
-chmod +x start-poker.sh
-./start-poker.sh
-```
+### 📊 Live Hand Equity (Noob Mode)
+* When "Noob Mode" is enabled, a **live probability bar** appears showing your chance of winning the hand
+* Monte Carlo simulation with 2000 trials, runs entirely on the client
+* Color‑coded: **green** (low equity) → **orange** (medium) → **red** (high) with glowing pulse effect
+* Panel background adapts to the active theme
 
-**4. Open your browser**  
-Go to `http://localhost:5173`
+### 🏆 Achievements
+* 8 unique achievements (First Blood, Hat Trick, High Roller, Royal Touch, Bluff Master, All‑In King, Sheriff, Veteran)
+* Toast notifications when an achievement is unlocked, stored per player
 
-> 💡 **Note:** The first run may take a few minutes to install dependencies. Two terminal windows will appear (backend + frontend). Do not close them while playing.
+### 💬 Chat & History
+* Table chat with persistent history (messages stay even when you close the chat panel)
+* System messages for joins, wins, side bets, and achievements
 
-### 🕹️ How to Play
+### 👤 Player Stats
+* Expandable leaderboard with full stats (hands played, pots won, losses, biggest pot, best hand)
 
-| Step | Action |
-|------|--------|
-| 1️⃣  | Enter a name (max 15 characters) and join the table. |
-| 2️⃣  | First hand: all players must click **Ready** to start. |
-| 3️⃣  | After the first hand, next hands start automatically. |
-| 4️⃣  | Use the action buttons: Fold, Check, Call, Raise (percentage of pot), All‑in. |
-| 5️⃣  | **Side bet:** If you fold, you can bet on another active player to win the hand (max 50% of your chips, profit 50%). |
-| 6️⃣  | **Chat:** Click the 💬 button to toggle – messages auto‑hide after 5 seconds. |
-| 7️⃣  | **Beginner mode:** Check "🐶 من نوب سگم" to get simple hand advice. |
-| 8️⃣  | **Turn timer:** 15 seconds – auto‑check or auto-fold if you don't act in time. |
+---
 
-### 📂 Project Structure
-```text
-Elite-Poker/
-├── backend/           # Node.js + WebSocket server
-│   ├── game/          # Poker game logic (hand evaluation, side pots, scoring)
-│   └── server.js      # WebSocket server, auto‑fold timer, chat broadcast
-├── frontend/          # React + Vite + Tailwind CSS
-│   └── src/           # Components, styles, WebSocket integration
-├── start-poker.bat    # Windows one‑click start script
-├── start-poker.sh     # Linux/macOS start script
-└── README.md          # This file
-```
+## 🚀 Quick Start
 
-### 🛠️ Manual Run (if scripts do not work)
-**Backend:**
+### Prerequisites
+* Node.js ≥ 16
+* npm or yarn
+
+### Installation
+
+**Backend (WebSocket server)**
 ```bash
 cd backend
-npm install
-npm start
+npm install   # or yarn
+node server.js
 ```
+Server runs on `ws://localhost:3000`.
 
-**Frontend (in another terminal):**
+**Frontend (React + Vite)**
 ```bash
-cd frontend
+cd ../frontend   # if separate directory, or where package.json is
 npm install
 npm run dev
 ```
-Then open `http://localhost:5173`
+Open `http://localhost:5173` and start playing.
 
-### 🌐 Multiplayer on Local Network / VPN
-- **Find your local IP address** (e.g., `192.168.1.100` via `ipconfig` on Windows or `ifconfig` on Linux).
-- On other devices, open `http://YOUR_IP:5173` (e.g., `http://192.168.1.100:5173`).
-- **Firewall:** Make sure Windows Firewall (or your OS firewall) allows incoming connections on ports 3000 and 5173.
-- You can also use VPN software like Radmin VPN, Packet Raft, Electro, etc. They create a virtual network and assign you an IP from their range.
+---
 
-### 🤝 Contributing
-Feel free to fork the repo, open issues, or submit pull requests. All contributions are welcome – whether bug fixes, new features, or documentation improvements.
+## 🕹️ How to Play
 
-### 📄 License
-This project is licensed under the MIT License – see the LICENSE file for details.
+1. Open the game in multiple browser tabs (or share the network URL).
+2. Enter a name (max 15 characters) and click **Join Table**.
+3. By default you're a spectator; click **Sit In** to join with 1000 chips.
+4. Click **Ready** and wait for all players to ready up → first hand starts.
+5. Use the action buttons (**Fold**, **Check**, **Call**, **Raise**, **All‑in**) on your turn.
+6. Enable **"🐶 من نوب سگم" (Noob Mode)** to see your hand strength and live equity bar.
+7. Use the ⚙️ Settings menu to switch themes, card backs, sound, pause the game, or reset the lobby.
+
+---
+
+## 📂 Project Structure
+
+```text
+Elite-Poker/
+├── backend/
+│   ├── server.js              # WebSocket server
+│   └── game/
+│       ├── Game.js            # Core poker logic
+│       ├── Player.js          # Player model & stats
+│       ├── Deck.js            # Card deck
+│       ├── HandEvaluator.js   # Hand ranking
+│       └── PotManager.js
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── GameTable.jsx      # Main game component
+│   │   ├── components/        # React components (Card, Chat, Leaderboard, etc.)
+│   │   ├── hooks/             # useSound (Web Audio), useWebSocket
+│   │   ├── utils/             # equity.js (Monte Carlo simulation)
+│   │   └── styles/            # themes.css, animations.css
+│   └── index.html
+└── README.md
+```
+
+---
+
+## 🔧 Tech Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS |
+| **Backend** | Node.js, Express, ws |
+| **Audio** | Web Audio API (no files) |
+| **Animations** | CSS keyframes, cubic‑bezier transitions |
+| **Real‑time** | WebSocket (bi‑directional) |
+
+---
+
+## 🌈 Customisation
+
+You can easily add new themes by editing `themes.css` and adding a new entry in the `themes` array inside `GameTable.jsx`.  
+All theme‑dependent colors are controlled by CSS custom properties (`--table-bg`, `--winner-text`, etc.).
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
 ---
 
 ## 🇮🇷 نسخه-فارسی
 ### 🎮 درباره بازی
 
-از ۲ تا ۹ بازیکن واقعی پشتیبانی می‌کند. بیشتر هم میشه اما باگ ظاهری داره حوصلم نمیشه درستش کنم ولی میتونید بیشتر هم بیارید
+از ۲ تا ۹ بازیکن واقعی پشتیبانی می‌کند. فعلا البته باگ داره هیچ محدودیتی نداره برای جویین دادن اگه دیدم نیازه اپدیت میشه
 
 ## ویژگی‌های اصلی:
 

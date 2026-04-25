@@ -12,7 +12,7 @@ export default function Leaderboard({ players, currentRound }) {
   };
 
   return (
-    <div className={`fixed top-4 left-24 z-30 bg-black/70 backdrop-blur-md rounded-xl shadow-2xl border border-amber-700/50 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-72'}`}>
+    <div className={`fixed top-2 left-2 z-30 bg-black/70 backdrop-blur-md rounded-xl shadow-2xl border border-amber-700/50 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-72'}`}>
       <div 
         className="flex justify-between items-center text-amber-400 font-bold border-b border-amber-700/50 px-3 py-2 cursor-pointer hover:bg-amber-900/20"
         onClick={() => setIsMinimized(!isMinimized)}
@@ -42,11 +42,14 @@ export default function Leaderboard({ players, currentRound }) {
                 </div>
                 {expandedPlayer === p.id && p.stats && (
                   <div className="bg-gray-900/80 rounded-lg mt-1 p-2 text-xs text-gray-300 space-y-1">
-                    <div>🃏 Hands Played: {p.stats.handsPlayed}</div>
+                    <div>🃏 Hands: {p.stats.handsPlayed}</div>
                     <div>🏆 Pots Won: {p.stats.potsWon}</div>
                     <div>❌ Losses: {p.stats.losses}</div>
                     <div>💰 Biggest Pot: {p.stats.biggestPot}</div>
                     <div>✨ Best Hand: {p.stats.bestHand || 'N/A'}</div>
+                    {p.stats.handsPlayed > 0 && (
+                      <div>📈 Win Rate: {Math.round((p.stats.potsWon / p.stats.handsPlayed) * 100)}%</div>
+                    )}
                   </div>
                 )}
               </div>

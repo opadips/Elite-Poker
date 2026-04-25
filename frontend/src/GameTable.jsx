@@ -8,7 +8,7 @@ import AnimatedChip from './components/AnimatedChip.jsx';
 import TurnTimer from './components/TurnTimer.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
-import { cardDeal, chipClick, winnerFanfare, timerBeep } from './hooks/useSound';
+import { cardDeal, chipClick, winnerFanfare, timerBeep, allInSound } from './hooks/useSound';
 import './styles/animations.css';
 
 const cardBackOptions = [
@@ -29,7 +29,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [animatingChips, setAnimatingChips] = useState([]);
   const [systemMessage, setSystemMessage] = useState(null);
   const [sideBetWin, setSideBetWin] = useState(null);
-  const [showChat, setShowChat] = useState(true);
+  const [showChat, setShowChat] = useState(false);
   const [newCardIndices, setNewCardIndices] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
@@ -39,12 +39,18 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [chatMessages, setChatMessages] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
   const [achievementToast, setAchievementToast] = useState(null);
+  const [showAllCards, setShowAllCards] = useState(false);
+  const [seatViewFixed, setSeatViewFixed] = useState(() => localStorage.getItem('seatViewFixed') !== 'false');
+  const [speechBubbles, setSpeechBubbles] = useState([]);
+  const [themeExpanded, setThemeExpanded] = useState(false);
+  const [cardBackExpanded, setCardBackExpanded] = useState(false);
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
   const playerRefs = useRef({});
   const lastWinnerRef = useRef(null);
   const prevCommunityLengthRef = useRef(0);
+  const bubbleTimersRef = useRef({});
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -55,12 +61,12 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     { id: 'void', name: 'Void Pulse', icon: '🌀', color: 'bg-indigo-950' },
   ];
 
-  const addChipAnimation = (fromPlayerId, value) => {
+  const addChipAnimation = (fromPlayerId, value, toPot = true) => {
     const playerEl = playerRefs.current[fromPlayerId];
     if (playerEl) {
       const rect = playerEl.getBoundingClientRect();
       const fromPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      setAnimatingChips(prev => [...prev, { id: Date.now() + Math.random(), value, fromPos }]);
+      setAnimatingChips(prev => [...prev, { id: Date.now() + Math.random(), value, fromPos, toPosition: toPot ? null : undefined }]);
     }
   };
 
@@ -73,6 +79,20 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       const data = JSON.parse(event.data);
       if (data.type === 'chat') {
         setChatMessages(prev => [...prev, { sender: data.sender, text: data.message, isSystem: false }]);
+        const players = gameState?.players;
+        const senderPlayer = players?.find(p => p.name === data.sender);
+        if (senderPlayer) {
+          const newBubble = {
+            id: Date.now() + Math.random(),
+            playerId: senderPlayer.id,
+            text: data.message
+          };
+          setSpeechBubbles(prev => [...prev.filter(b => b.playerId !== senderPlayer.id), newBubble]);
+          clearTimeout(bubbleTimersRef.current[senderPlayer.id]);
+          bubbleTimersRef.current[senderPlayer.id] = setTimeout(() => {
+            setSpeechBubbles(prev => prev.filter(b => b.id !== newBubble.id));
+          }, 5000);
+        }
       } else if (data.type === 'system') {
         setChatMessages(prev => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
         setSystemMessage(data.text);
@@ -80,6 +100,8 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       } else if (data.type === 'achievement') {
         setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
         setTimeout(() => setAchievementToast(null), 4000);
+      } else if (data.type === 'allInSound') {
+        if (soundEnabled) allInSound();
       }
 
       if (data.type === 'gameState') {
@@ -95,10 +117,14 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           setTimeout(() => setNewCardIndices([]), 600);
         }
         prevCommunityLengthRef.current = newCommLength;
-        
+
+        if (data.state.handInProgress) {
+          lastWinnerRef.current = null;
+        }
+
         setGameState(data.state);
         setIsPaused(data.state.paused || false);
-        
+
         if (data.state.winner && data.state.winner.names !== lastWinnerRef.current) {
           lastWinnerRef.current = data.state.winner.names;
           const winnerPlayer = data.state.players?.find(p => p.name === data.state.winner.names);
@@ -130,7 +156,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setTimeout(() => setSystemMessage(null), 2000);
       }
     };
-  }, [ws, soundEnabled]);
+  }, [ws, soundEnabled, gameState]);
 
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
@@ -141,17 +167,27 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     const b = tableHeight / 2;
     const centerX = tableRect.left + a;
     const centerY = tableRect.top + b;
-    const total = gameState.players.filter(p => !p.isSpectator).length;
+
     const activePlayers = gameState.players.filter(p => !p.isSpectator);
+    let orderedPlayers = activePlayers;
+
+    if (seatViewFixed) {
+      const selfIndex = orderedPlayers.findIndex(p => p.id === playerId);
+      if (selfIndex >= 0) {
+        orderedPlayers = [...orderedPlayers.slice(selfIndex), ...orderedPlayers.slice(0, selfIndex)];
+      }
+    }
+
+    const total = orderedPlayers.length;
     const newPositions = {};
-    activePlayers.forEach((_, idx) => {
-      const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
+    orderedPlayers.forEach((p, idx) => {
+      const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
       const x = centerX + a * Math.cos(angle);
       const y = centerY + b * Math.sin(angle);
-      newPositions[activePlayers[idx].id] = { x, y };
+      newPositions[p.id] = { x, y };
     });
     setPlayerPositions(newPositions);
-  }, [gameState]);
+  }, [gameState, playerId, seatViewFixed]);
 
   useEffect(() => {
     updatePositions();
@@ -160,10 +196,10 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   }, [updatePositions]);
 
   useEffect(() => {
-    if (gameState && gameState.currentPlayerId === playerId && gameState.waitingForAction) {
+    if (gameState && gameState.waitingForAction && gameState.currentPlayerId) {
       setTimerResetTrigger(prev => prev + 1);
     }
-  }, [gameState?.currentPlayerId, gameState?.waitingForAction, playerId]);
+  }, [gameState?.currentPlayerId, gameState?.waitingForAction]);
 
   const onTurnTimeout = () => {
     if (gameState && gameState.currentPlayerId === playerId && gameState.waitingForAction) {
@@ -182,6 +218,27 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const handleTimerBeep = () => {
     if (soundEnabled) timerBeep();
   };
+
+  useEffect(() => {
+    if (winnerEffect?.winnerId && gameState) {
+      const winnerEl = playerRefs.current[winnerEffect.winnerId];
+      if (winnerEl) {
+        const rect = winnerEl.getBoundingClientRect();
+        const toPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        const fromPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        for (let i = 0; i < 6; i++) {
+          setTimeout(() => {
+            setAnimatingChips(prev => [...prev, {
+              id: Date.now() + Math.random(),
+              value: Math.floor(gameState.totalPot / 6),
+              fromPos,
+              toPosition: toPos
+            }]);
+          }, i * 200);
+        }
+      }
+    }
+  }, [winnerEffect, gameState]);
 
   if (!gameState) return <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>;
 
@@ -205,9 +262,16 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     }
     else if (type === 'allin') {
       addChipAnimation(playerId, currentPlayer?.chips);
-      if (soundEnabled) chipClick();
+      if (soundEnabled) {
+        chipClick();
+        allInSound();
+      }
       ws.send(JSON.stringify({ type: 'action', action: 'allin' }));
     }
+  };
+
+  const handleRevealCards = () => {
+    ws.send(JSON.stringify({ type: 'reveal' }));
   };
 
   const onToggleBeginner = (checked) => {
@@ -246,21 +310,43 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
     }
   };
 
+  const toggleSeatView = () => {
+    setSeatViewFixed(prev => {
+      const next = !prev;
+      localStorage.setItem('seatViewFixed', next);
+      return next;
+    });
+  };
+
   const activePlayersList = gameState.players.filter(p => !p.isSpectator);
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
-      {/* دکمه چت */}
       <button
         onClick={() => setShowChat(!showChat)}
-        className="fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+        className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
         title={showChat ? "Close chat" : "Open chat"}
+        style={{ zIndex: 70 }}
       >
         💬
       </button>
 
-      {/* تنظیمات */}
-      <div className="fixed top-4 right-20 z-40">
+      {gameState && !gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
+        <div className="fixed bottom-24 left-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
+          <button
+            onClick={toggleReady}
+            className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
+              currentPlayer.ready
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
+          >
+            {currentPlayer.ready ? '🔴 Unready' : '🟢 Ready'}
+          </button>
+        </div>
+      )}
+
+      <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
         <button
           onClick={() => setShowSettings(!showSettings)}
           className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
@@ -269,55 +355,85 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           ⚙️
         </button>
         {showSettings && (
-          <div className="absolute right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700 z-50 animate-fadeInSlideDown origin-top-right overflow-hidden">
+          <div className="absolute right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700 z-50 animate-fadeInSlideDown origin-top-right overflow-hidden max-h-[80vh] overflow-y-auto settings-scroll">
             <div className="px-5 py-3 bg-gray-800/50 border-b border-gray-700 flex items-center gap-2">
               <span className="text-xl">⚙️</span>
               <span className="text-white font-bold text-sm">Settings</span>
             </div>
 
-            <div className="px-4 py-3 border-b border-gray-700/50">
-              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                <span>🎨</span> Theme
+            <div className="border-b border-gray-700/50">
+              <div
+                className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50"
+                onClick={() => setThemeExpanded(!themeExpanded)}
+              >
+                <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+                  <span>🎨</span> Theme
+                </div>
+                <span className="text-gray-400 text-sm">{themeExpanded ? '▲' : '▼'}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {themes.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => { onThemeChange(t.id); setShowSettings(false); }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                      theme === t.id
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 shadow-sm'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-transparent'
-                    }`}
-                  >
-                    <span className="text-lg">{t.icon}</span>
-                    {t.name}
-                  </button>
-                ))}
-              </div>
+              {themeExpanded && (
+                <div className="px-4 py-3 grid grid-cols-2 gap-2">
+                  {themes.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => { onThemeChange(t.id); setShowSettings(false); }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                        theme === t.id
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 shadow-sm'
+                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-transparent'
+                      }`}
+                    >
+                      <span className="text-lg">{t.icon}</span>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Card Back */}
+            <div className="border-b border-gray-700/50">
+              <div
+                className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50"
+                onClick={() => setCardBackExpanded(!cardBackExpanded)}
+              >
+                <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+                  <span>🃏</span> Card Back
+                </div>
+                <span className="text-gray-400 text-sm">{cardBackExpanded ? '▲' : '▼'}</span>
+              </div>
+              {cardBackExpanded && (
+                <div className="px-4 py-3 grid grid-cols-3 gap-2">
+                  {cardBackOptions.map(back => (
+                    <button
+                      key={back.id}
+                      onClick={() => handleCardBackChange(back.id)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                        cardBack === back.id
+                          ? 'bg-amber-500/20 border border-amber-500/50'
+                          : 'bg-gray-800 border border-transparent hover:bg-gray-700'
+                      }`}
+                    >
+                      <span className="text-xl">{back.icon}</span>
+                      <span className="text-xs text-gray-300">{back.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="px-4 py-3 border-b border-gray-700/50">
               <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                <span>🃏</span> Card Back
+                <span>🎥</span> Seat View
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {cardBackOptions.map(back => (
-                  <button
-                    key={back.id}
-                    onClick={() => handleCardBackChange(back.id)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                      cardBack === back.id
-                        ? 'bg-amber-500/20 border border-amber-500/50'
-                        : 'bg-gray-800 border border-transparent hover:bg-gray-700'
-                    }`}
-                  >
-                    <span className="text-xl">{back.icon}</span>
-                    <span className="text-xs text-gray-300">{back.name}</span>
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={toggleSeatView}
+                className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${
+                  seatViewFixed ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'
+                }`}
+              >
+                <span className="text-sm font-medium">{seatViewFixed ? 'Fixed (My Seat Bottom)' : 'Dynamic (Rotating)'}</span>
+                <span className="text-lg">{seatViewFixed ? '📍' : '🔄'}</span>
+              </button>
             </div>
 
             <div className="px-4 py-3 border-b border-gray-700/50">
@@ -333,6 +449,16 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 <span className="text-sm font-medium">{soundEnabled ? 'ON' : 'OFF'}</span>
                 <span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
               </button>
+            </div>
+
+            <div className="px-4 py-3 border-b border-gray-700/50">
+              <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>🐶</span> Noob Mode
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} className="w-4 h-4" />
+                <span className="text-white text-sm">Enable Hand Info & Equity</span>
+              </label>
             </div>
 
             <div className="px-4 py-3 border-b border-gray-700/50">
@@ -380,28 +506,18 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
       {showChat && (
-        <Chat
-          messages={chatMessages}
-          playerName={currentPlayer?.name || '?'}
-          onSendMessage={handleSendChat}
-        />
+        <div style={{ zIndex: 70 }}>
+          <Chat
+            messages={chatMessages}
+            playerName={currentPlayer?.name || '?'}
+            onSendMessage={handleSendChat}
+          />
+        </div>
       )}
 
       {isPaused && (
         <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center pointer-events-none">
           <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">⏸️ GAME PAUSED</div>
-        </div>
-      )}
-
-      {!isPaused && gameState.waitingForAction && !gameState.winner && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
-          <TurnTimer 
-            duration={20} 
-            onTimeout={onTurnTimeout} 
-            resetTrigger={timerResetTrigger}
-            onBeep={handleTimerBeep}
-            isActive={gameState.currentPlayerId === playerId}
-          />
         </div>
       )}
 
@@ -426,7 +542,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       )}
 
       {achievementToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-bold px-6 py-3 rounded-full shadow-2xl animate-fadeInSlideDown flex items-center gap-2">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-bold px-6 py-3 rounded-full shadow-2xl animate-fadeInSlideDown flex items-center gap-2">
           <span className="text-2xl">🎖️</span>
           <div>
             <div className="text-sm">{achievementToast.player}</div>
@@ -435,27 +551,13 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         </div>
       )}
 
-      <div className="fixed bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md rounded-xl px-3 py-2 border border-amber-700/40 flex items-center gap-2 text-white text-sm">
-        <label htmlFor="handInfoToggle" className="cursor-pointer">🐶 من نوب سگم</label>
-        <input type="checkbox" id="handInfoToggle" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} />
-      </div>
-
-      {showHandInfo && currentPlayer && !currentPlayer.folded && !currentPlayer.isSpectator && (
-        <HandInfo 
-         holeCards={currentPlayer.holeCards}
-         communityCards={gameState.communityCards}
-         round={gameState.currentRound}
-         playerName={currentPlayer.name}
-         opponentsCount={activePlayersList.filter(p => p.id !== playerId && !p.folded).length}
-        />
-      )}
       {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
         <BettingPanel
           ws={ws}
           playerId={playerId}
           players={gameState.players}
           currentRound={gameState.currentRound}
-         chipAmount={currentPlayer.chips}
+          chipAmount={currentPlayer.chips}
         />
       )}
 
@@ -481,6 +583,17 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
             <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg" style={{ background: 'var(--pot-bg)' }}>
               💰 Pot: {gameState.totalPot}
             </div>
+            {!isPaused && gameState.waitingForAction && !gameState.winner && (
+              <div className="timer-inline" style={{ top: '-42px' }}>
+                <TurnTimer 
+                  duration={20} 
+                  onTimeout={onTurnTimeout} 
+                  resetTrigger={timerResetTrigger}
+                  onBeep={handleTimerBeep}
+                  isActive={gameState.currentPlayerId === playerId}
+                />
+              </div>
+            )}
             <div className="flex gap-3 p-4 bg-amber-950/50 rounded-3xl">
               {gameState.communityCards.map((card, i) => (
                 <div
@@ -502,6 +615,9 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           const isActive = gameState.currentPlayerId === p.id;
           const isWinner = winnerEffect?.winnerId === p.id;
           const isSelf = p.id === playerId;
+          const canReveal = !gameState.handInProgress && gameState.winner && isSelf && !p.folded && !p.revealed;
+          const isReady = p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
+
           return (
             <div
               key={p.id}
@@ -516,6 +632,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                     <div className="flex gap-1 justify-center mt-1">
                       {winnerEffect.winnerCards.map((card, ci) => (
                         <div key={ci} className="animate-spin-once">
+                          <Card rank={card.rank} suit={card.suit} />
                         </div>
                       ))}
                     </div>
@@ -523,16 +640,24 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 </div>
               )}
 
+              {speechBubbles.filter(b => b.playerId === p.id).map(bubble => (
+                <div key={bubble.id} className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn">
+                  <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">
+                    {bubble.text}
+                  </div>
+                </div>
+              ))}
+
               <div className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
                 ${isActive ? 'ring-4 ring-yellow-400 scale-105 shadow-yellow-500/50' : ''}
                 ${p.folded ? 'opacity-60 grayscale' : ''}
                 ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
-                ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}`}
+                ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
+                ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
                 style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
                 <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
                 <div className="font-bold text-white text-center text-lg">{p.name}</div>
                 <div className="text-green-400 text-center">💰 {p.chips}</div>
-                {/* Action tracker */}
                 {p.lastAction?.type && (
                   <div className={`text-xs text-center ${
                     p.lastAction.type === 'fold' ? 'text-red-400' :
@@ -548,11 +673,12 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   {p.holeCards?.map((card, ci) => (
                     <Card 
                       key={ci} 
-                      rank={isSelf ? card.rank : '?'} 
-                      suit={isSelf ? card.suit : '?'} 
-                      hidden={!isSelf} 
+                      rank={isSelf || p.revealed ? card.rank : '?'} 
+                      suit={isSelf || p.revealed ? card.suit : '?'} 
+                      hidden={!(isSelf || p.revealed)} 
                       cardBack={cardBack}
                       isSelf={isSelf}
+                      revealAnim={p.revealed && !isSelf}
                     />
                   ))}
                 </div>
@@ -563,16 +689,14 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 {gameState.dealerIndex === p.id && (
                   <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">DEALER</div>
                 )}
-                {isSelf && !gameState.firstHandStarted && !gameState.handInProgress && !p.isSpectator && (
-                  <button
-                    onClick={toggleReady}
-                    className={`mt-2 w-full text-xs font-bold py-1 rounded transition ${p.ready ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-500'}`}
-                  >
-                    {p.ready ? '✓ Ready' : 'Ready'}
-                  </button>
-                )}
-                {!isSelf && p.ready && !gameState.firstHandStarted && !gameState.handInProgress && !p.isSpectator && (
-                  <div className="text-center text-green-400 text-[10px] mt-1">✓ Ready</div>
+                {isSelf && showHandInfo && !p.folded && !p.isSpectator && (
+                  <HandInfo 
+                    holeCards={p.holeCards}
+                    communityCards={gameState.communityCards}
+                    round={gameState.currentRound}
+                    playerName={p.name}
+                    opponentsCount={activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length}
+                  />
                 )}
               </div>
             </div>
@@ -581,22 +705,23 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       </div>
 
       {animatingChips.map(chip => (
-        <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} onComplete={() => removeChipAnimation(chip.id)} />
+        <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} toPosition={chip.toPosition} onComplete={() => removeChipAnimation(chip.id)} />
       ))}
 
-      {myTurn && !isPaused && (
-        <ActionButtons
-          onFold={() => handleAction('fold')}
-          onCheck={() => handleAction('check')}
-          onCall={() => handleAction('call')}
-          onRaise={(amt) => handleAction('raise', amt)}
-          onAllIn={() => handleAction('allin')}
-          toCall={toCall}
-          minRaise={20}
-          playerChips={currentPlayer?.chips || 0}
-          currentPot={gameState.totalPot}
-        />
-      )}
+      <ActionButtons
+        onFold={() => handleAction('fold')}
+        onCheck={() => handleAction('check')}
+        onCall={() => handleAction('call')}
+        onRaise={(amt) => handleAction('raise', amt)}
+        onAllIn={() => handleAction('allin')}
+        toCall={toCall}
+        minRaise={20}
+        playerChips={currentPlayer?.chips || 0}
+        currentPot={gameState.totalPot}
+        myTurn={myTurn && !isPaused}
+        canReveal={!gameState.handInProgress && gameState.winner && currentPlayer && !currentPlayer.folded && !currentPlayer.revealed}
+        onReveal={handleRevealCards}
+      />
     </div>
   );
 }

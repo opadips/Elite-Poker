@@ -38,7 +38,6 @@ export default function Chat({ messages, playerName, onSendMessage }) {
     startHideTimer();
   };
 
-  // اسکرول خودکار وقتی پیام‌ها تغییر کنند
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -63,8 +62,8 @@ export default function Chat({ messages, playerName, onSendMessage }) {
 
   return (
     <div
-      className={`fixed top-4 left-24 z-30 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[-20px] pointer-events-none'
+      className={`fixed bottom-16 left-4 z-50 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

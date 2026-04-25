@@ -1,6 +1,6 @@
 /* src/styles/animations.css */
 
-/* ========== کارت‌های مشترک ========== */
+/* کارت‌های مشترک – چرخش و پرش */
 @keyframes cardRevealSpin {
   0% {
     transform: rotateY(180deg) scale(0.3);
@@ -21,15 +21,15 @@
   backface-visibility: hidden;
 }
 
-/* ========== چیپ با حرکت فنری ========== */
+/* چیپ – حرکت نرم با قوس */
 .chip-animated {
   position: fixed;
   z-index: 100;
   pointer-events: none;
-  transition: left 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55),
-              top 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+  transition: left 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+              top 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
               opacity 0.4s ease-out,
-              transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+              transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
 
 .chip-bounce {
@@ -43,13 +43,18 @@
   100% { transform: translateY(0) scale(1); }
 }
 
-@keyframes foldCard {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0) rotate(20deg); opacity: 0; }
+@keyframes cardFlip {
+  0% {
+    transform: rotateY(180deg) scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
-@keyframes allInShake {
-  0%,100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+.card-reveal-all {
+  animation: cardFlip 0.5s ease-out forwards;
+  backface-visibility: hidden;
 }

@@ -1,10 +1,8 @@
-
-/**
- */
+// src/hooks/useSound.js
 export function cardDeal() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const bufferSize = ctx.sampleRate * 0.08; // 80ms
+    const bufferSize = ctx.sampleRate * 0.08;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -24,13 +22,9 @@ export function cardDeal() {
     gain.connect(ctx.destination);
     source.start(ctx.currentTime);
     source.stop(ctx.currentTime + 0.08);
-  } catch (e) {
-    // Audio not supported – ignore
-  }
+  } catch (e) {}
 }
 
-/**
- */
 export function chipClick() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -48,12 +42,10 @@ export function chipClick() {
   } catch (e) {}
 }
 
-/**
- */
 export function winnerFanfare() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    const notes = [523.25, 659.25, 783.99, 1046.5];
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -71,8 +63,6 @@ export function winnerFanfare() {
   } catch (e) {}
 }
 
-/**
- */
 export function timerBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -86,5 +76,26 @@ export function timerBeep() {
     gain.connect(ctx.destination);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.15);
+  } catch (e) {}
+}
+
+export function allInSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    for (let i = 0; i < 12; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      const freq = 600 + Math.random() * 400;
+      osc.frequency.setValueAtTime(freq, now + i * 0.03);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + i * 0.03 + 0.1);
+      gain.gain.setValueAtTime(0.2, now + i * 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.03 + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.03);
+      osc.stop(now + i * 0.03 + 0.2);
+    }
   } catch (e) {}
 }

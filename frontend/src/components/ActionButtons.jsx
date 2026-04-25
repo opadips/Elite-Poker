@@ -1,6 +1,7 @@
+// src/components/ActionButtons.jsx
 import React, { useState } from 'react';
 
-export default function ActionButtons({ onFold, onCheck, onCall, onRaise, onAllIn, toCall, minRaise, playerChips, currentPot }) {
+export default function ActionButtons({ onFold, onCheck, onCall, onRaise, onAllIn, toCall, minRaise, playerChips, currentPot, myTurn, canReveal, onReveal }) {
   const [customRaise, setCustomRaise] = useState('');
   const [showPercent, setShowPercent] = useState(false);
 
@@ -22,44 +23,68 @@ export default function ActionButtons({ onFold, onCheck, onCall, onRaise, onAllI
   };
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 flex flex-wrap justify-center gap-2 bg-black/60 backdrop-blur-md p-3 rounded-2xl mx-2 shadow-2xl border border-amber-700/40">
-      <button onClick={onFold} className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl font-bold text-sm transition">Fold</button>
-      
-      {toCall === 0 ? (
-        <button onClick={onCheck} className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-xl font-bold text-sm">Check</button>
-      ) : (
-        <button onClick={onCall} className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-xl font-bold text-sm">Call {toCall}</button>
+    <div className="fixed bottom-4 right-4 flex flex-col items-end gap-2 z-50">
+      {myTurn && (
+        <div className="flex gap-2 items-center bg-black/70 backdrop-blur-md p-2 rounded-2xl border border-amber-500/40 shadow-2xl">
+          <button onClick={onFold} className="w-16 h-10 rounded-xl bg-red-700 hover:bg-red-600 text-white font-bold text-xs transition-colors shadow-lg">
+            Fold
+          </button>
+          {toCall === 0 ? (
+            <button onClick={onCheck} className="w-16 h-10 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs transition-colors shadow-lg">
+              Check
+            </button>
+          ) : (
+            <button onClick={onCall} className="w-16 h-10 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs transition-colors shadow-lg">
+              Call
+            </button>
+          )}
+          <button onClick={onAllIn} className="w-16 h-10 rounded-xl bg-red-800 hover:bg-red-700 text-white font-bold text-xs border border-red-400 transition-colors shadow-lg">
+            All-in
+          </button>
+        </div>
       )}
-      
-      <button onClick={onAllIn} className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-xl font-bold text-sm border border-red-400">All-in</button>
-      
-      <div className="relative">
-        <button 
-          onClick={() => setShowPercent(!showPercent)}
-          className="bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2 rounded-xl font-bold text-sm"
-        >
-          Raise %
-        </button>
-        {showPercent && (
-          <div className="absolute bottom-full left-0 mb-2 bg-gray-800 rounded-xl p-2 flex gap-2 shadow-xl z-30">
-            <button onClick={() => potRaise(50)} className="bg-yellow-500 px-3 py-1 rounded text-black text-xs">50% pot</button>
-            <button onClick={() => potRaise(75)} className="bg-yellow-500 px-3 py-1 rounded text-black text-xs">75% pot</button>
-            <button onClick={() => potRaise(100)} className="bg-yellow-500 px-3 py-1 rounded text-black text-xs">100% pot</button>
-            <button onClick={() => potRaise(150)} className="bg-yellow-500 px-3 py-1 rounded text-black text-xs">150% pot</button>
+
+      {canReveal && (
+        <div className="bg-black/70 backdrop-blur-md p-2 rounded-2xl border border-purple-500/40 shadow-2xl">
+          <button
+            onClick={onReveal}
+            className="h-10 px-4 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-sm transition-colors shadow-lg flex items-center gap-1"
+          >
+            <span>👁️</span> Show Cards
+          </button>
+        </div>
+      )}
+
+      {myTurn && (
+        <div className="flex gap-2 items-center bg-black/70 backdrop-blur-md p-2 rounded-2xl border border-amber-500/40 shadow-2xl">
+          <div className="relative">
+            <button
+              onClick={() => setShowPercent(!showPercent)}
+              className="h-9 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-black font-bold text-xs transition-colors"
+            >
+              Raise %
+            </button>
+            {showPercent && (
+              <div className="absolute bottom-full right-0 mb-2 bg-gray-800 rounded-xl p-2 flex gap-1 shadow-xl z-30">
+                <button onClick={() => potRaise(50)} className="bg-amber-500 px-2 py-1 rounded text-black text-xs">50%</button>
+                <button onClick={() => potRaise(75)} className="bg-amber-500 px-2 py-1 rounded text-black text-xs">75%</button>
+                <button onClick={() => potRaise(100)} className="bg-amber-500 px-2 py-1 rounded text-black text-xs">Pot</button>
+                <button onClick={() => potRaise(150)} className="bg-amber-500 px-2 py-1 rounded text-black text-xs">150%</button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      
-      <div className="flex gap-1 bg-gray-800/60 p-1 rounded-xl">
-        <input
-          type="number"
-          placeholder={minRaise.toString()}
-          value={customRaise}
-          onChange={(e) => setCustomRaise(e.target.value)}
-          className="w-24 p-1 rounded-lg bg-gray-900 text-white text-center text-sm border border-amber-600"
-        />
-        <button onClick={handleCustomRaise} className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-xl font-bold text-sm">Raise</button>
-      </div>
+          <input
+            type="number"
+            placeholder={minRaise.toString()}
+            value={customRaise}
+            onChange={(e) => setCustomRaise(e.target.value)}
+            className="w-20 h-9 rounded-xl bg-gray-800 text-white text-center text-xs border border-amber-600 outline-none"
+          />
+          <button onClick={handleCustomRaise} className="h-9 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-colors">
+            Raise
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,10 @@ const wss = new WebSocketServer({ server });
 const game = new Game();
 const clients = new Map();
 
+game.onStateChange = () => {
+  broadcastGameState();
+};
+
 function broadcastGameState() {
   const state = game.getState();
   const msg = JSON.stringify({ type: 'gameState', state });
@@ -46,6 +50,13 @@ function broadcastSideBetWin(bettorName, targetName, amount, profit) {
   const winMsg = JSON.stringify({ type: 'sideBetWin', bettorName, targetName, amount, profit });
   for (const [ws] of clients.entries()) {
     if (ws.readyState === 1) ws.send(winMsg);
+  }
+}
+
+function broadcastAllInSound() {
+  const msg = JSON.stringify({ type: 'allInSound' });
+  for (const [ws] of clients.entries()) {
+    if (ws.readyState === 1) ws.send(msg);
   }
 }
 
@@ -111,6 +122,12 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'error', message: 'Name too long (max 15 chars)' }));
           return;
         }
+        // جلوگیری از نام تکراری
+        const nameExists = game.players.some(p => p.name === name.trim());
+        if (nameExists) {
+          ws.send(JSON.stringify({ type: 'error', message: 'Name already taken' }));
+          return;
+        }
         const playerId = game.addPlayer(name.trim(), true);
         clients.set(ws, { playerId, name: name.trim(), timeoutId: null });
         ws.send(JSON.stringify({ type: 'joined', playerId }));
@@ -130,10 +147,11 @@ wss.on('connection', (ws) => {
         }
       }
       else if (msg.type === 'resetLobby') {
+        const client = clients.get(ws);
         game.resetLobby();
         clearAllTimers();
         broadcastGameState();
-        broadcastSystemMessage(`🔄 Lobby has been reset by admin. All players restarted.`);
+        broadcastSystemMessage(`🔄 Lobby has been reset by ${client?.name || 'admin'}. All players restarted.`);
       }
       else if (msg.type === 'action') {
         if (game.paused) return;
@@ -142,6 +160,9 @@ wss.on('connection', (ws) => {
         const { action, amount } = msg;
         setAutoActionTimer(ws, client.playerId);
         game.playerAction(client.playerId, action, amount);
+        if (action === 'allin') {
+          broadcastAllInSound();
+        }
         broadcastGameState();
       }
       else if (msg.type === 'ready') {
@@ -183,16 +204,27 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'sideBetResult', message: result.message, success: false }));
         }
       }
+      else if (msg.type === 'reveal') {
+        const client = clients.get(ws);
+        if (!client) return;
+        const player = game.players.find(p => p.id === client.playerId);
+        if (player && !game.handInProgress && game.winner) {
+          player.revealed = true;
+          broadcastGameState();
+        }
+      }
       else if (msg.type === 'pause') {
         if (!game.paused) {
+          const client = clients.get(ws);
           game.pause();
           clearAllTimers();
           broadcastGameState();
-          broadcastSystemMessage('⏸️ Game paused by a player.');
+          broadcastSystemMessage(`⏸️ Game paused by ${client?.name || 'unknown'}.`);
         }
       }
       else if (msg.type === 'resume') {
         if (game.paused) {
+          const client = clients.get(ws);
           game.resume();
           if (game.waitingForAction) {
             const currentId = game.getState().currentPlayerId;
@@ -202,7 +234,7 @@ wss.on('connection', (ws) => {
             }
           }
           broadcastGameState();
-          broadcastSystemMessage('▶️ Game resumed.');
+          broadcastSystemMessage(`▶️ Game resumed by ${client?.name || 'unknown'}.`);
         }
       }
     } catch (err) {

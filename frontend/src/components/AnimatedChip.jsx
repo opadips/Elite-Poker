@@ -1,9 +1,13 @@
 // src/components/AnimatedChip.jsx
 import React, { useEffect, useState } from 'react';
-import './../styles/animations.css'; // ایمپورت CSS جدید
+import './../styles/animations.css';
 
-export default function AnimatedChip({ value, fromPosition, onComplete }) {
-  const [phase, setPhase] = useState('start'); // start, moving, arrived
+export default function AnimatedChip({ value, fromPosition, toPosition, onComplete }) {
+  const chipSize = value >= 500 ? 'w-10 h-10 text-sm' : value >= 200 ? 'w-9 h-9 text-xs' : 'w-8 h-8 text-xs';
+  const chipColor = value >= 500 ? 'from-red-500 to-rose-700 border-rose-300' :
+                     value >= 200 ? 'from-amber-400 to-amber-700 border-yellow-300' :
+                     'from-emerald-400 to-emerald-600 border-green-300';
+
   const [style, setStyle] = useState({
     left: fromPosition.x,
     top: fromPosition.y,
@@ -12,44 +16,27 @@ export default function AnimatedChip({ value, fromPosition, onComplete }) {
   });
 
   useEffect(() => {
-    // مقصد: مرکز میز (محل پات)
-    const targetX = window.innerWidth / 2;
-    const targetY = window.innerHeight / 2;
+    const targetX = toPosition ? toPosition.x : window.innerWidth / 2;
+    const targetY = toPosition ? toPosition.y : window.innerHeight / 2;
 
-    // فاز حرکت به سمت مقصد
-    setPhase('moving');
     setStyle({
       left: targetX,
       top: targetY,
       opacity: 1,
-      transform: 'scale(0.9)' // کمی کوچک شدن در مسیر
+      transform: 'scale(0.85)'
     });
 
-    // بعد از رسیدن، جهش انجام بده
-    const moveDuration = 600; // هماهنگ با transition در CSS
-    const bounceTimer = setTimeout(() => {
-      setPhase('arrived');
-      setStyle(prev => ({
-        ...prev,
-        transform: 'scale(1.2)' // بزرگ‌تر برای شروع جهش
-      }));
-    }, moveDuration);
-
-    // اتمام انیمیشن
+    const moveDuration = 800;
     const completeTimer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, moveDuration + 400);
+    }, moveDuration);
 
-    return () => {
-      clearTimeout(bounceTimer);
-      clearTimeout(completeTimer);
-    };
-  }, [fromPosition, onComplete]);
+    return () => clearTimeout(completeTimer);
+  }, [fromPosition, toPosition, onComplete]);
 
   return (
     <div className="chip-animated" style={style}>
-      <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-700 shadow-lg border-2 border-yellow-300 flex items-center justify-center text-xs font-bold text-white
-        ${phase === 'arrived' ? 'chip-bounce' : ''}`}>
+      <div className={`${chipSize} rounded-full bg-gradient-to-br ${chipColor} shadow-lg border-2 flex items-center justify-center font-bold text-white`}>
         {value}
       </div>
     </div>

@@ -20,6 +20,7 @@ export class Player {
       bestHand: '',
     };
     this.achievements = [];
+    this.revealed = false;
   }
 
   resetForNewHand() {
