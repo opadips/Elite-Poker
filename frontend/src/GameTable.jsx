@@ -20,7 +20,7 @@ const cardBackOptions = [
 
 function formatChips(amount) {
   if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (amount >= 100000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return amount.toString();
 }
 
@@ -526,7 +526,7 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
         <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
           <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
           <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
-            Sit In ({formatChips(gameState.startingChips)})
+            Sit In ({formatChips(gameState.startingChips || 1000)})
           </button>
           <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
         </div>
@@ -606,6 +606,20 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
                   <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
                     {p.name}
                     {isAdmin && p.name === currentPlayer?.name && <span className="text-xs" title="Admin">👑</span>}
+                    {isAdmin && !isSelf && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Kick ${p.name} from the table?`)) {
+                            sendWs({ type: 'kickPlayer', targetId: p.id });
+                          }
+                        }}
+                        className="text-red-400 hover:text-red-300 text-xs ml-1"
+                        title="Kick player"
+                      >
+                        ❌
+                      </button>
+                    )}
                   </div>
                   <div className="text-green-400 text-center">💰 {formatChips(p.chips)}</div>
                   {p.lastAction?.type && (
