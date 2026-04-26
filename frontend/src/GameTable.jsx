@@ -18,7 +18,13 @@ const cardBackOptions = [
   { id: 'ruby', name: 'Ruby', icon: '💎' },
 ];
 
-export default function GameTable({ ws, playerId, theme, onThemeChange }) {
+function formatChips(amount) {
+  if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (amount >= 100000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return amount.toString();
+}
+
+export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThemeChange, onReturnToLobby, onLeaveLobby }) {
   const [gameState, setGameState] = useState(null);
   const [winnerEffect, setWinnerEffect] = useState(null);
   const [winningHandName, setWinningHandName] = useState(null);
@@ -43,6 +49,8 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
   const [turnRemainingSec, setTurnRemainingSec] = useState(0);
   const [turnCurrentPlayerId, setTurnCurrentPlayerId] = useState(null);
+  const [handHistory, setHandHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
@@ -52,6 +60,16 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const bubbleTimersRef = useRef({});
   const chatAutoCloseRef = useRef(null);
   const lastBeepSecond = useRef(0);
+  const gameStateRef = useRef(null);
+  const soundEnabledRef = useRef(true);
+
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -76,12 +94,15 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   };
 
   useEffect(() => {
-    ws.onmessage = (event) => {
+    if (!ws) return;
+
+    const handleMessage = (event) => {
       const data = JSON.parse(event.data);
+
       if (data.type === 'chat') {
         setChatMessages(prev => [...prev, { sender: data.sender, text: data.message, isSystem: false }]);
-        const players = gameState?.players;
-        const senderPlayer = players?.find(p => p.name === data.sender);
+        const currentGameState = gameStateRef.current;
+        const senderPlayer = currentGameState?.players?.find(p => p.name === data.sender);
         if (senderPlayer) {
           const newBubble = {
             id: Date.now() + Math.random(),
@@ -110,29 +131,25 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
         setTimeout(() => setAchievementToast(null), 4000);
       } else if (data.type === 'allInSound') {
-        if (soundEnabled) allInSound();
+        if (soundEnabledRef.current) allInSound();
       } else if (data.type === 'turnTimer') {
         setTurnRemainingSec(data.remaining);
         setTurnCurrentPlayerId(data.currentPlayerId);
-      }
-
-      if (data.type === 'gameState') {
+      } else if (data.type === 'handHistory') {
+        setHandHistory(data.history || []);
+      } else if (data.type === 'gameState') {
         const newCommLength = data.state.communityCards?.length || 0;
         const oldLength = prevCommunityLengthRef.current;
         if (newCommLength > oldLength) {
           const newIndices = [];
-          for (let i = oldLength; i < newCommLength; i++) {
-            newIndices.push(i);
-          }
+          for (let i = oldLength; i < newCommLength; i++) newIndices.push(i);
           setNewCardIndices(newIndices);
-          if (soundEnabled) cardDeal();
+          if (soundEnabledRef.current) cardDeal();
           setTimeout(() => setNewCardIndices([]), 600);
         }
         prevCommunityLengthRef.current = newCommLength;
 
-        if (data.state.handInProgress) {
-          lastWinnerRef.current = null;
-        }
+        if (data.state.handInProgress) lastWinnerRef.current = null;
 
         setGameState(data.state);
         setIsPaused(data.state.paused || false);
@@ -147,7 +164,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
               winnerName: winnerPlayer.name
             });
             setWinningHandName(data.state.winner.handName);
-            if (soundEnabled) winnerFanfare();
+            if (soundEnabledRef.current) winnerFanfare();
             setTimeout(() => {
               setWinnerEffect(null);
               setWinningHandName(null);
@@ -168,7 +185,10 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         setTimeout(() => setSystemMessage(null), 2000);
       }
     };
-  }, [ws, soundEnabled, gameState, showChat]);
+
+    ws.addEventListener('message', handleMessage);
+    return () => ws.removeEventListener('message', handleMessage);
+  }, [ws]);
 
   useEffect(() => {
     if (turnRemainingSec > 0 && soundEnabled) {
@@ -185,30 +205,26 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
     const tableRect = tableRef.current.getBoundingClientRect();
-    const tableWidth = tableRect.width;
-    const tableHeight = tableRect.height;
-    const a = tableWidth / 2;
-    const b = tableHeight / 2;
+    const a = tableRect.width / 2;
+    const b = tableRect.height / 2;
     const centerX = tableRect.left + a;
     const centerY = tableRect.top + b;
 
     const activePlayers = gameState.players.filter(p => !p.isSpectator);
     let orderedPlayers = activePlayers;
-
     if (seatViewFixed) {
       const selfIndex = orderedPlayers.findIndex(p => p.id === playerId);
-      if (selfIndex >= 0) {
-        orderedPlayers = [...orderedPlayers.slice(selfIndex), ...orderedPlayers.slice(0, selfIndex)];
-      }
+      if (selfIndex >= 0) orderedPlayers = [...orderedPlayers.slice(selfIndex), ...orderedPlayers.slice(0, selfIndex)];
     }
 
     const total = orderedPlayers.length;
     const newPositions = {};
     orderedPlayers.forEach((p, idx) => {
       const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
-      const x = centerX + a * Math.cos(angle);
-      const y = centerY + b * Math.sin(angle);
-      newPositions[p.id] = { x, y };
+      newPositions[p.id] = {
+        x: centerX + a * Math.cos(angle),
+        y: centerY + b * Math.sin(angle)
+      };
     });
     setPlayerPositions(newPositions);
   }, [gameState, playerId, seatViewFixed]);
@@ -253,114 +269,79 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
   const myTurn = gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && currentPlayer && !currentPlayer.isAllIn && !currentPlayer.isSpectator;
   const toCall = myTurn && currentPlayer ? (gameState.currentBet - (currentPlayer.currentBet || 0)) : 0;
 
+  const sendWs = (msg) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+    }
+  };
+
   const handleAction = (type, amount = 0) => {
     if (isPaused) return;
-    if (type === 'fold') ws.send(JSON.stringify({ type: 'action', action: 'fold' }));
-    else if (type === 'check') ws.send(JSON.stringify({ type: 'action', action: 'check' }));
+    if (type === 'fold' || type === 'check') sendWs({ type: 'action', action: type });
     else if (type === 'call') {
       addChipAnimation(playerId, toCall);
       if (soundEnabled) chipClick();
-      ws.send(JSON.stringify({ type: 'action', action: 'call' }));
-    }
-    else if (type === 'raise') {
+      sendWs({ type: 'action', action: 'call' });
+    } else if (type === 'raise') {
       addChipAnimation(playerId, amount);
       if (soundEnabled) chipClick();
-      ws.send(JSON.stringify({ type: 'action', action: 'raise', amount }));
-    }
-    else if (type === 'allin') {
+      sendWs({ type: 'action', action: 'raise', amount });
+    } else if (type === 'allin') {
       addChipAnimation(playerId, currentPlayer?.chips);
       if (soundEnabled) {
         chipClick();
         allInSound();
       }
-      ws.send(JSON.stringify({ type: 'action', action: 'allin' }));
+      sendWs({ type: 'action', action: 'allin' });
     }
   };
 
-  const handleRevealCards = () => {
-    ws.send(JSON.stringify({ type: 'reveal' }));
-  };
-
+  const handleRevealCards = () => sendWs({ type: 'reveal' });
   const onToggleBeginner = (checked) => {
     setShowHandInfo(checked);
-    if (checked) ws.send(JSON.stringify({ type: 'toggleBeginner' }));
+    if (checked) sendWs({ type: 'toggleBeginner' });
   };
-
-  const toggleReady = () => {
-    ws.send(JSON.stringify({ type: 'ready' }));
-  };
-
-  const sitIn = () => {
-    ws.send(JSON.stringify({ type: 'sitIn' }));
-  };
-
+  const toggleReady = () => sendWs({ type: 'ready' });
+  const sitIn = () => sendWs({ type: 'sitIn' });
   const resetLobby = () => {
-    ws.send(JSON.stringify({ type: 'resetLobby' }));
+    sendWs({ type: 'resetLobby' });
     setResetConfirm(false);
     setShowSettings(false);
   };
-
   const handleCardBackChange = (backId) => {
     setCardBack(backId);
     localStorage.setItem('pokerCardBack', backId);
   };
-
-  const handleSendChat = (text) => {
-    ws.send(JSON.stringify({ type: 'chat', message: text }));
-  };
-
-  const togglePause = () => {
-    if (isPaused) {
-      ws.send(JSON.stringify({ type: 'resume' }));
-    } else {
-      ws.send(JSON.stringify({ type: 'pause' }));
-    }
-  };
-
-  const toggleSeatView = () => {
-    setSeatViewFixed(prev => {
-      const next = !prev;
-      localStorage.setItem('seatViewFixed', next);
-      return next;
-    });
-  };
-
+  const handleSendChat = (text) => sendWs({ type: 'chat', message: text });
+  const togglePause = () => sendWs({ type: isPaused ? 'resume' : 'pause' });
+  const toggleSeatView = () => setSeatViewFixed(prev => {
+    const next = !prev;
+    localStorage.setItem('seatViewFixed', next);
+    return next;
+  });
   const handleChatToggle = () => {
     if (showChat) {
-      if (chatAutoCloseRef.current) {
-        clearTimeout(chatAutoCloseRef.current);
-        chatAutoCloseRef.current = null;
-      }
+      if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
       setShowChat(false);
     } else {
-      if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
       setShowChat(true);
     }
+  };
+  const requestHandHistory = () => {
+    sendWs({ type: 'getHandHistory' });
+    setShowHistory(true);
   };
 
   const activePlayersList = gameState.players.filter(p => !p.isSpectator);
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
-      <button
-        onClick={handleChatToggle}
-        className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
-        title={showChat ? "Close chat" : "Open chat"}
-        style={{ zIndex: 70 }}
-      >
-        💬
-      </button>
+      <button onClick={handleChatToggle} className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+        title={showChat ? "Close chat" : "Open chat"} style={{ zIndex: 70 }}>💬</button>
 
       {gameState && !gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
         <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
-          <button
-            onClick={toggleReady}
-            className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
-              currentPlayer.ready
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-green-600 hover:bg-green-700 text-white'
-            }`}
-          >
+          <button onClick={toggleReady} className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${currentPlayer.ready ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
             {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
           </button>
         </div>
@@ -368,47 +349,25 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
 
       <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
         <div className="relative">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
-            title="Settings"
-          >
-            ⚙️
-          </button>
+          <button onClick={() => setShowSettings(!showSettings)} className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all" title="Settings">⚙️</button>
           {showSettings && (
             <div className="absolute top-full right-0 mt-1 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700 z-50 overflow-hidden transition-all duration-200 origin-top-right scale-100 opacity-100"
-                 style={{ transformOrigin: 'top right' }}
-            >
+                 style={{ transformOrigin: 'top right' }}>
               <div className="max-h-[80vh] overflow-y-auto settings-scroll">
                 <div className="px-5 py-3 bg-gray-800/50 border-b border-gray-700 flex items-center gap-2">
-                  <span className="text-xl">⚙️</span>
-                  <span className="text-white font-bold text-sm">Settings</span>
+                  <span className="text-xl">⚙️</span><span className="text-white font-bold text-sm">Settings</span>
                 </div>
-
                 <div className="border-b border-gray-700/50">
-                  <div
-                    className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50"
-                    onClick={() => setThemeExpanded(!themeExpanded)}
-                  >
-                    <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
-                      <span>🎨</span> Theme
-                    </div>
+                  <div className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onClick={() => setThemeExpanded(!themeExpanded)}>
+                    <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2"><span>🎨</span> Theme</div>
                     <span className="text-gray-400 text-sm">{themeExpanded ? '▲' : '▼'}</span>
                   </div>
                   {themeExpanded && (
                     <div className="px-4 py-3 grid grid-cols-2 gap-2">
                       {themes.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => { onThemeChange(t.id); setShowSettings(false); }}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                            theme === t.id
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 shadow-sm'
-                              : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-transparent'
-                          }`}
-                        >
-                          <span className="text-lg">{t.icon}</span>
-                          {t.name}
+                        <button key={t.id} onClick={() => { onThemeChange(t.id); setShowSettings(false); }}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${theme === t.id ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 shadow-sm' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-transparent'}`}>
+                          <span className="text-lg">{t.icon}</span>{t.name}
                         </button>
                       ))}
                     </div>
@@ -416,29 +375,16 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 </div>
 
                 <div className="border-b border-gray-700/50">
-                  <div
-                    className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50"
-                    onClick={() => setCardBackExpanded(!cardBackExpanded)}
-                  >
-                    <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
-                      <span>🃏</span> Card Back
-                    </div>
+                  <div className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onClick={() => setCardBackExpanded(!cardBackExpanded)}>
+                    <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2"><span>🃏</span> Card Back</div>
                     <span className="text-gray-400 text-sm">{cardBackExpanded ? '▲' : '▼'}</span>
                   </div>
                   {cardBackExpanded && (
                     <div className="px-4 py-3 grid grid-cols-3 gap-2">
                       {cardBackOptions.map(back => (
-                        <button
-                          key={back.id}
-                          onClick={() => handleCardBackChange(back.id)}
-                          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                            cardBack === back.id
-                              ? 'bg-amber-500/20 border border-amber-500/50'
-                              : 'bg-gray-800 border border-transparent hover:bg-gray-700'
-                          }`}
-                        >
-                          <span className="text-xl">{back.icon}</span>
-                          <span className="text-xs text-gray-300">{back.name}</span>
+                        <button key={back.id} onClick={() => handleCardBackChange(back.id)}
+                          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${cardBack === back.id ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-gray-800 border border-transparent hover:bg-gray-700'}`}>
+                          <span className="text-xl">{back.icon}</span><span className="text-xs text-gray-300">{back.name}</span>
                         </button>
                       ))}
                     </div>
@@ -446,39 +392,22 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 </div>
 
                 <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>🎥</span> Seat View
-                  </div>
-                  <button
-                    onClick={toggleSeatView}
-                    className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${
-                      seatViewFixed ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'
-                    }`}
-                  >
+                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🎥</span> Seat View</div>
+                  <button onClick={toggleSeatView} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${seatViewFixed ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'}`}>
                     <span className="text-sm font-medium">{seatViewFixed ? 'Fixed (My Seat Bottom)' : 'Dynamic (Rotating)'}</span>
                     <span className="text-lg">{seatViewFixed ? '📍' : '🔄'}</span>
                   </button>
                 </div>
 
                 <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>🔊</span> Sound
-                  </div>
-                  <button
-                    onClick={() => setSoundEnabled(prev => !prev)}
-                    className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${
-                      soundEnabled ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{soundEnabled ? 'ON' : 'OFF'}</span>
-                    <span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
+                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🔊</span> Sound</div>
+                  <button onClick={() => setSoundEnabled(prev => !prev)} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${soundEnabled ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'}`}>
+                    <span className="text-sm font-medium">{soundEnabled ? 'ON' : 'OFF'}</span><span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
                   </button>
                 </div>
 
                 <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>🐶</span> Noob Mode
-                  </div>
+                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🐶</span> Noob Mode</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} className="w-4 h-4" />
                     <span className="text-white text-sm">🐶من نوب سگم</span>
@@ -486,31 +415,29 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 </div>
 
                 <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>⏯️</span> Game Control
+                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>⏯️</span> Game Control</div>
+                  <button onClick={togglePause} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${isPaused ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'}`}>
+                    <span className="text-sm font-medium">{isPaused ? '▶️ Resume' : '⏸️ Pause'}</span><span className="text-lg">{isPaused ? '▶️' : '⏸️'}</span>
+                  </button>
+                </div>
+
+                {isAdmin && (
+                  <div className="px-4 py-3 border-b border-gray-700/50">
+                    <button onClick={() => setResetConfirm(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 transition-all text-sm font-medium">
+                      <span>🔄</span> Reset Lobby
+                    </button>
                   </div>
-                  <button
-                    onClick={togglePause}
-                    className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${
-                      isPaused
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                        : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{isPaused ? '▶️ Resume' : '⏸️ Pause'}</span>
-                    <span className="text-lg">{isPaused ? '▶️' : '⏸️'}</span>
+                )}
+
+                <div className="px-4 py-3 border-b border-gray-700/50">
+                  <button onClick={requestHandHistory} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all text-sm font-medium">
+                    <span>📜</span> Hand History
                   </button>
                 </div>
 
                 <div className="px-4 py-3">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>🔄</span> Lobby
-                  </div>
-                  <button
-                    onClick={() => setResetConfirm(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 transition-all text-sm font-medium"
-                  >
-                    <span>🔄</span> Reset Lobby
+                  <button onClick={onReturnToLobby} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600 transition-all text-sm font-medium">
+                    <span>🚪</span> Return to Lobby
                   </button>
                 </div>
               </div>
@@ -529,15 +456,29 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
         </div>
       )}
 
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowHistory(false)}>
+          <div className="bg-gray-900/95 p-6 rounded-xl max-w-md w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-amber-400 font-bold text-lg">Hand History</h3>
+              <button onClick={() => setShowHistory(false)} className="text-white text-2xl">×</button>
+            </div>
+            {handHistory.length === 0 ? (
+              <p className="text-gray-400 text-sm">No hands played yet.</p>
+            ) : (
+              <ul className="text-sm text-gray-300 space-y-2">
+                {handHistory.map((entry, i) => <li key={i} className="border-b border-gray-700 pb-1">{entry}</li>)}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
       <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
       {showChat && (
         <div style={{ zIndex: 70 }}>
-          <Chat
-            messages={chatMessages}
-            playerName={currentPlayer?.name || '?'}
-            onSendMessage={handleSendChat}
-          />
+          <Chat messages={chatMessages} playerName={currentPlayer?.name || '?'} onSendMessage={handleSendChat} />
         </div>
       )}
 
@@ -578,44 +519,29 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       )}
 
       {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
-        <BettingPanel
-          ws={ws}
-          playerId={playerId}
-          players={gameState.players}
-          currentRound={gameState.currentRound}
-          chipAmount={currentPlayer.chips}
-        />
+        <BettingPanel ws={ws} playerId={playerId} players={gameState.players} currentRound={gameState.currentRound} chipAmount={currentPlayer.chips} />
       )}
 
       {currentPlayer && currentPlayer.isSpectator && !gameState.winner && (
         <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
           <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
-          <button
-            onClick={sitIn}
-            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm"
-          >
-            Sit In (1000 chips)
+          <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
+            Sit In ({formatChips(gameState.startingChips)})
           </button>
           <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
         </div>
       )}
 
       <div ref={tableContainerRef} className="relative w-full h-full">
-        <div
-          ref={tableRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[55%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm game-table"
-        >
+        <div ref={tableRef} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[55%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm game-table">
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
             <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg" style={{ background: 'var(--pot-bg)' }}>
-              💰 Pot: {gameState.totalPot}
+              💰 Pot: {formatChips(gameState.totalPot)}
             </div>
             <div className="flex gap-3 p-4 bg-amber-950/50 rounded-3xl">
               {gameState.communityCards.map((card, i) => (
-                <div
-                  key={i}
-                  className={newCardIndices.includes(i) ? 'card-reveal-spin' : ''}
-                  style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.15}s` : '0s' }}
-                >
+                <div key={i} className={newCardIndices.includes(i) ? 'card-reveal-spin' : ''}
+                  style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.15}s` : '0s' }}>
                   <Card rank={card.rank} suit={card.suit} isCommunity={true} />
                 </div>
               ))}
@@ -635,26 +561,18 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
           const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
 
           return (
-            <div
-              key={p.id}
-              ref={el => playerRefs.current[p.id] = el}
-              className="absolute transition-all duration-300 flex items-center"
-              style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
-            >
+            <div key={p.id} ref={el => playerRefs.current[p.id] = el} className="absolute transition-all duration-300 flex items-center"
+              style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}>
               {isTimerActive && (
                 <div className="flex flex-col items-center mr-2 z-20">
-                  <div className="text-[10px] text-white mb-1 font-mono">
-                    {Math.ceil(turnRemainingSec)}s
-                  </div>
+                  <div className="text-[10px] text-white mb-1 font-mono">{Math.ceil(turnRemainingSec)}s</div>
                   <div className="w-2 h-16 bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                    <div
-                      className="w-full transition-all duration-300 ease-linear"
+                    <div className="w-full transition-all duration-300 ease-linear"
                       style={{
                         height: `${(turnRemainingSec / 20) * 100}%`,
                         backgroundColor: getTimerColor(turnRemainingSec),
                         borderRadius: '0 0 999px 999px'
-                      }}
-                    />
+                      }} />
                   </div>
                 </div>
               )}
@@ -665,11 +583,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                     <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text" style={{ color: 'var(--winner-text)' }}>🏆 WINNER! 🏆</div>
                     {!isSelf && (
                       <div className="flex gap-1 justify-center mt-1">
-                        {winnerEffect.winnerCards.map((card, ci) => (
-                          <div key={ci} className="animate-spin-once">
-                            <Card rank={card.rank} suit={card.suit} />
-                          </div>
-                        ))}
+                        {winnerEffect.winnerCards.map((card, ci) => <div key={ci} className="animate-spin-once"><Card rank={card.rank} suit={card.suit} /></div>)}
                       </div>
                     )}
                   </div>
@@ -677,9 +591,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
 
                 {speechBubbles.filter(b => b.playerId === p.id).map(bubble => (
                   <div key={bubble.id} className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn">
-                    <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">
-                      {bubble.text}
-                    </div>
+                    <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">{bubble.text}</div>
                   </div>
                 ))}
 
@@ -691,8 +603,11 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
                   style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
                   <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
-                  <div className="font-bold text-white text-center text-lg">{p.name}</div>
-                  <div className="text-green-400 text-center">💰 {p.chips}</div>
+                  <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
+                    {p.name}
+                    {isAdmin && p.name === currentPlayer?.name && <span className="text-xs" title="Admin">👑</span>}
+                  </div>
+                  <div className="text-green-400 text-center">💰 {formatChips(p.chips)}</div>
                   {p.lastAction?.type && (
                     <div className={`text-xs text-center ${
                       p.lastAction.type === 'fold' ? 'text-red-400' :
@@ -706,15 +621,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                   )}
                   <div className="flex justify-center gap-1 mt-2">
                     {p.holeCards?.map((card, ci) => (
-                      <Card 
-                        key={ci} 
-                        rank={isSelf || p.revealed ? card.rank : '?'} 
-                        suit={isSelf || p.revealed ? card.suit : '?'} 
-                        hidden={!(isSelf || p.revealed)} 
-                        cardBack={cardBack}
-                        isSelf={isSelf}
-                        revealAnim={p.revealed && !isSelf}
-                      />
+                      <Card key={ci} rank={isSelf || p.revealed ? card.rank : '?'} suit={isSelf || p.revealed ? card.suit : '?'} hidden={!(isSelf || p.revealed)} cardBack={cardBack} isSelf={isSelf} revealAnim={p.revealed && !isSelf} />
                     ))}
                   </div>
                   <div className="flex justify-center gap-1 mt-2 text-xs">
@@ -725,7 +632,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                     <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">DEALER</div>
                   )}
                   {isSelf && showHandInfo && !p.folded && !p.isSpectator && (
-                    <HandInfo 
+                    <HandInfo
                       holeCards={p.holeCards}
                       communityCards={gameState.communityCards}
                       round={gameState.currentRound}

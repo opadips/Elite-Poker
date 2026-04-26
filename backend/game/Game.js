@@ -719,6 +719,7 @@ export class Game {
       handInProgress: this.handInProgress,
       firstHandStarted: this.firstHandStarted,
       paused: this.paused,
+      startingChips: this.startingChips,
     };
   }
 }
