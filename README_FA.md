@@ -5,7 +5,6 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D16-brightgreen)
 ![React](https://img.shields.io/badge/react-18-blue)
-![Elite Poker Screenshot](screenshots/gameplay.png)
 ---
 ## ✨ Features
 ### 🏠 سیستم لابی (Lobby System)
