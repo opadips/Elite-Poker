@@ -1,6 +1,6 @@
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
-➡️ **برای دیدن نسخه فارسی کلیک کنید:** [English Version](README.md)
+➡️ **click here for English Version:** [English Version](README.md)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D16-brightgreen)
