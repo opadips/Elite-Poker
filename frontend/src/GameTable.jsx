@@ -352,7 +352,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       </button>
 
       {gameState && !gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-24 left-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
+        <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
           <button
             onClick={toggleReady}
             className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
@@ -361,7 +361,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
                 : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
           >
-            {currentPlayer.ready ? '🔴 Unready' : '🟢 Ready'}
+            {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
           </button>
         </div>
       )}
@@ -582,7 +582,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       )}
 
       {currentPlayer && currentPlayer.isSpectator && !gameState.winner && (
-        <div className="fixed bottom-24 left-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
+        <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
           <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
           <button
             onClick={sitIn}
@@ -597,7 +597,7 @@ export default function GameTable({ ws, playerId, theme, onThemeChange }) {
       <div ref={tableContainerRef} className="relative w-full h-full">
         <div
           ref={tableRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[70%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm game-table"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[55%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm game-table"
         >
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
             <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg" style={{ background: 'var(--pot-bg)' }}>
