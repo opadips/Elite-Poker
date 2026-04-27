@@ -1,5 +1,5 @@
+// frontend/src/GameTable.jsx
 import React, { useEffect, useState, useRef } from 'react';
-import Card from './components/Card.jsx';
 import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
 import AnimatedChip from './components/AnimatedChip.jsx';
@@ -10,7 +10,7 @@ import SettingsPanel from './components/SettingsPanel.jsx';
 import Table from './components/Table.jsx';
 import GameContext from './context/GameContext';
 import { usePlayerPositions } from './hooks/usePlayerPositions';
-import { chipClick, allInSound as allInSoundFunc } from './hooks/useSound';
+import { useGameActions } from './hooks/useGameActions';
 import { useGameSocket } from './hooks/useGameSocket';
 import './styles/animations.css';
 
@@ -24,18 +24,33 @@ const cardBackOptions = [
 ];
 
 function formatChips(amount) {
-  if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (amount >= 1000000)
+    return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (amount >= 1000)
+    return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return amount.toString();
 }
 
-export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThemeChange, onReturnToLobby, onLeaveLobby }) {
+export default function GameTable({
+  ws,
+  playerId,
+  lobbyId,
+  isAdmin,
+  theme,
+  onThemeChange,
+  onReturnToLobby,
+  onLeaveLobby,
+}) {
   const [showHandInfo, setShowHandInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [cardBack, setCardBack] = useState(() => localStorage.getItem('pokerCardBack') || 'default');
-  const [seatViewFixed, setSeatViewFixed] = useState(() => localStorage.getItem('seatViewFixed') !== 'false');
+  const [cardBack, setCardBack] = useState(
+    () => localStorage.getItem('pokerCardBack') || 'default'
+  );
+  const [seatViewFixed, setSeatViewFixed] = useState(
+    () => localStorage.getItem('seatViewFixed') !== 'false'
+  );
   const [themeExpanded, setThemeExpanded] = useState(false);
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -68,7 +83,11 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
     handHistory,
   } = useGameSocket(ws, soundEnabledRef);
 
-  const { playerPositions, tableRef } = usePlayerPositions(gameState, playerId, seatViewFixed);
+  const { playerPositions, tableRef } = usePlayerPositions(
+    gameState,
+    playerId,
+    seatViewFixed
+  );
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -79,36 +98,65 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
     { id: 'void', name: 'Void Pulse', icon: '🌀', color: 'bg-indigo-950' },
   ];
 
-  const addChipAnimation = (fromPlayerId, value, toPot = true) => {
-    const playerEl = playerRefs.current[fromPlayerId];
-    if (playerEl) {
-      const rect = playerEl.getBoundingClientRect();
-      const fromPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      setAnimatingChips(prev => [...prev, { id: Date.now() + Math.random(), value, fromPos, toPosition: toPot ? null : undefined }]);
+  const sendWs = (msg) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
     }
   };
 
-  const removeChipAnimation = (id) => {
-    setAnimatingChips(prev => prev.filter(c => c.id !== id));
-  };
+  const currentPlayer = gameState?.players?.find((p) => p.id === playerId);
+
+  const {
+    handleAction,
+    handleRevealCards,
+    toggleReady,
+    sitIn,
+    resetLobby,
+    togglePause,
+    requestHandHistory,
+    addChipAnimation,
+  } = useGameActions(
+    ws,
+    isPaused,
+    soundEnabled,
+    setShowSettings,
+    setResetConfirm,
+    gameState,
+    playerId,
+    currentPlayer,
+    setAnimatingChips,
+    playerRefs,
+    sendWs
+  );
+
+  const removeChipAnimation = (id) =>
+    setAnimatingChips((prev) => prev.filter((c) => c.id !== id));
 
   useEffect(() => {
     if (winnerEffect?.winnerId && gameState) {
       const winnerEl = playerRefs.current[winnerEffect.winnerId];
-      if (winnerEl) {
-        const rect = winnerEl.getBoundingClientRect();
-        const toPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        const fromPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-        for (let i = 0; i < 6; i++) {
-          setTimeout(() => {
-            setAnimatingChips(prev => [...prev, {
+      if (!winnerEl) return;
+      const rect = winnerEl.getBoundingClientRect();
+      const toPos = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      const fromPos = {
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
+      };
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          setAnimatingChips((prev) => [
+            ...prev,
+            {
               id: Date.now() + Math.random(),
               value: Math.floor(gameState.totalPot / 6),
               fromPos,
-              toPosition: toPos
-            }]);
-          }, i * 200);
-        }
+              toPosition: toPos,
+            },
+          ]);
+        }, i * 200);
       }
     }
   }, [winnerEffect, gameState]);
@@ -120,76 +168,53 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
     return '#ef4444';
   };
 
-  if (!gameState) return <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>;
-
-  const currentPlayer = gameState.players?.find(p => p.id === playerId);
-  const myTurn = gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && currentPlayer && !currentPlayer.isAllIn && !currentPlayer.isSpectator;
-  const toCall = myTurn && currentPlayer ? (gameState.currentBet - (currentPlayer.currentBet || 0)) : 0;
-  const canReveal = !gameState.handInProgress && gameState.winner && currentPlayer && !currentPlayer.folded && !currentPlayer.revealed;
-
-  const sendWs = (msg) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(msg));
-    }
-  };
-
-  const handleAction = (type, amount = 0) => {
-    if (isPaused) return;
-    if (type === 'fold' || type === 'check') sendWs({ type: 'action', action: type });
-    else if (type === 'call') {
-      addChipAnimation(playerId, toCall);
-      if (soundEnabled) chipClick();
-      sendWs({ type: 'action', action: 'call' });
-    } else if (type === 'raise') {
-      addChipAnimation(playerId, amount);
-      if (soundEnabled) chipClick();
-      sendWs({ type: 'action', action: 'raise', amount });
-    } else if (type === 'allin') {
-      addChipAnimation(playerId, currentPlayer?.chips);
-      if (soundEnabled) {
-        chipClick();
-        allInSoundFunc();
-      }
-      sendWs({ type: 'action', action: 'allin' });
-    }
-  };
-
-  const handleRevealCards = () => sendWs({ type: 'reveal' });
   const onToggleBeginner = (checked) => {
     setShowHandInfo(checked);
     if (checked) sendWs({ type: 'toggleBeginner' });
   };
-  const toggleReady = () => sendWs({ type: 'ready' });
-  const sitIn = () => sendWs({ type: 'sitIn' });
-  const resetLobby = () => {
-    sendWs({ type: 'resetLobby' });
-    setResetConfirm(false);
-    setShowSettings(false);
-  };
+
   const handleCardBackChange = (backId) => {
     setCardBack(backId);
     localStorage.setItem('pokerCardBack', backId);
   };
-  const handleSendChat = (text) => sendWs({ type: 'chat', message: text });
-  const togglePause = () => sendWs({ type: isPaused ? 'resume' : 'pause' });
-  const toggleSeatView = () => setSeatViewFixed(prev => {
-    const next = !prev;
-    localStorage.setItem('seatViewFixed', next);
-    return next;
-  });
-  const handleChatToggle = () => {
-    if (showChat) {
-      setShowChat(false);
-    } else {
-      setShowChat(true);
-    }
-  };
-  const requestHandHistory = () => {
-    sendWs({ type: 'getHandHistory' });
-    setShowHistory(true);
-  };
 
-  const activePlayersList = gameState.players.filter(p => !p.isSpectator);
+  const handleSendChat = (text) => sendWs({ type: 'chat', message: text });
+
+  const toggleSeatView = () =>
+    setSeatViewFixed((prev) => {
+      const next = !prev;
+      localStorage.setItem('seatViewFixed', next);
+      return next;
+    });
+
+  const handleChatToggle = () => setShowChat((prev) => !prev);
+
+  if (!gameState)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Waiting...
+      </div>
+    );
+
+  const myTurn =
+    gameState.currentPlayerId === playerId &&
+    gameState.waitingForAction &&
+    !gameState.winner &&
+    currentPlayer &&
+    !currentPlayer.isAllIn &&
+    !currentPlayer.isSpectator;
+  const toCall =
+    myTurn && currentPlayer
+      ? gameState.currentBet - (currentPlayer.currentBet || 0)
+      : 0;
+  const canReveal =
+    !gameState.handInProgress &&
+    gameState.winner &&
+    currentPlayer &&
+    !currentPlayer.folded &&
+    !currentPlayer.revealed;
+
+  const activePlayersList = gameState.players.filter((p) => !p.isSpectator);
 
   const contextValue = {
     gameState,
@@ -205,25 +230,52 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
     turnCurrentPlayerId,
     winnerEffect,
     speechBubbles,
+    playerRefs,
+    setAnimatingChips,
   };
 
   return (
     <GameContext.Provider value={contextValue}>
-      <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
-        <button onClick={handleChatToggle} className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
-          title={showChat ? "Close chat" : "Open chat"} style={{ zIndex: 70 }}>💬</button>
+      <div
+        className="fixed inset-0 overflow-hidden"
+        style={{ background: 'var(--bg-gradient)' }}
+      >
+        <button
+          onClick={handleChatToggle}
+          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+          title={showChat ? 'Close chat' : 'Open chat'}
+          style={{ zIndex: 70 }}
+        >
+          💬
+        </button>
 
-        {gameState && !gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
-          <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
-            <button onClick={toggleReady} className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${currentPlayer.ready ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-              {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
-            </button>
-          </div>
-        )}
+        {!gameState.firstHandStarted &&
+          !gameState.handInProgress &&
+          currentPlayer &&
+          !currentPlayer.isSpectator && (
+            <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
+              <button
+                onClick={toggleReady}
+                className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
+                  currentPlayer.ready
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
+              </button>
+            </div>
+          )}
 
         <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
           <div className="relative">
-            <button onClick={() => setShowSettings(!showSettings)} className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all" title="Settings">⚙️</button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+              title="Settings"
+            >
+              ⚙️
+            </button>
             <SettingsPanel
               showSettings={showSettings}
               setShowSettings={setShowSettings}
@@ -254,44 +306,88 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
         </div>
 
         {resetConfirm && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn" onClick={() => setResetConfirm(false)}>
-            <div className="bg-gray-800 p-6 rounded-xl text-center" onClick={e => e.stopPropagation()}>
-              <p className="text-white mb-4">Reset all scores and chips? This cannot be undone.</p>
-              <button onClick={resetLobby} className="bg-red-600 px-4 py-2 rounded mr-2">Yes, Reset</button>
-              <button onClick={() => setResetConfirm(false)} className="bg-gray-600 px-4 py-2 rounded">Cancel</button>
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn"
+            onClick={() => setResetConfirm(false)}
+          >
+            <div
+              className="bg-gray-800 p-6 rounded-xl text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-white mb-4">
+                Reset all scores and chips? This cannot be undone.
+              </p>
+              <button
+                onClick={resetLobby}
+                className="bg-red-600 px-4 py-2 rounded mr-2"
+              >
+                Yes, Reset
+              </button>
+              <button
+                onClick={() => setResetConfirm(false)}
+                className="bg-gray-600 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         )}
 
         {showHistory && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowHistory(false)}>
-            <div className="bg-gray-900/95 p-6 rounded-xl max-w-md w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+            onClick={() => setShowHistory(false)}
+          >
+            <div
+              className="bg-gray-900/95 p-6 rounded-xl max-w-md w-full max-h-[70vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-amber-400 font-bold text-lg">Hand History</h3>
-                <button onClick={() => setShowHistory(false)} className="text-white text-2xl">×</button>
+                <h3 className="text-amber-400 font-bold text-lg">
+                  Hand History
+                </h3>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-white text-2xl"
+                >
+                  ×
+                </button>
               </div>
               {handHistory.length === 0 ? (
                 <p className="text-gray-400 text-sm">No hands played yet.</p>
               ) : (
                 <ul className="text-sm text-gray-300 space-y-2">
-                  {handHistory.map((entry, i) => <li key={i} className="border-b border-gray-700 pb-1">{entry}</li>)}
+                  {handHistory.map((entry, i) => (
+                    <li key={i} className="border-b border-gray-700 pb-1">
+                      {entry}
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
           </div>
         )}
 
-        <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
+        <Leaderboard
+          players={gameState.players}
+          currentRound={gameState.currentRound}
+        />
 
         {showChat && (
           <div style={{ zIndex: 70 }}>
-            <Chat messages={chatMessages} playerName={currentPlayer?.name || '?'} onSendMessage={handleSendChat} />
+            <Chat
+              messages={chatMessages}
+              playerName={currentPlayer?.name || '?'}
+              onSendMessage={handleSendChat}
+            />
           </div>
         )}
 
         {isPaused && (
           <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center pointer-events-none">
-            <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">⏸️ GAME PAUSED</div>
+            <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">
+              ⏸️ GAME PAUSED
+            </div>
           </div>
         )}
 
@@ -311,7 +407,8 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
 
         {sideBetWin && (
           <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-800 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
-            🎉 {sideBetWin.bettorName} won {sideBetWin.total} chips from side bet on {sideBetWin.targetName}! 🎉
+            🎉 {sideBetWin.bettorName} won {sideBetWin.total} chips from side
+            bet on {sideBetWin.targetName}! 🎉
           </div>
         )}
 
@@ -320,22 +417,40 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
             <span className="text-2xl">🎖️</span>
             <div>
               <div className="text-sm">{achievementToast.player}</div>
-              <div className="text-xs">{achievementToast.name}: {achievementToast.desc}</div>
+              <div className="text-xs">
+                {achievementToast.name}: {achievementToast.desc}
+              </div>
             </div>
           </div>
         )}
 
-        {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
-          <BettingPanel ws={ws} playerId={playerId} players={gameState.players} currentRound={gameState.currentRound} chipAmount={currentPlayer.chips} />
-        )}
+        {currentPlayer &&
+          currentPlayer.folded &&
+          !gameState.winner &&
+          !currentPlayer.isSpectator && (
+            <BettingPanel
+              ws={ws}
+              playerId={playerId}
+              players={gameState.players}
+              currentRound={gameState.currentRound}
+              chipAmount={currentPlayer.chips}
+            />
+          )}
 
         {currentPlayer && currentPlayer.isSpectator && !gameState.winner && (
           <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
-            <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
-            <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
+            <div className="text-amber-400 font-bold mb-2">
+              👁️ Spectator Mode
+            </div>
+            <button
+              onClick={sitIn}
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm"
+            >
               Sit In ({formatChips(gameState.startingChips || 1000)})
             </button>
-            <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
+            <div className="text-xs text-gray-400 mt-2">
+              Wait for current hand to end
+            </div>
           </div>
         )}
 
@@ -344,7 +459,11 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
           tableRef={tableRef}
           gameState={gameState}
           newCardIndices={newCardIndices}
-          prevCommunityLengthRef={{ current: newCardIndices.length ? gameState.communityCards.length - newCardIndices.length : 0 }}
+          prevCommunityLengthRef={{
+            current: newCardIndices.length
+              ? gameState.communityCards.length - newCardIndices.length
+              : 0,
+          }}
         />
 
         {activePlayersList.map((p, idx) => (
@@ -356,8 +475,14 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
           />
         ))}
 
-        {animatingChips.map(chip => (
-          <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} toPosition={chip.toPosition} onComplete={() => removeChipAnimation(chip.id)} />
+        {animatingChips.map((chip) => (
+          <AnimatedChip
+            key={chip.id}
+            value={chip.value}
+            fromPosition={chip.fromPos}
+            toPosition={chip.toPosition}
+            onComplete={() => removeChipAnimation(chip.id)}
+          />
         ))}
 
         {(myTurn || canReveal) && (
