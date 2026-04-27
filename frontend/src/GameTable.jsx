@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Card from './components/Card.jsx';
 import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
@@ -9,6 +9,7 @@ import PlayerSeat from './components/PlayerSeat.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import Table from './components/Table.jsx';
 import GameContext from './context/GameContext';
+import { usePlayerPositions } from './hooks/usePlayerPositions';
 import { chipClick, allInSound as allInSoundFunc } from './hooks/useSound';
 import { useGameSocket } from './hooks/useGameSocket';
 import './styles/animations.css';
@@ -38,10 +39,8 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
   const [themeExpanded, setThemeExpanded] = useState(false);
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [playerPositions, setPlayerPositions] = useState({});
 
   const tableContainerRef = useRef(null);
-  const tableRef = useRef(null);
   const playerRefs = useRef({});
   const soundEnabledRef = useRef(true);
 
@@ -69,6 +68,8 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
     handHistory,
   } = useGameSocket(ws, soundEnabledRef);
 
+  const { playerPositions, tableRef } = usePlayerPositions(gameState, playerId, seatViewFixed);
+
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
     { id: 'cyberpunk', name: 'Cyberpunk', icon: '💠', color: 'bg-purple-800' },
@@ -90,39 +91,6 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
   const removeChipAnimation = (id) => {
     setAnimatingChips(prev => prev.filter(c => c.id !== id));
   };
-
-  const updatePositions = useCallback(() => {
-    if (!gameState || !tableRef.current) return;
-    const tableRect = tableRef.current.getBoundingClientRect();
-    const a = tableRect.width / 2;
-    const b = tableRect.height / 2;
-    const centerX = tableRect.left + a;
-    const centerY = tableRect.top + b;
-
-    const activePlayers = gameState.players.filter(p => !p.isSpectator);
-    let orderedPlayers = activePlayers;
-    if (seatViewFixed) {
-      const selfIndex = orderedPlayers.findIndex(p => p.id === playerId);
-      if (selfIndex >= 0) orderedPlayers = [...orderedPlayers.slice(selfIndex), ...orderedPlayers.slice(0, selfIndex)];
-    }
-
-    const total = orderedPlayers.length;
-    const newPositions = {};
-    orderedPlayers.forEach((p, idx) => {
-      const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
-      newPositions[p.id] = {
-        x: centerX + a * Math.cos(angle),
-        y: centerY + b * Math.sin(angle)
-      };
-    });
-    setPlayerPositions(newPositions);
-  }, [gameState, playerId, seatViewFixed]);
-
-  useEffect(() => {
-    updatePositions();
-    window.addEventListener('resize', updatePositions);
-    return () => window.removeEventListener('resize', updatePositions);
-  }, [updatePositions]);
 
   useEffect(() => {
     if (winnerEffect?.winnerId && gameState) {
