@@ -1,6 +1,6 @@
 const lobbyTimers = new Map();
 
-export function broadcastTurnTimer(lobbyId, lobbyManager, clients, broadcastGameState) {
+export function broadcastTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcastGameState) {
   const timerData = lobbyTimers.get(lobbyId);
   if (!timerData || !timerData.turnStartTime) return;
   const lobby = lobbyManager.getLobby(lobbyId);
@@ -9,7 +9,7 @@ export function broadcastTurnTimer(lobbyId, lobbyManager, clients, broadcastGame
   const remaining = Math.max(0, 20 - elapsed);
   const currentPlayerId = lobby.game.getState().currentPlayerId;
   const msg = JSON.stringify({ type: 'turnTimer', remaining, currentPlayerId });
-  for (const [ws, client] of clients.entries()) {
+  for (const [ws, client] of clientRegistry.entries()) {
     if (client.lobbyId === lobbyId && ws.readyState === 1) {
       ws.send(msg);
     }
@@ -25,8 +25,8 @@ export function startTurnTimerBroadcast(lobbyId, playerId) {
     turnStartTime: Date.now(),
     lastTurnPlayerId: playerId,
     interval: setInterval(() => {
-      const { lobbyManager, clients, broadcastGameState } = startTurnTimerBroadcast.refs || {};
-      if (lobbyManager) broadcastTurnTimer(lobbyId, lobbyManager, clients, broadcastGameState);
+      const { lobbyManager, clientRegistry, broadcastGameState } = startTurnTimerBroadcast.refs || {};
+      if (lobbyManager) broadcastTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcastGameState);
     }, 500),
   });
 }
@@ -43,19 +43,19 @@ export function setTurnTimerRefs(refs) {
   startTurnTimerBroadcast.refs = refs;
 }
 
-export function clearTimer(ws, clients) {
-  const client = clients.get(ws);
+export function clearTimer(ws, clientRegistry) {
+  const client = clientRegistry.get(ws);
   if (client?.timeoutId) {
     clearTimeout(client.timeoutId);
     client.timeoutId = null;
   }
 }
 
-export function setAutoActionTimer(ws, playerId, lobbyId, lobbyManager, clients, broadcastGameState) {
+export function setAutoActionTimer(ws, playerId, lobbyId, lobbyManager, clientRegistry, broadcastGameState) {
   const lobby = lobbyManager.getLobby(lobbyId);
   if (!lobby || lobby.game.paused) return;
-  clearTimer(ws, clients);
-  const client = clients.get(ws);
+  clearTimer(ws, clientRegistry);
+  const client = clientRegistry.get(ws);
   if (!client) return;
 
   startTurnTimerBroadcast(lobbyId, playerId);
@@ -87,8 +87,8 @@ export function setAutoActionTimer(ws, playerId, lobbyId, lobbyManager, clients,
   client.timeoutId = timeoutId;
 }
 
-export function clearAllTimers(lobbyId, clients) {
-  for (const [ws, client] of clients.entries()) {
+export function clearAllTimers(lobbyId, clientRegistry) {
+  for (const [ws, client] of clientRegistry.entries()) {
     if (client.lobbyId === lobbyId && client.timeoutId) {
       clearTimeout(client.timeoutId);
       client.timeoutId = null;
@@ -97,7 +97,7 @@ export function clearAllTimers(lobbyId, clients) {
   stopTurnTimerBroadcast(lobbyId);
 }
 
-export function ensureTurnTimer(lobbyId, lobbyManager, clients, broadcastGameState) {
+export function ensureTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcastGameState) {
   const lobby = lobbyManager.getLobby(lobbyId);
   if (!lobby) return;
   const state = lobby.game.getState();
@@ -109,9 +109,9 @@ export function ensureTurnTimer(lobbyId, lobbyManager, clients, broadcastGameSta
   if (!currentId) return;
   const timerData = lobbyTimers.get(lobbyId);
   if (!timerData || timerData.lastTurnPlayerId !== currentId) {
-    const targetWs = [...clients.entries()].find(([_, c]) => c.playerId === currentId && c.lobbyId === lobbyId)?.[0];
+    const targetWs = [...clientRegistry.entries()].find(([_, c]) => c.playerId === currentId && c.lobbyId === lobbyId)?.[0];
     if (targetWs) {
-      setAutoActionTimer(targetWs, currentId, lobbyId, lobbyManager, clients, broadcastGameState);
+      setAutoActionTimer(targetWs, currentId, lobbyId, lobbyManager, clientRegistry, broadcastGameState);
     } else {
       startTurnTimerBroadcast(lobbyId, currentId);
     }
