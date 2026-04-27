@@ -1,3 +1,4 @@
+// frontend/src/components/PlayerSeat.jsx
 import React, { useContext } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
@@ -77,15 +78,6 @@ export default function PlayerSeat({ p, idx, pos }) {
             >
               🏆 WINNER! 🏆
             </div>
-            {!isSelf && (
-              <div className="flex gap-1 justify-center mt-1">
-                {winnerEffect.winnerCards.map((card, ci) => (
-                  <div key={ci} className="animate-spin-once">
-                    <Card rank={card.rank} suit={card.suit} />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
         {speechBubbles
