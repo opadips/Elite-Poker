@@ -1,4 +1,3 @@
-```markdown
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
 ➡️ **برای دیدن نسخه فارسی کلیک کنید:[Perisan version](README_FA.md)
@@ -192,13 +191,6 @@ Elite-Poker/
 - **Add new themes** – edit `themes.css` and add a new entry in the `themes` array inside `GameTable.jsx`.
 - All theme‑dependent colors are controlled by CSS custom properties (`--table-bg`, `--winner-text`, etc.).
 - Card backs and other personalisation options are stored in `localStorage` for persistence.
-
----
-## 📚 AI Documentation
-This project includes three files designed to help AI agents (and humans) understand the codebase quickly:
-- **[AI_CONTEXT.md](AI_CONTEXT.md)** – Architecture overview, data flow, WebSocket message types, unwritten rules, and a quick guide for adding new features.
-- **[MODULES.md](MODULES.md)** – Per‑module reference with inputs, outputs, core logic, and imports.
-- **[DEPENDENCIES.md](DEPENDENCIES.md)** – Justification for every third‑party library (only 7 production dependencies total).
 
 ---
 And I would like you to know that I have used many models to build this project so far, such as:
