@@ -1,7 +1,8 @@
-// backend/game/Game.js
 import { Player } from './Player.js';
 import { Deck } from './Deck.js';
 import { HandEvaluator } from './HandEvaluator.js';
+import * as BettingRound from './BettingRound.js';
+import * as PotManager from './PotManager.js';
 
 const ACHIEVEMENTS = {
   FIRST_BLOOD: { id: 'first_blood', name: 'First Blood', desc: 'Win your first pot!' },
@@ -180,10 +181,10 @@ export class Game {
       this.actedPlayers.add(playerId);
       this.checkForSoloSurvivor();
       if (!this.handInProgress) return;
-      this.nextPlayer();
+      BettingRound.nextPlayer(this);
     } else if (action === 'check' && toCall === 0) {
       this.actedPlayers.add(playerId);
-      this.nextPlayer();
+      BettingRound.nextPlayer(this);
     } else if (action === 'call') {
       let callAmount = Math.min(toCall, player.chips);
       player.chips -= callAmount;
@@ -192,7 +193,7 @@ export class Game {
       this.pot += callAmount;
       if (player.chips === 0) player.isAllIn = true;
       this.actedPlayers.add(playerId);
-      this.nextPlayer();
+      BettingRound.nextPlayer(this);
     } else if (action === 'raise') {
       let raiseAmount = Math.max(amount, this.bigBlind);
       let totalNeeded = toCall + raiseAmount;
@@ -216,7 +217,7 @@ export class Game {
       this.lastRaiseBy = playerId;
       this.actedPlayers.clear();
       this.actedPlayers.add(playerId);
-      this.nextPlayer();
+      BettingRound.nextPlayer(this);
     } else if (action === 'allin') {
       let total = player.chips;
       player.chips = 0;
@@ -231,11 +232,11 @@ export class Game {
       }
       this.actedPlayers.clear();
       this.actedPlayers.add(playerId);
-      this.nextPlayer();
+      BettingRound.nextPlayer(this);
     }
 
     if (!this.handInProgress) return;
-    this.checkRoundComplete();
+    BettingRound.checkRoundComplete(this);
   }
 
   checkForSoloSurvivor() {
@@ -256,281 +257,37 @@ export class Game {
   }
 
   nextPlayer() {
-    if (!this.handInProgress) return;
-    if (this._allInResolving) return;
-
-    const activePlayers = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
-    if (activePlayers.length === 0) {
-      this.handleAllAllIn();
-      return;
-    }
-
-    let startIdx = activePlayers.findIndex(p => p.id === this.currentPlayerIndex);
-    if (startIdx === -1) startIdx = 0;
-    let found = false;
-    for (let i = 0; i < activePlayers.length; i++) {
-      const idx = (startIdx + 1 + i) % activePlayers.length;
-      const candidate = activePlayers[idx];
-      if (!candidate.folded && !candidate.isAllIn) {
-        this.currentPlayerIndex = candidate.id;
-        found = true;
-        console.log(`Next player: ${candidate.name}`);
-        break;
-      }
-    }
-    if (!found) this.handleAllAllIn();
+    BettingRound.nextPlayer(this);
   }
 
   handleAllAllIn() {
-    if (this._allInResolving) return;
-    const activePlayers = this.getActivePlayers().filter(p => !p.folded);
-    if (activePlayers.length === 0) return;
-
-    const allAllIn = activePlayers.every(p => p.isAllIn) || activePlayers.length === 1;
-    if (!allAllIn) return;
-
-    this.revealRemainingCards();
-  }
-
-  revealRemainingCards() {
-    if (this._allInResolving) return;
-    this._allInResolving = true;
-    console.log('Revealing remaining cards...');
-    this.waitingForAction = false;
-
-    const revealStep = () => {
-      if (!this._allInResolving) return;
-      if (this.currentRound === 'preflop') {
-        this.communityCards = [this.deck.draw(), this.deck.draw(), this.deck.draw()];
-        console.log(`Flop: ${this.communityCards.map(c => c.rank + c.suit).join(', ')}`);
-        this.currentRound = 'flop';
-        if (this.onStateChange) this.onStateChange();
-        setTimeout(() => revealStep(), 2000);
-      } else if (this.currentRound === 'flop') {
-        this.communityCards.push(this.deck.draw());
-        console.log(`Turn: ${this.communityCards[3].rank}${this.communityCards[3].suit}`);
-        this.currentRound = 'turn';
-        if (this.onStateChange) this.onStateChange();
-        setTimeout(() => revealStep(), 2000);
-      } else if (this.currentRound === 'turn') {
-        this.communityCards.push(this.deck.draw());
-        console.log(`River: ${this.communityCards[4].rank}${this.communityCards[4].suit}`);
-        this.currentRound = 'river';
-        if (this.onStateChange) this.onStateChange();
-        setTimeout(() => revealStep(), 2000);
-      } else {
-        this.runShowdown();
-        this.endHand();
-        this._allInResolving = false;
-      }
-    };
-    revealStep();
-  }
-
-  checkRoundComplete() {
-    if (!this.handInProgress) return;
-    if (this._allInResolving) return;
-    const activePlayers = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
-    if (activePlayers.length === 0) {
-      if (!this._allInResolving) this.handleAllAllIn();
-      return;
-    }
-    const allActed = activePlayers.every(p => this.actedPlayers.has(p.id));
-    const allBetsEqual = activePlayers.every(p => p.currentBet === this.currentBet);
-    console.log(`Round check: allActed=${allActed}, allBetsEqual=${allBetsEqual}`);
-    if (allActed && allBetsEqual) {
-      this.advanceRound();
-    }
+    BettingRound.handleAllAllIn(this);
   }
 
   advanceRound() {
-    if (this.currentRound === 'preflop') {
-      this.communityCards = [this.deck.draw(), this.deck.draw(), this.deck.draw()];
-      console.log(`Flop: ${this.communityCards.map(c => c.rank + c.suit).join(', ')}`);
-      this.currentRound = 'flop';
-      this.resetBettingRound();
-    } else if (this.currentRound === 'flop') {
-      this.communityCards.push(this.deck.draw());
-      console.log(`Turn: ${this.communityCards[3].rank}${this.communityCards[3].suit}`);
-      this.currentRound = 'turn';
-      this.resetBettingRound();
-    } else if (this.currentRound === 'turn') {
-      this.communityCards.push(this.deck.draw());
-      console.log(`River: ${this.communityCards[4].rank}${this.communityCards[4].suit}`);
-      this.currentRound = 'river';
-      this.resetBettingRound();
-    } else if (this.currentRound === 'river') {
-      this.runShowdown();
-      this.endHand();
-      return;
-    }
-
-    const nonAllIn = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
-    if (nonAllIn.length === 1 && this.getActivePlayers().some(p => p.isAllIn)) {
-      this.revealRemainingCards();
-    }
-  }
-
-  resetBettingRound() {
-    this.actedPlayers.clear();
-    const active = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
-    for (let p of active) {
-      p.currentBet = 0;
-    }
-    this.currentBet = 0;
-    this.minRaise = this.bigBlind;
-    this.lastRaiseBy = null;
-    this.currentPlayerIndex = this.findFirstActiveAfterDealer();
-    this.waitingForAction = true;
-    const nextPlayer = this.players.find(p => p.id === this.currentPlayerIndex);
-    console.log(`New round (${this.currentRound}), first to act: ${nextPlayer?.name}`);
-  }
-
-  findFirstActiveAfterDealer() {
-    const active = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
-    if (active.length === 0) return null;
-    const dealerIdx = active.findIndex(p => p.id === this.dealerIndex);
-    for (let i = 1; i <= active.length; i++) {
-      const candidate = active[(dealerIdx + i) % active.length];
-      if (!candidate.folded && !candidate.isAllIn) return candidate.id;
-    }
-    return active[0]?.id;
+    BettingRound.advanceRound(this);
   }
 
   runShowdown() {
-    const evaluator = new HandEvaluator();
-    const contenders = this.getActivePlayers().filter(p => !p.folded);
-    if (contenders.length === 0) return;
-
-    const hands = {};
-    for (let p of contenders) {
-      hands[p.id] = evaluator.evaluate(p.holeCards, this.communityCards);
-      console.log(`${p.name} hand: ${hands[p.id].name}`);
-    }
-
-    const sortedByBet = [...contenders].sort((a, b) => a.totalBet - b.totalBet);
-    const sidePots = [];
-    let prevLevel = 0;
-    for (let i = 0; i < sortedByBet.length; i++) {
-      const level = sortedByBet[i].totalBet;
-      if (level > prevLevel) {
-        const contributors = sortedByBet.slice(i);
-        const potAmount = (level - prevLevel) * contributors.length;
-        sidePots.push({
-          amount: potAmount,
-          eligible: contributors.map(p => p.id)
-        });
-        prevLevel = level;
-      }
-    }
-    let sumSide = sidePots.reduce((s, p) => s + p.amount, 0);
-    if (sumSide < this.pot && sidePots.length > 0) {
-      sidePots[sidePots.length - 1].amount += (this.pot - sumSide);
-    }
-
-    const winnings = {};
-    const dealerPos = this.getActivePlayers().findIndex(p => p.id === this.dealerIndex);
-
-    for (const pot of sidePots) {
-      if (pot.amount <= 0) continue;
-      let bestHand = null;
-      let winners = [];
-      for (const pid of pot.eligible) {
-        const player = contenders.find(p => p.id === pid);
-        if (!player) continue;
-        const hand = hands[pid];
-        if (!bestHand || hand.rank < bestHand.rank || (hand.rank === bestHand.rank && hand.cmp(bestHand) > 0)) {
-          bestHand = hand;
-          winners = [player];
-        } else if (hand.rank === bestHand.rank && hand.cmp(bestHand) === 0) {
-          winners.push(player);
-        }
-      }
-      if (winners.length === 0) continue;
-      const share = Math.floor(pot.amount / winners.length);
-      let remainder = pot.amount - share * winners.length;
-
-      winners.sort((a, b) => {
-        const idxA = this.getActivePlayers().findIndex(p => p.id === a.id);
-        const idxB = this.getActivePlayers().findIndex(p => p.id === b.id);
-        const distA = (idxA - dealerPos + this.getActivePlayers().length) % this.getActivePlayers().length;
-        const distB = (idxB - dealerPos + this.getActivePlayers().length) % this.getActivePlayers().length;
-        return distA - distB;
-      });
-
-      for (let i = 0; i < winners.length; i++) {
-        const win = share + (i < remainder ? 1 : 0);
-        if (!winnings[winners[i].id]) winnings[winners[i].id] = { amount: 0, handName: bestHand.name };
-        winnings[winners[i].id].amount += win;
-        winnings[winners[i].id].handName = bestHand.name;
-      }
-    }
-
-    const results = [];
-    const allWinners = [];
-    for (const [pid, win] of Object.entries(winnings)) {
-      const player = this.players.find(p => p.id === pid);
-      if (player) {
-        player.chips += win.amount;
-        results.push({ name: player.name, amount: win.amount, handName: win.handName });
-        allWinners.push(player);
-        player.stats.handsPlayed += 1;
-        player.stats.potsWon += 1;
-        if (win.amount > player.stats.biggestPot) player.stats.biggestPot = win.amount;
-        if (!player.stats.bestHand || this.compareHandNames(win.handName, player.stats.bestHand) < 0) {
-          player.stats.bestHand = win.handName;
-        }
-        if (!this._consecutiveWins[pid]) this._consecutiveWins[pid] = 0;
-        this._consecutiveWins[pid] += 1;
-      }
-    }
-    for (let p of contenders) {
-      if (!winnings[p.id]) {
-        p.stats.handsPlayed += 1;
-        p.stats.losses += 1;
-        this._consecutiveWins[p.id] = 0;
-      }
-    }
-
-    this.winner = {
-      names: results.map(r => r.name).join(', '),
-      winnings: results.reduce((s, r) => s + r.amount, 0),
-      handName: results[0]?.handName || '',
-      players: results.map(r => ({ name: r.name, cards: this.players.find(p => p.name === r.name)?.holeCards || [] }))
-    };
-    console.log(`Winner: ${this.winner.names} with ${this.winner.handName}, wins ${this.winner.winnings}`);
-
-    this.sideBetResults = this.resolveSideBets(allWinners);
+    PotManager.runShowdown(this);
   }
 
-  resolveSideBets(winnerPlayers) {
-    if (!winnerPlayers.length || this.sideBets.length === 0) {
-      this.sideBets = [];
-      return [];
+  compareHandNames(a, b) {
+    const order = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair','High Card'];
+    const ia = order.indexOf(a);
+    const ib = order.indexOf(b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  }
+
+  evaluatePlayerHand(player) {
+    const evaluator = new HandEvaluator();
+    if (this.communityCards.length === 0) {
+      const [c1, c2] = player.holeCards;
+      if (c1.rank === c2.rank) return 'Pair';
+      if (c1.rank === 'A' || c2.rank === 'A') return 'Ace High';
+      return 'High Card';
     }
-    const winnerIds = new Set(winnerPlayers.map(p => p.id));
-    const winningBets = this.sideBets.filter(b => winnerIds.has(b.targetPlayerId));
-    if (winningBets.length === 0) {
-      this.sideBets = [];
-      return [];
-    }
-    const results = [];
-    for (let bet of winningBets) {
-      const bettor = this.players.find(p => p.id === bet.bettorId);
-      if (bettor) {
-        const profit = Math.floor(bet.amount * 0.5);
-        bettor.chips += bet.amount + profit;
-        results.push({
-          bettorName: bettor.name,
-          targetName: winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name || '',
-          amount: bet.amount,
-          profit: profit
-        });
-        console.log(`Side bet win: ${bettor.name} wins ${bet.amount + profit} (bet ${bet.amount} on ${winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name})`);
-      }
-    }
-    this.sideBets = [];
-    return results;
+    return evaluator.evaluate(player.holeCards, this.communityCards).name;
   }
 
   placeSideBet(bettorId, targetId, amount) {
@@ -553,24 +310,6 @@ export class Game {
     this.sideBets.push({ bettorId, targetPlayerId: targetId, amount });
     console.log(`${bettor.name} placed side bet ${amount} on ${target.name}`);
     return { success: true, bettorName: bettor.name, targetName: target.name, amount };
-  }
-
-  compareHandNames(a, b) {
-    const order = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair','High Card'];
-    const ia = order.indexOf(a);
-    const ib = order.indexOf(b);
-    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-  }
-
-  evaluatePlayerHand(player) {
-    const evaluator = new HandEvaluator();
-    if (this.communityCards.length === 0) {
-      const [c1, c2] = player.holeCards;
-      if (c1.rank === c2.rank) return 'Pair';
-      if (c1.rank === 'A' || c2.rank === 'A') return 'Ace High';
-      return 'High Card';
-    }
-    return evaluator.evaluate(player.holeCards, this.communityCards).name;
   }
 
   checkAchievements() {
