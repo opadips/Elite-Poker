@@ -8,6 +8,7 @@ import BettingPanel from './components/BettingPanel.jsx';
 import PlayerSeat from './components/PlayerSeat.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import Table from './components/Table.jsx';
+import GameContext from './context/GameContext';
 import { chipClick, allInSound as allInSoundFunc } from './hooks/useSound';
 import { useGameSocket } from './hooks/useGameSocket';
 import './styles/animations.css';
@@ -222,187 +223,192 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
 
   const activePlayersList = gameState.players.filter(p => !p.isSpectator);
 
+  const contextValue = {
+    gameState,
+    playerId,
+    isAdmin,
+    currentPlayer,
+    sendWs,
+    cardBack,
+    showHandInfo,
+    activePlayersList,
+    getTimerColor,
+    turnRemainingSec,
+    turnCurrentPlayerId,
+    winnerEffect,
+    speechBubbles,
+  };
+
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
-      <button onClick={handleChatToggle} className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
-        title={showChat ? "Close chat" : "Open chat"} style={{ zIndex: 70 }}>💬</button>
+    <GameContext.Provider value={contextValue}>
+      <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
+        <button onClick={handleChatToggle} className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+          title={showChat ? "Close chat" : "Open chat"} style={{ zIndex: 70 }}>💬</button>
 
-      {gameState && !gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
-          <button onClick={toggleReady} className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${currentPlayer.ready ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-            {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
-          </button>
-        </div>
-      )}
+        {gameState && !gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
+          <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
+            <button onClick={toggleReady} className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${currentPlayer.ready ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+              {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
+            </button>
+          </div>
+        )}
 
-      <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
-        <div className="relative">
-          <button onClick={() => setShowSettings(!showSettings)} className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all" title="Settings">⚙️</button>
-          <SettingsPanel
-            showSettings={showSettings}
-            setShowSettings={setShowSettings}
-            theme={theme}
-            themes={themes}
-            onThemeChange={onThemeChange}
-            themeExpanded={themeExpanded}
-            setThemeExpanded={setThemeExpanded}
-            cardBackExpanded={cardBackExpanded}
-            setCardBackExpanded={setCardBackExpanded}
-            cardBackOptions={cardBackOptions}
-            cardBack={cardBack}
-            handleCardBackChange={handleCardBackChange}
-            seatViewFixed={seatViewFixed}
-            toggleSeatView={toggleSeatView}
-            soundEnabled={soundEnabled}
-            setSoundEnabled={setSoundEnabled}
-            showHandInfo={showHandInfo}
-            onToggleBeginner={onToggleBeginner}
-            isPaused={isPaused}
-            togglePause={togglePause}
-            isAdmin={isAdmin}
-            setResetConfirm={setResetConfirm}
-            requestHandHistory={requestHandHistory}
-            onReturnToLobby={onReturnToLobby}
-          />
-        </div>
-      </div>
-
-      {resetConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn" onClick={() => setResetConfirm(false)}>
-          <div className="bg-gray-800 p-6 rounded-xl text-center" onClick={e => e.stopPropagation()}>
-            <p className="text-white mb-4">Reset all scores and chips? This cannot be undone.</p>
-            <button onClick={resetLobby} className="bg-red-600 px-4 py-2 rounded mr-2">Yes, Reset</button>
-            <button onClick={() => setResetConfirm(false)} className="bg-gray-600 px-4 py-2 rounded">Cancel</button>
+        <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
+          <div className="relative">
+            <button onClick={() => setShowSettings(!showSettings)} className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all" title="Settings">⚙️</button>
+            <SettingsPanel
+              showSettings={showSettings}
+              setShowSettings={setShowSettings}
+              theme={theme}
+              themes={themes}
+              onThemeChange={onThemeChange}
+              themeExpanded={themeExpanded}
+              setThemeExpanded={setThemeExpanded}
+              cardBackExpanded={cardBackExpanded}
+              setCardBackExpanded={setCardBackExpanded}
+              cardBackOptions={cardBackOptions}
+              cardBack={cardBack}
+              handleCardBackChange={handleCardBackChange}
+              seatViewFixed={seatViewFixed}
+              toggleSeatView={toggleSeatView}
+              soundEnabled={soundEnabled}
+              setSoundEnabled={setSoundEnabled}
+              showHandInfo={showHandInfo}
+              onToggleBeginner={onToggleBeginner}
+              isPaused={isPaused}
+              togglePause={togglePause}
+              isAdmin={isAdmin}
+              setResetConfirm={setResetConfirm}
+              requestHandHistory={requestHandHistory}
+              onReturnToLobby={onReturnToLobby}
+            />
           </div>
         </div>
-      )}
 
-      {showHistory && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowHistory(false)}>
-          <div className="bg-gray-900/95 p-6 rounded-xl max-w-md w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-amber-400 font-bold text-lg">Hand History</h3>
-              <button onClick={() => setShowHistory(false)} className="text-white text-2xl">×</button>
+        {resetConfirm && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn" onClick={() => setResetConfirm(false)}>
+            <div className="bg-gray-800 p-6 rounded-xl text-center" onClick={e => e.stopPropagation()}>
+              <p className="text-white mb-4">Reset all scores and chips? This cannot be undone.</p>
+              <button onClick={resetLobby} className="bg-red-600 px-4 py-2 rounded mr-2">Yes, Reset</button>
+              <button onClick={() => setResetConfirm(false)} className="bg-gray-600 px-4 py-2 rounded">Cancel</button>
             </div>
-            {handHistory.length === 0 ? (
-              <p className="text-gray-400 text-sm">No hands played yet.</p>
-            ) : (
-              <ul className="text-sm text-gray-300 space-y-2">
-                {handHistory.map((entry, i) => <li key={i} className="border-b border-gray-700 pb-1">{entry}</li>)}
-              </ul>
-            )}
           </div>
-        </div>
-      )}
+        )}
 
-      <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
-
-      {showChat && (
-        <div style={{ zIndex: 70 }}>
-          <Chat messages={chatMessages} playerName={currentPlayer?.name || '?'} onSendMessage={handleSendChat} />
-        </div>
-      )}
-
-      {isPaused && (
-        <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center pointer-events-none">
-          <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">⏸️ GAME PAUSED</div>
-        </div>
-      )}
-
-      {winningHandName && (
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
-          <div className="winner-themed text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider whitespace-nowrap">
-            {winningHandName}
+        {showHistory && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowHistory(false)}>
+            <div className="bg-gray-900/95 p-6 rounded-xl max-w-md w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-amber-400 font-bold text-lg">Hand History</h3>
+                <button onClick={() => setShowHistory(false)} className="text-white text-2xl">×</button>
+              </div>
+              {handHistory.length === 0 ? (
+                <p className="text-gray-400 text-sm">No hands played yet.</p>
+              ) : (
+                <ul className="text-sm text-gray-300 space-y-2">
+                  {handHistory.map((entry, i) => <li key={i} className="border-b border-gray-700 pb-1">{entry}</li>)}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {systemMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-yellow-600 text-black font-bold px-6 py-2 rounded-full shadow-lg animate-bounce">
-          {systemMessage}
-        </div>
-      )}
+        <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
-      {sideBetWin && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-800 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
-          🎉 {sideBetWin.bettorName} won {sideBetWin.total} chips from side bet on {sideBetWin.targetName}! 🎉
-        </div>
-      )}
-
-      {achievementToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-bold px-6 py-3 rounded-full shadow-2xl animate-fadeInSlideDown flex items-center gap-2">
-          <span className="text-2xl">🎖️</span>
-          <div>
-            <div className="text-sm">{achievementToast.player}</div>
-            <div className="text-xs">{achievementToast.name}: {achievementToast.desc}</div>
+        {showChat && (
+          <div style={{ zIndex: 70 }}>
+            <Chat messages={chatMessages} playerName={currentPlayer?.name || '?'} onSendMessage={handleSendChat} />
           </div>
-        </div>
-      )}
+        )}
 
-      {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
-        <BettingPanel ws={ws} playerId={playerId} players={gameState.players} currentRound={gameState.currentRound} chipAmount={currentPlayer.chips} />
-      )}
+        {isPaused && (
+          <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center pointer-events-none">
+            <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">⏸️ GAME PAUSED</div>
+          </div>
+        )}
 
-      {currentPlayer && currentPlayer.isSpectator && !gameState.winner && (
-        <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
-          <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
-          <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
-            Sit In ({formatChips(gameState.startingChips || 1000)})
-          </button>
-          <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
-        </div>
-      )}
+        {winningHandName && (
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+            <div className="winner-themed text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider whitespace-nowrap">
+              {winningHandName}
+            </div>
+          </div>
+        )}
 
-      <Table
-        tableContainerRef={tableContainerRef}
-        tableRef={tableRef}
-        gameState={gameState}
-        newCardIndices={newCardIndices}
-        prevCommunityLengthRef={{ current: newCardIndices.length ? gameState.communityCards.length - newCardIndices.length : 0 }}
-      />
+        {systemMessage && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-yellow-600 text-black font-bold px-6 py-2 rounded-full shadow-lg animate-bounce">
+            {systemMessage}
+          </div>
+        )}
 
-      {activePlayersList.map((p, idx) => (
-        <PlayerSeat
-          key={p.id}
-          p={p}
-          idx={idx}
-          pos={playerPositions[p.id]}
+        {sideBetWin && (
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-800 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
+            🎉 {sideBetWin.bettorName} won {sideBetWin.total} chips from side bet on {sideBetWin.targetName}! 🎉
+          </div>
+        )}
+
+        {achievementToast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-bold px-6 py-3 rounded-full shadow-2xl animate-fadeInSlideDown flex items-center gap-2">
+            <span className="text-2xl">🎖️</span>
+            <div>
+              <div className="text-sm">{achievementToast.player}</div>
+              <div className="text-xs">{achievementToast.name}: {achievementToast.desc}</div>
+            </div>
+          </div>
+        )}
+
+        {currentPlayer && currentPlayer.folded && !gameState.winner && !currentPlayer.isSpectator && (
+          <BettingPanel ws={ws} playerId={playerId} players={gameState.players} currentRound={gameState.currentRound} chipAmount={currentPlayer.chips} />
+        )}
+
+        {currentPlayer && currentPlayer.isSpectator && !gameState.winner && (
+          <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
+            <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
+            <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
+              Sit In ({formatChips(gameState.startingChips || 1000)})
+            </button>
+            <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
+          </div>
+        )}
+
+        <Table
+          tableContainerRef={tableContainerRef}
+          tableRef={tableRef}
           gameState={gameState}
-          winnerEffect={winnerEffect}
-          isAdmin={isAdmin}
-          currentPlayerName={currentPlayer?.name}
-          playerId={playerId}
-          cardBack={cardBack}
-          showHandInfo={showHandInfo}
-          activePlayersList={activePlayersList}
-          speechBubbles={speechBubbles}
-          turnRemainingSec={turnRemainingSec}
-          turnCurrentPlayerId={turnCurrentPlayerId}
-          getTimerColor={getTimerColor}
-          sendWs={sendWs}
+          newCardIndices={newCardIndices}
+          prevCommunityLengthRef={{ current: newCardIndices.length ? gameState.communityCards.length - newCardIndices.length : 0 }}
         />
-      ))}
 
-      {animatingChips.map(chip => (
-        <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} toPosition={chip.toPosition} onComplete={() => removeChipAnimation(chip.id)} />
-      ))}
+        {activePlayersList.map((p, idx) => (
+          <PlayerSeat
+            key={p.id}
+            p={p}
+            idx={idx}
+            pos={playerPositions[p.id]}
+          />
+        ))}
 
-      {(myTurn || canReveal) && (
-        <ActionButtons
-          onFold={() => handleAction('fold')}
-          onCheck={() => handleAction('check')}
-          onCall={() => handleAction('call')}
-          onRaise={(amt) => handleAction('raise', amt)}
-          onAllIn={() => handleAction('allin')}
-          toCall={toCall}
-          minRaise={20}
-          playerChips={currentPlayer?.chips || 0}
-          currentPot={gameState.totalPot}
-          myTurn={myTurn && !isPaused}
-          canReveal={canReveal}
-          onReveal={handleRevealCards}
-        />
-      )}
-    </div>
+        {animatingChips.map(chip => (
+          <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} toPosition={chip.toPosition} onComplete={() => removeChipAnimation(chip.id)} />
+        ))}
+
+        {(myTurn || canReveal) && (
+          <ActionButtons
+            onFold={() => handleAction('fold')}
+            onCheck={() => handleAction('check')}
+            onCall={() => handleAction('call')}
+            onRaise={(amt) => handleAction('raise', amt)}
+            onAllIn={() => handleAction('allin')}
+            toCall={toCall}
+            minRaise={20}
+            playerChips={currentPlayer?.chips || 0}
+            currentPot={gameState.totalPot}
+            myTurn={myTurn && !isPaused}
+            canReveal={canReveal}
+            onReveal={handleRevealCards}
+          />
+        )}
+      </div>
+    </GameContext.Provider>
   );
 }

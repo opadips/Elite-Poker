@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
+import GameContext from '../context/GameContext';
 
 function formatChips(amount) {
   if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -8,24 +9,23 @@ function formatChips(amount) {
   return amount.toString();
 }
 
-export default function PlayerSeat({
-  p,
-  idx,
-  pos,
-  gameState,
-  winnerEffect,
-  isAdmin,
-  currentPlayerName,
-  playerId,
-  cardBack,
-  showHandInfo,
-  activePlayersList,
-  speechBubbles,
-  turnRemainingSec,
-  turnCurrentPlayerId,
-  getTimerColor,
-  sendWs,
-}) {
+export default function PlayerSeat({ p, idx, pos }) {
+  const {
+    gameState,
+    playerId,
+    isAdmin,
+    currentPlayer,
+    sendWs,
+    cardBack,
+    showHandInfo,
+    activePlayersList,
+    getTimerColor,
+    turnRemainingSec,
+    turnCurrentPlayerId,
+    winnerEffect,
+    speechBubbles,
+  } = useContext(GameContext);
+
   if (!pos) return null;
 
   const isActive = gameState.currentPlayerId === p.id;
@@ -78,7 +78,7 @@ export default function PlayerSeat({
           <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
           <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
             {p.name}
-            {isAdmin && p.name === currentPlayerName && <span className="text-xs" title="Admin">👑</span>}
+            {isAdmin && p.name === currentPlayer?.name && <span className="text-xs" title="Admin">👑</span>}
             {isAdmin && !isSelf && (
               <button
                 onClick={(e) => {
