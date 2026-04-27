@@ -2,11 +2,14 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Card from './components/Card.jsx';
 import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
-import HandInfo from './components/HandInfo.jsx';
 import AnimatedChip from './components/AnimatedChip.jsx';
 import Chat from './components/Chat.jsx';
 import BettingPanel from './components/BettingPanel.jsx';
-import { cardDeal, chipClick, winnerFanfare, timerBeep, allInSound } from './hooks/useSound';
+import PlayerSeat from './components/PlayerSeat.jsx';
+import SettingsPanel from './components/SettingsPanel.jsx';
+import Table from './components/Table.jsx';
+import { chipClick, allInSound as allInSoundFunc } from './hooks/useSound';
+import { useGameSocket } from './hooks/useGameSocket';
 import './styles/animations.css';
 
 const cardBackOptions = [
@@ -18,58 +21,46 @@ const cardBackOptions = [
   { id: 'ruby', name: 'Ruby', icon: '💎' },
 ];
 
-function formatChips(amount) {
-  if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  return amount.toString();
-}
-
 export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThemeChange, onReturnToLobby, onLeaveLobby }) {
-  const [gameState, setGameState] = useState(null);
-  const [winnerEffect, setWinnerEffect] = useState(null);
-  const [winningHandName, setWinningHandName] = useState(null);
-  const [playerPositions, setPlayerPositions] = useState({});
   const [showHandInfo, setShowHandInfo] = useState(false);
-  const [animatingChips, setAnimatingChips] = useState([]);
-  const [systemMessage, setSystemMessage] = useState(null);
-  const [sideBetWin, setSideBetWin] = useState(null);
-  const [showChat, setShowChat] = useState(false);
-  const [newCardIndices, setNewCardIndices] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [cardBack, setCardBack] = useState(() => localStorage.getItem('pokerCardBack') || 'default');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [isPaused, setIsPaused] = useState(false);
-  const [achievementToast, setAchievementToast] = useState(null);
-  const [showAllCards, setShowAllCards] = useState(false);
   const [seatViewFixed, setSeatViewFixed] = useState(() => localStorage.getItem('seatViewFixed') !== 'false');
-  const [speechBubbles, setSpeechBubbles] = useState([]);
   const [themeExpanded, setThemeExpanded] = useState(false);
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
-  const [turnRemainingSec, setTurnRemainingSec] = useState(0);
-  const [turnCurrentPlayerId, setTurnCurrentPlayerId] = useState(null);
-  const [handHistory, setHandHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [playerPositions, setPlayerPositions] = useState({});
 
   const tableContainerRef = useRef(null);
   const tableRef = useRef(null);
   const playerRefs = useRef({});
-  const lastWinnerRef = useRef(null);
-  const prevCommunityLengthRef = useRef(0);
-  const bubbleTimersRef = useRef({});
-  const chatAutoCloseRef = useRef(null);
-  const lastBeepSecond = useRef(0);
-  const gameStateRef = useRef(null);
   const soundEnabledRef = useRef(true);
-
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
+
+  const {
+    gameState,
+    winnerEffect,
+    winningHandName,
+    animatingChips,
+    setAnimatingChips,
+    systemMessage,
+    sideBetWin,
+    showChat,
+    setShowChat,
+    newCardIndices,
+    chatMessages,
+    isPaused,
+    achievementToast,
+    speechBubbles,
+    turnRemainingSec,
+    turnCurrentPlayerId,
+    handHistory,
+  } = useGameSocket(ws, soundEnabledRef);
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -92,115 +83,6 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
   const removeChipAnimation = (id) => {
     setAnimatingChips(prev => prev.filter(c => c.id !== id));
   };
-
-  useEffect(() => {
-    if (!ws) return;
-
-    const handleMessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === 'chat') {
-        setChatMessages(prev => [...prev, { sender: data.sender, text: data.message, isSystem: false }]);
-        const currentGameState = gameStateRef.current;
-        const senderPlayer = currentGameState?.players?.find(p => p.name === data.sender);
-        if (senderPlayer) {
-          const newBubble = {
-            id: Date.now() + Math.random(),
-            playerId: senderPlayer.id,
-            text: data.message
-          };
-          setSpeechBubbles(prev => [...prev.filter(b => b.playerId !== senderPlayer.id), newBubble]);
-          clearTimeout(bubbleTimersRef.current[senderPlayer.id]);
-          bubbleTimersRef.current[senderPlayer.id] = setTimeout(() => {
-            setSpeechBubbles(prev => prev.filter(b => b.id !== newBubble.id));
-          }, 5000);
-        }
-      } else if (data.type === 'system') {
-        setChatMessages(prev => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
-        setSystemMessage(data.text);
-        setTimeout(() => setSystemMessage(null), 3000);
-        if (!showChat) {
-          setShowChat(true);
-          if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
-          chatAutoCloseRef.current = setTimeout(() => {
-            setShowChat(false);
-            chatAutoCloseRef.current = null;
-          }, 5000);
-        }
-      } else if (data.type === 'achievement') {
-        setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
-        setTimeout(() => setAchievementToast(null), 4000);
-      } else if (data.type === 'allInSound') {
-        if (soundEnabledRef.current) allInSound();
-      } else if (data.type === 'turnTimer') {
-        setTurnRemainingSec(data.remaining);
-        setTurnCurrentPlayerId(data.currentPlayerId);
-      } else if (data.type === 'handHistory') {
-        setHandHistory(data.history || []);
-      } else if (data.type === 'gameState') {
-        const newCommLength = data.state.communityCards?.length || 0;
-        const oldLength = prevCommunityLengthRef.current;
-        if (newCommLength > oldLength) {
-          const newIndices = [];
-          for (let i = oldLength; i < newCommLength; i++) newIndices.push(i);
-          setNewCardIndices(newIndices);
-          if (soundEnabledRef.current) cardDeal();
-          setTimeout(() => setNewCardIndices([]), 600);
-        }
-        prevCommunityLengthRef.current = newCommLength;
-
-        if (data.state.handInProgress) lastWinnerRef.current = null;
-
-        setGameState(data.state);
-        setIsPaused(data.state.paused || false);
-
-        if (data.state.winner && data.state.winner.names !== lastWinnerRef.current) {
-          lastWinnerRef.current = data.state.winner.names;
-          const winnerPlayer = data.state.players?.find(p => p.name === data.state.winner.names);
-          if (winnerPlayer) {
-            setWinnerEffect({
-              winnerId: winnerPlayer.id,
-              winnerCards: winnerPlayer.holeCards,
-              winnerName: winnerPlayer.name
-            });
-            setWinningHandName(data.state.winner.handName);
-            if (soundEnabledRef.current) winnerFanfare();
-            setTimeout(() => {
-              setWinnerEffect(null);
-              setWinningHandName(null);
-            }, 3000);
-          }
-        }
-      } else if (data.type === 'sideBetWin') {
-        setSideBetWin({
-          bettorName: data.bettorName,
-          targetName: data.targetName,
-          amount: data.amount,
-          profit: data.profit,
-          total: data.amount + data.profit
-        });
-        setTimeout(() => setSideBetWin(null), 4000);
-      } else if (data.type === 'sitInSuccess') {
-        setSystemMessage('You are now in the game!');
-        setTimeout(() => setSystemMessage(null), 2000);
-      }
-    };
-
-    ws.addEventListener('message', handleMessage);
-    return () => ws.removeEventListener('message', handleMessage);
-  }, [ws]);
-
-  useEffect(() => {
-    if (turnRemainingSec > 0 && soundEnabled) {
-      const currentSec = Math.ceil(turnRemainingSec);
-      if (currentSec <= 5 && currentSec !== lastBeepSecond.current) {
-        timerBeep();
-        lastBeepSecond.current = currentSec;
-      }
-    } else {
-      lastBeepSecond.current = 0;
-    }
-  }, [turnRemainingSec, soundEnabled]);
 
   const updatePositions = useCallback(() => {
     if (!gameState || !tableRef.current) return;
@@ -290,7 +172,7 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
       addChipAnimation(playerId, currentPlayer?.chips);
       if (soundEnabled) {
         chipClick();
-        allInSound();
+        allInSoundFunc();
       }
       sendWs({ type: 'action', action: 'allin' });
     }
@@ -321,7 +203,6 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
   });
   const handleChatToggle = () => {
     if (showChat) {
-      if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
       setShowChat(false);
     } else {
       setShowChat(true);
@@ -350,99 +231,32 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
       <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
         <div className="relative">
           <button onClick={() => setShowSettings(!showSettings)} className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all" title="Settings">⚙️</button>
-          {showSettings && (
-            <div className="absolute top-full right-0 mt-1 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700 z-50 overflow-hidden transition-all duration-200 origin-top-right scale-100 opacity-100"
-                 style={{ transformOrigin: 'top right' }}>
-              <div className="max-h-[80vh] overflow-y-auto settings-scroll">
-                <div className="px-5 py-3 bg-gray-800/50 border-b border-gray-700 flex items-center gap-2">
-                  <span className="text-xl">⚙️</span><span className="text-white font-bold text-sm">Settings</span>
-                </div>
-                <div className="border-b border-gray-700/50">
-                  <div className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onClick={() => setThemeExpanded(!themeExpanded)}>
-                    <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2"><span>🎨</span> Theme</div>
-                    <span className="text-gray-400 text-sm">{themeExpanded ? '▲' : '▼'}</span>
-                  </div>
-                  {themeExpanded && (
-                    <div className="px-4 py-3 grid grid-cols-2 gap-2">
-                      {themes.map(t => (
-                        <button key={t.id} onClick={() => { onThemeChange(t.id); setShowSettings(false); }}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${theme === t.id ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 shadow-sm' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-transparent'}`}>
-                          <span className="text-lg">{t.icon}</span>{t.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-b border-gray-700/50">
-                  <div className="px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onClick={() => setCardBackExpanded(!cardBackExpanded)}>
-                    <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2"><span>🃏</span> Card Back</div>
-                    <span className="text-gray-400 text-sm">{cardBackExpanded ? '▲' : '▼'}</span>
-                  </div>
-                  {cardBackExpanded && (
-                    <div className="px-4 py-3 grid grid-cols-3 gap-2">
-                      {cardBackOptions.map(back => (
-                        <button key={back.id} onClick={() => handleCardBackChange(back.id)}
-                          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${cardBack === back.id ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-gray-800 border border-transparent hover:bg-gray-700'}`}>
-                          <span className="text-xl">{back.icon}</span><span className="text-xs text-gray-300">{back.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🎥</span> Seat View</div>
-                  <button onClick={toggleSeatView} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${seatViewFixed ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'}`}>
-                    <span className="text-sm font-medium">{seatViewFixed ? 'Fixed (My Seat Bottom)' : 'Dynamic (Rotating)'}</span>
-                    <span className="text-lg">{seatViewFixed ? '📍' : '🔄'}</span>
-                  </button>
-                </div>
-
-                <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🔊</span> Sound</div>
-                  <button onClick={() => setSoundEnabled(prev => !prev)} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${soundEnabled ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'}`}>
-                    <span className="text-sm font-medium">{soundEnabled ? 'ON' : 'OFF'}</span><span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
-                  </button>
-                </div>
-
-                <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🐶</span> Noob Mode</div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} className="w-4 h-4" />
-                    <span className="text-white text-sm">🐶من نوب سگم</span>
-                  </label>
-                </div>
-
-                <div className="px-4 py-3 border-b border-gray-700/50">
-                  <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>⏯️</span> Game Control</div>
-                  <button onClick={togglePause} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${isPaused ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'}`}>
-                    <span className="text-sm font-medium">{isPaused ? '▶️ Resume' : '⏸️ Pause'}</span><span className="text-lg">{isPaused ? '▶️' : '⏸️'}</span>
-                  </button>
-                </div>
-
-                {isAdmin && (
-                  <div className="px-4 py-3 border-b border-gray-700/50">
-                    <button onClick={() => setResetConfirm(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 transition-all text-sm font-medium">
-                      <span>🔄</span> Reset Lobby
-                    </button>
-                  </div>
-                )}
-
-                <div className="px-4 py-3 border-b border-gray-700/50">
-                  <button onClick={requestHandHistory} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/30 transition-all text-sm font-medium">
-                    <span>📜</span> Hand History
-                  </button>
-                </div>
-
-                <div className="px-4 py-3">
-                  <button onClick={onReturnToLobby} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600 transition-all text-sm font-medium">
-                    <span>🚪</span> Return to Lobby
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <SettingsPanel
+            showSettings={showSettings}
+            setShowSettings={setShowSettings}
+            theme={theme}
+            themes={themes}
+            onThemeChange={onThemeChange}
+            themeExpanded={themeExpanded}
+            setThemeExpanded={setThemeExpanded}
+            cardBackExpanded={cardBackExpanded}
+            setCardBackExpanded={setCardBackExpanded}
+            cardBackOptions={cardBackOptions}
+            cardBack={cardBack}
+            handleCardBackChange={handleCardBackChange}
+            seatViewFixed={seatViewFixed}
+            toggleSeatView={toggleSeatView}
+            soundEnabled={soundEnabled}
+            setSoundEnabled={setSoundEnabled}
+            showHandInfo={showHandInfo}
+            onToggleBeginner={onToggleBeginner}
+            isPaused={isPaused}
+            togglePause={togglePause}
+            isAdmin={isAdmin}
+            setResetConfirm={setResetConfirm}
+            requestHandHistory={requestHandHistory}
+            onReturnToLobby={onReturnToLobby}
+          />
         </div>
       </div>
 
@@ -526,140 +340,41 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
         <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
           <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
           <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
-            Sit In ({formatChips(gameState.startingChips || 1000)})
+            Sit In ({(gameState.startingChips || 1000) >= 1000000 ? (gameState.startingChips/1000000).toFixed(1).replace(/\.0$/, '') + 'M' : (gameState.startingChips || 1000) >= 1000 ? (gameState.startingChips/1000).toFixed(1).replace(/\.0$/, '') + 'K' : gameState.startingChips || 1000})
           </button>
           <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
         </div>
       )}
 
-      <div ref={tableContainerRef} className="relative w-full h-full">
-        <div ref={tableRef} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[55%] rounded-full bg-amber-800/30 shadow-2xl border-8 border-amber-700/40 backdrop-blur-sm game-table">
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
-            <div className="bg-black/60 text-white px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg" style={{ background: 'var(--pot-bg)' }}>
-              💰 Pot: {formatChips(gameState.totalPot)}
-            </div>
-            <div className="flex gap-3 p-4 bg-amber-950/50 rounded-3xl">
-              {gameState.communityCards.map((card, i) => (
-                <div key={i} className={newCardIndices.includes(i) ? 'card-reveal-spin' : ''}
-                  style={{ animationDelay: newCardIndices.includes(i) ? `${(i - (prevCommunityLengthRef.current - newCardIndices.length)) * 0.15}s` : '0s' }}>
-                  <Card rank={card.rank} suit={card.suit} isCommunity={true} />
-                </div>
-              ))}
-              {gameState.communityCards.length === 0 && <div className="text-white text-sm">Flop</div>}
-            </div>
-          </div>
-        </div>
+      <Table
+        tableContainerRef={tableContainerRef}
+        tableRef={tableRef}
+        gameState={gameState}
+        newCardIndices={newCardIndices}
+        prevCommunityLengthRef={{ current: newCardIndices.length ? gameState.communityCards.length - newCardIndices.length : 0 }}
+      />
 
-        {activePlayersList.map((p, idx) => {
-          const pos = playerPositions[p.id];
-          if (!pos) return null;
-          const isActive = gameState.currentPlayerId === p.id;
-          const isWinner = winnerEffect?.winnerId === p.id;
-          const isSelf = p.id === playerId;
-          const canReveal = !gameState.handInProgress && gameState.winner && isSelf && !p.folded && !p.revealed;
-          const isReady = p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
-          const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
-
-          return (
-            <div key={p.id} ref={el => playerRefs.current[p.id] = el} className="absolute transition-all duration-300 flex items-center"
-              style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}>
-              {isTimerActive && (
-                <div className="flex flex-col items-center mr-2 z-20">
-                  <div className="text-[10px] text-white mb-1 font-mono">{Math.ceil(turnRemainingSec)}s</div>
-                  <div className="w-2 h-16 bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                    <div className="w-full transition-all duration-300 ease-linear"
-                      style={{
-                        height: `${(turnRemainingSec / 20) * 100}%`,
-                        backgroundColor: getTimerColor(turnRemainingSec),
-                        borderRadius: '0 0 999px 999px'
-                      }} />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                {isWinner && (
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
-                    <div className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text" style={{ color: 'var(--winner-text)' }}>🏆 WINNER! 🏆</div>
-                    {!isSelf && (
-                      <div className="flex gap-1 justify-center mt-1">
-                        {winnerEffect.winnerCards.map((card, ci) => <div key={ci} className="animate-spin-once"><Card rank={card.rank} suit={card.suit} /></div>)}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {speechBubbles.filter(b => b.playerId === p.id).map(bubble => (
-                  <div key={bubble.id} className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn">
-                    <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">{bubble.text}</div>
-                  </div>
-                ))}
-
-                <div className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
-                  ${isActive ? 'ring-4 ring-yellow-400 scale-105 shadow-yellow-500/50' : ''}
-                  ${p.folded ? 'opacity-60 grayscale' : ''}
-                  ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
-                  ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
-                  ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
-                  style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                  <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">#{idx+1}</div>
-                  <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
-                    {p.name}
-                    {isAdmin && p.name === currentPlayer?.name && <span className="text-xs" title="Admin">👑</span>}
-                    {isAdmin && !isSelf && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm(`Kick ${p.name} from the table?`)) {
-                            sendWs({ type: 'kickPlayer', targetId: p.id });
-                          }
-                        }}
-                        className="text-red-400 hover:text-red-300 text-xs ml-1"
-                        title="Kick player"
-                      >
-                        ❌
-                      </button>
-                    )}
-                  </div>
-                  <div className="text-green-400 text-center">💰 {formatChips(p.chips)}</div>
-                  {p.lastAction?.type && (
-                    <div className={`text-xs text-center ${
-                      p.lastAction.type === 'fold' ? 'text-red-400' :
-                      p.lastAction.type === 'check' ? 'text-gray-400' :
-                      p.lastAction.type === 'call' ? 'text-green-400' :
-                      p.lastAction.type === 'raise' ? 'text-orange-400' :
-                      p.lastAction.type === 'allin' ? 'text-red-500 animate-pulse' : 'text-white'
-                    }`}>
-                      {p.lastAction.type.toUpperCase()}{p.lastAction.amount > 0 ? ` ${p.lastAction.amount}` : ''}
-                    </div>
-                  )}
-                  <div className="flex justify-center gap-1 mt-2">
-                    {p.holeCards?.map((card, ci) => (
-                      <Card key={ci} rank={isSelf || p.revealed ? card.rank : '?'} suit={isSelf || p.revealed ? card.suit : '?'} hidden={!(isSelf || p.revealed)} cardBack={cardBack} isSelf={isSelf} revealAnim={p.revealed && !isSelf} />
-                    ))}
-                  </div>
-                  <div className="flex justify-center gap-1 mt-2 text-xs">
-                    {p.folded && <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">FOLD</span>}
-                    {p.isAllIn && <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>}
-                  </div>
-                  {gameState.dealerIndex === p.id && (
-                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">DEALER</div>
-                  )}
-                  {isSelf && showHandInfo && !p.folded && !p.isSpectator && (
-                    <HandInfo
-                      holeCards={p.holeCards}
-                      communityCards={gameState.communityCards}
-                      round={gameState.currentRound}
-                      playerName={p.name}
-                      opponentsCount={activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {activePlayersList.map((p, idx) => (
+        <PlayerSeat
+          key={p.id}
+          p={p}
+          idx={idx}
+          pos={playerPositions[p.id]}
+          gameState={gameState}
+          winnerEffect={winnerEffect}
+          isAdmin={isAdmin}
+          currentPlayerName={currentPlayer?.name}
+          playerId={playerId}
+          cardBack={cardBack}
+          showHandInfo={showHandInfo}
+          activePlayersList={activePlayersList}
+          speechBubbles={speechBubbles}
+          turnRemainingSec={turnRemainingSec}
+          turnCurrentPlayerId={turnCurrentPlayerId}
+          getTimerColor={getTimerColor}
+          sendWs={sendWs}
+        />
+      ))}
 
       {animatingChips.map(chip => (
         <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} toPosition={chip.toPosition} onComplete={() => removeChipAnimation(chip.id)} />
