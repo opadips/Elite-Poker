@@ -1,13 +1,10 @@
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
-➡️ **نسخه فارسی:** برای نسخه فارسی، به فایل `README_FA.md` مراجعه کنید.
+➡️ **برای دیدن نسخه فارسی کلیک کنید:[Perisan version](README_FA.md)
 
-A full‑featured Texas Hold'em poker game with **real‑time multiplayer**,
-advanced animations, dynamic sound, multi‑theme support, and a live hand‑equity tracker.
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D16-brightgreen)
 ![React](https://img.shields.io/badge/react-18-blue)
-![Elite Poker Screenshot](screenshots/gameplay.png)
 ---
 ## ✨ Features
 ### 🏠 Lobby System

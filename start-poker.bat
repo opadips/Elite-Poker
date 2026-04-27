@@ -1,6 +1,6 @@
 @echo off
 title Poker Server Launcher
-echo Starting Poker Online...
+echo Starting Elite Poker...
 
 :: 
 where node >nul 2>nul

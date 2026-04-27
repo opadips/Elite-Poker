@@ -1,3 +1,4 @@
+// backend/game/Game.js
 import { Player } from './Player.js';
 import { Deck } from './Deck.js';
 import { HandEvaluator } from './HandEvaluator.js';
@@ -39,6 +40,7 @@ export class Game {
     this._nextHandTimer = null;
     this._consecutiveWins = {};
     this._allInResolving = false;
+    this.startingChips = 1000;
     this.onStateChange = null;
   }
 
@@ -73,7 +75,7 @@ export class Game {
     if (!player.isSpectator) return { success: false, message: 'Already in game' };
     if (this.handInProgress) return { success: false, message: 'Cannot sit in during a hand' };
     player.isSpectator = false;
-    player.chips = 1000;
+    player.chips = this.startingChips;
     player.ready = false;
     console.log(`${player.name} sat in the game.`);
     const active = this.getActivePlayers();
@@ -120,8 +122,8 @@ export class Game {
 
     for (let p of activePlayers) {
       if (p.chips <= 0) {
-        console.log(`${p.name} had 0 chips, resetting to 1000`);
-        p.chips = 1000;
+        console.log(`${p.name} had 0 chips, resetting to ${this.startingChips}`);
+        p.chips = this.startingChips;
       }
       p.resetForNewHand();
       p.holeCards = [this.deck.draw(), this.deck.draw()];
@@ -593,7 +595,7 @@ export class Game {
 
   resetLobby() {
     for (let p of this.players) {
-      p.chips = 1000;
+      p.chips = this.startingChips;
       p.isSpectator = false;
       p.ready = false;
       p.resetForNewHand();
@@ -665,7 +667,7 @@ export class Game {
       this.scores[champion.id] = (this.scores[champion.id] || 0) + 1;
       console.log(`🏆 ${champion.name} wins the tournament round! Score: ${this.scores[champion.id]}`);
       for (let p of this.players) {
-        p.chips = 1000;
+        p.chips = this.startingChips;
         p.isSpectator = false;
         p.ready = false;
       }
