@@ -6,6 +6,7 @@ import * as PotManager from './PotManager.js';
 import { applyTournamentRules } from './TournamentManager.js';
 import { checkAchievements } from './AchievementTracker.js';
 import { startHand, postBlind } from './HandLifecycle.js';
+import { validateAction } from './PlayerActionValidator.js';
 
 export class Game {
   constructor() {
@@ -104,13 +105,10 @@ export class Game {
   }
 
   playerAction(playerId, action, amount = 0) {
-    if (this.paused) return;
-    if (!this.waitingForAction) return;
-    const player = this.players.find(p => p.id === playerId);
-    if (!player || player.folded || player.isAllIn || player.isSpectator) return;
-    if (this.currentPlayerIndex !== playerId) return;
+    const validation = validateAction(this, playerId);
+    if (!validation) return;
+    const { player, toCall } = validation;
 
-    const toCall = this.currentBet - player.currentBet;
     console.log(`${player.name} action: ${action}, toCall=${toCall}, chips=${player.chips}`);
 
     player.lastAction = { type: action, amount: amount || 0 };
