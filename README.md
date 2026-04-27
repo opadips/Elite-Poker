@@ -1,4 +1,3 @@
-```markdown
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
 ➡️ **برای دیدن نسخه فارسی کلیک کنید:[Perisan version](README_FA.md)
