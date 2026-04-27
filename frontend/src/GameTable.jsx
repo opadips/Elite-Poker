@@ -21,6 +21,12 @@ const cardBackOptions = [
   { id: 'ruby', name: 'Ruby', icon: '💎' },
 ];
 
+function formatChips(amount) {
+  if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return amount.toString();
+}
+
 export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThemeChange, onReturnToLobby, onLeaveLobby }) {
   const [showHandInfo, setShowHandInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -150,6 +156,7 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
   const currentPlayer = gameState.players?.find(p => p.id === playerId);
   const myTurn = gameState.currentPlayerId === playerId && gameState.waitingForAction && !gameState.winner && currentPlayer && !currentPlayer.isAllIn && !currentPlayer.isSpectator;
   const toCall = myTurn && currentPlayer ? (gameState.currentBet - (currentPlayer.currentBet || 0)) : 0;
+  const canReveal = !gameState.handInProgress && gameState.winner && currentPlayer && !currentPlayer.folded && !currentPlayer.revealed;
 
   const sendWs = (msg) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -340,7 +347,7 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
         <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
           <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
           <button onClick={sitIn} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm">
-            Sit In ({(gameState.startingChips || 1000) >= 1000000 ? (gameState.startingChips/1000000).toFixed(1).replace(/\.0$/, '') + 'M' : (gameState.startingChips || 1000) >= 1000 ? (gameState.startingChips/1000).toFixed(1).replace(/\.0$/, '') + 'K' : gameState.startingChips || 1000})
+            Sit In ({formatChips(gameState.startingChips || 1000)})
           </button>
           <div className="text-xs text-gray-400 mt-2">Wait for current hand to end</div>
         </div>
@@ -380,20 +387,22 @@ export default function GameTable({ ws, playerId, lobbyId, isAdmin, theme, onThe
         <AnimatedChip key={chip.id} value={chip.value} fromPosition={chip.fromPos} toPosition={chip.toPosition} onComplete={() => removeChipAnimation(chip.id)} />
       ))}
 
-      <ActionButtons
-        onFold={() => handleAction('fold')}
-        onCheck={() => handleAction('check')}
-        onCall={() => handleAction('call')}
-        onRaise={(amt) => handleAction('raise', amt)}
-        onAllIn={() => handleAction('allin')}
-        toCall={toCall}
-        minRaise={20}
-        playerChips={currentPlayer?.chips || 0}
-        currentPot={gameState.totalPot}
-        myTurn={myTurn && !isPaused}
-        canReveal={!gameState.handInProgress && gameState.winner && currentPlayer && !currentPlayer.folded && !currentPlayer.revealed}
-        onReveal={handleRevealCards}
-      />
+      {(myTurn || canReveal) && (
+        <ActionButtons
+          onFold={() => handleAction('fold')}
+          onCheck={() => handleAction('check')}
+          onCall={() => handleAction('call')}
+          onRaise={(amt) => handleAction('raise', amt)}
+          onAllIn={() => handleAction('allin')}
+          toCall={toCall}
+          minRaise={20}
+          playerChips={currentPlayer?.chips || 0}
+          currentPot={gameState.totalPot}
+          myTurn={myTurn && !isPaused}
+          canReveal={canReveal}
+          onReveal={handleRevealCards}
+        />
+      )}
     </div>
   );
 }
