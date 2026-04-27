@@ -9,7 +9,10 @@ import GameOverlays from './components/GameOverlays.jsx';
 import GameContext from './context/GameContext';
 import { usePlayerPositions } from './hooks/usePlayerPositions';
 import { useGameActions } from './hooks/useGameActions';
-import { useGameSocket } from './hooks/useGameSocket';
+import { useGameStateSync } from './hooks/useGameStateSync';
+import { useTimerSync } from './hooks/useTimerSync';
+import { useChatSync } from './hooks/useChatSync';
+import { useHandHistorySync } from './hooks/useHandHistorySync';
 import './styles/animations.css';
 
 const cardBackOptions = [
@@ -44,6 +47,7 @@ export default function GameTable({
   const [themeExpanded, setThemeExpanded] = useState(false);
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [animatingChips, setAnimatingChips] = useState([]);
 
   const tableContainerRef = useRef(null);
   const playerRefs = useRef({});
@@ -57,27 +61,25 @@ export default function GameTable({
     gameState,
     winnerEffect,
     winningHandName,
-    animatingChips,
-    setAnimatingChips,
-    systemMessage,
-    sideBetWin,
+    newCardIndices,
+    isPaused,
+  } = useGameStateSync(ws, soundEnabledRef);
+
+  const { turnRemainingSec, turnCurrentPlayerId } = useTimerSync(ws, soundEnabledRef);
+
+  const {
+    chatMessages,
     showChat,
     setShowChat,
-    newCardIndices,
-    chatMessages,
-    isPaused,
-    achievementToast,
     speechBubbles,
-    turnRemainingSec,
-    turnCurrentPlayerId,
-    handHistory,
-  } = useGameSocket(ws, soundEnabledRef);
+    systemMessage,
+    achievementToast,
+    sideBetWin,
+  } = useChatSync(ws, gameState);
 
-  const { playerPositions, tableRef } = usePlayerPositions(
-    gameState,
-    playerId,
-    seatViewFixed
-  );
+  const { handHistory } = useHandHistorySync(ws);
+
+  const { playerPositions, tableRef } = usePlayerPositions(gameState, playerId, seatViewFixed);
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
@@ -127,14 +129,8 @@ export default function GameTable({
       const winnerEl = playerRefs.current[winnerEffect.winnerId];
       if (!winnerEl) return;
       const rect = winnerEl.getBoundingClientRect();
-      const toPos = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      };
-      const fromPos = {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-      };
+      const toPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      const fromPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       for (let i = 0; i < 6; i++) {
         setTimeout(() => {
           setAnimatingChips((prev) => [
@@ -181,9 +177,7 @@ export default function GameTable({
 
   if (!gameState)
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Waiting...
-      </div>
+      <div className="min-h-screen flex items-center justify-center text-white">Waiting...</div>
     );
 
   const myTurn =
@@ -194,15 +188,9 @@ export default function GameTable({
     !currentPlayer.isAllIn &&
     !currentPlayer.isSpectator;
   const toCall =
-    myTurn && currentPlayer
-      ? gameState.currentBet - (currentPlayer.currentBet || 0)
-      : 0;
+    myTurn && currentPlayer ? gameState.currentBet - (currentPlayer.currentBet || 0) : 0;
   const canReveal =
-    !gameState.handInProgress &&
-    gameState.winner &&
-    currentPlayer &&
-    !currentPlayer.folded &&
-    !currentPlayer.revealed;
+    !gameState.handInProgress && gameState.winner && currentPlayer && !currentPlayer.folded && !currentPlayer.revealed;
 
   const activePlayersList = gameState.players.filter((p) => !p.isSpectator);
 
@@ -226,10 +214,7 @@ export default function GameTable({
 
   return (
     <GameContext.Provider value={contextValue}>
-      <div
-        className="fixed inset-0 overflow-hidden"
-        style={{ background: 'var(--bg-gradient)' }}
-      >
+      <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--bg-gradient)' }}>
         <button
           onClick={handleChatToggle}
           className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
@@ -239,23 +224,18 @@ export default function GameTable({
           💬
         </button>
 
-        {!gameState.firstHandStarted &&
-          !gameState.handInProgress &&
-          currentPlayer &&
-          !currentPlayer.isSpectator && (
-            <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
-              <button
-                onClick={toggleReady}
-                className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
-                  currentPlayer.ready
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
-              </button>
-            </div>
-          )}
+        {!gameState.firstHandStarted && !gameState.handInProgress && currentPlayer && !currentPlayer.isSpectator && (
+          <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
+            <button
+              onClick={toggleReady}
+              className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
+                currentPlayer.ready ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
+            >
+              {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
+            </button>
+          </div>
+        )}
 
         <div className="fixed top-2 right-2 z-40" style={{ zIndex: 70 }}>
           <div className="relative">
@@ -295,30 +275,18 @@ export default function GameTable({
           </div>
         </div>
 
-        <Leaderboard
-          players={gameState.players}
-          currentRound={gameState.currentRound}
-        />
+        <Leaderboard players={gameState.players} currentRound={gameState.currentRound} />
 
         <Table
           tableContainerRef={tableContainerRef}
           tableRef={tableRef}
           gameState={gameState}
           newCardIndices={newCardIndices}
-          prevCommunityLengthRef={{
-            current: newCardIndices.length
-              ? gameState.communityCards.length - newCardIndices.length
-              : 0,
-          }}
+          prevCommunityLengthRef={{ current: newCardIndices.length ? gameState.communityCards.length - newCardIndices.length : 0 }}
         />
 
         {activePlayersList.map((p, idx) => (
-          <PlayerSeat
-            key={p.id}
-            p={p}
-            idx={idx}
-            pos={playerPositions[p.id]}
-          />
+          <PlayerSeat key={p.id} p={p} idx={idx} pos={playerPositions[p.id]} />
         ))}
 
         {animatingChips.map((chip) => (
