@@ -257,11 +257,13 @@ export class Game {
   nextPlayer() {
     if (!this.handInProgress) return;
     if (this._allInResolving) return;
+
     const activePlayers = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
     if (activePlayers.length === 0) {
       this.handleAllAllIn();
       return;
     }
+
     let startIdx = activePlayers.findIndex(p => p.id === this.currentPlayerIndex);
     if (startIdx === -1) startIdx = 0;
     let found = false;
@@ -282,11 +284,19 @@ export class Game {
     if (this._allInResolving) return;
     const activePlayers = this.getActivePlayers().filter(p => !p.folded);
     if (activePlayers.length === 0) return;
+
     const allAllIn = activePlayers.every(p => p.isAllIn) || activePlayers.length === 1;
     if (!allAllIn) return;
+
+    this.revealRemainingCards();
+  }
+
+  revealRemainingCards() {
+    if (this._allInResolving) return;
     this._allInResolving = true;
-    console.log('All players all-in (or single player). Revealing remaining cards with delay...');
+    console.log('Revealing remaining cards...');
     this.waitingForAction = false;
+
     const revealStep = () => {
       if (!this._allInResolving) return;
       if (this.currentRound === 'preflop') {
@@ -351,6 +361,13 @@ export class Game {
     } else if (this.currentRound === 'river') {
       this.runShowdown();
       this.endHand();
+      return;
+    }
+
+    // after dealing a new street, if only one player can act and someone is all‑in, skip further betting
+    const nonAllIn = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
+    if (nonAllIn.length === 1 && this.getActivePlayers().some(p => p.isAllIn)) {
+      this.revealRemainingCards();
     }
   }
 
