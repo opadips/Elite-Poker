@@ -1,3 +1,4 @@
+```markdown
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
 ➡️ **برای دیدن نسخه فارسی کلیک کنید:[Perisan version](README_FA.md)
@@ -14,6 +15,7 @@
 - **Online players panel** – see who is in the lobby
 - **Waitlist** – if a table is full (max 10 players), you can join a waitlist and be auto‑seated when a spot opens
 - **Admin controls** – only the table creator can reset the lobby or kick players
+- **Kick players** – admin can remove players from the table via a ❌ button next to their name
 - **Return to lobby** – leave the table and go back to the lobby list without disconnecting
 ### 🎮 Core Gameplay
 - Full Texas Hold'em rules (preflop, flop, turn, river, blinds, side pots)
@@ -23,6 +25,7 @@
 - **Tournament mode** – chips reset only when one player remains; winner gets a point and all players restart with fresh chips
 - **Cash mode** – chips keep accumulating across hands (no forced reset)
 - **Auto‑action timer** – 20s per turn, auto‑check or auto‑fold on time‑out, visible via a vertical color‑coded bar beside the active player
+- **Turn timer bar** – vertical bar next to active player (blue >15s, green >10s, yellow >5s, red ≤5s)
 - **Pause / Resume** – pause the game anytime (pauses auto‑fold timers), with player attribution
 ### 🎨 Visual & UX
 - **6 stunning themes** with pure CSS backgrounds (no external files):
@@ -131,23 +134,49 @@ Elite-Poker/
 ├── backend/
 │   ├── server.js              # WebSocket server & lobby management
 │   ├── LobbyManager.js        # Multi‑table management, waitlist, chat, history
+│   ├── handlers/
+│   │   ├── lobbyHandlers.js   # WS handlers for lobby operations (create, join, leave, kick, password)
+│   │   └── gameHandlers.js    # WS handlers for game actions (action, ready, sitIn, chat, sideBet, pause, resume)
+│   ├── utils/
+│   │   └── timerUtils.js      # 20s turn timer, auto‑check/fold, time remaining broadcast
 │   └── game/
 │       ├── Game.js            # Core poker logic, achievements, side pots
 │       ├── Player.js          # Player model, stats & state
 │       ├── Deck.js            # Card deck
-│       └── HandEvaluator.js   # 7‑card hand evaluation
+│       ├── HandEvaluator.js   # 7‑card hand evaluation
+│       ├── BettingRound.js    # Turn management, betting round logic, all‑in detection, auto‑reveal
+│       └── PotManager.js      # Side‑pot calculation, pot distribution, side bet payouts
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx            # Login / Lobby / Game flow, theme control
 │   │   ├── LobbyList.jsx      # Lobby list, general chat, online players
 │   │   ├── CreateLobbyModal.jsx # Table creation form
 │   │   ├── GameTable.jsx      # Main game component (table, players, timer, chat)
-│   │   ├── components/        # Card, Chat, Leaderboard, ActionButtons, BettingPanel, HandInfo, AnimatedChip, etc.
-│   │   ├── hooks/             # useSound (Web Audio)
-│   │   ├── utils/             # equity.js (Monte Carlo simulation)
-│   │   └── styles/            # themes.css, animations.css
+│   │   ├── components/
+│   │   │   ├── Card.jsx           # Single playing card (face or hidden)
+│   │   │   ├── Chat.jsx           # Table chat interface
+│   │   │   ├── Leaderboard.jsx    # Expandable player statistics
+│   │   │   ├── ActionButtons.jsx  # Fold, Check, Call, Raise, All‑in, Reveal
+│   │   │   ├── BettingPanel.jsx   # Side bet panel for folded players
+│   │   │   ├── HandInfo.jsx       # Noob‑mode info: hand rank + equity bar
+│   │   │   ├── AnimatedChip.jsx   # Chip animation component
+│   │   │   ├── PlayerSeat.jsx     # Single player seat (cards, timer, chips, kick button)
+│   │   │   ├── SettingsPanel.jsx  # Settings dropdown (theme, card back, sound, etc.)
+│   │   │   └── Table.jsx          # Oval table, community cards, pot amount
+│   │   ├── hooks/
+│   │   │   ├── useSound.js        # Web Audio API sound effects
+│   │   │   └── useGameSocket.js   # Central WS listener, processes all incoming messages
+│   │   ├── utils/
+│   │   │   └── equity.js          # Monte Carlo simulation (2000 trials)
+│   │   └── styles/
+│   │       ├── themes.css         # 6 visual themes
+│   │       └── animations.css     # CSS keyframe animations
 │   └── index.html
-└── README.md
+├── AI_CONTEXT.md              # Project handbook for AI agents (architecture, data flow, rules)
+├── MODULES.md                 # Module reference: inputs/outputs, logic, dependencies per file
+├── DEPENDENCIES.md            # Minimal dependency justification (7 total production deps)
+├── README.md                  # This file (English)
+└── README_FA.md               # Persian version
 ```
 ---
 ## 🔧 Tech Stack
@@ -163,6 +192,14 @@ Elite-Poker/
 - **Add new themes** – edit `themes.css` and add a new entry in the `themes` array inside `GameTable.jsx`.
 - All theme‑dependent colors are controlled by CSS custom properties (`--table-bg`, `--winner-text`, etc.).
 - Card backs and other personalisation options are stored in `localStorage` for persistence.
+
+---
+## 📚 AI Documentation
+This project includes three files designed to help AI agents (and humans) understand the codebase quickly:
+- **[AI_CONTEXT.md](AI_CONTEXT.md)** – Architecture overview, data flow, WebSocket message types, unwritten rules, and a quick guide for adding new features.
+- **[MODULES.md](MODULES.md)** – Per‑module reference with inputs, outputs, core logic, and imports.
+- **[DEPENDENCIES.md](DEPENDENCIES.md)** – Justification for every third‑party library (only 7 production dependencies total).
+
 ---
 And I would like you to know that I have used many models to build this project so far, such as:
 `Qwen3.6` `gemma-4` `deepseek` 
@@ -175,4 +212,3 @@ u found a bug or issue ??
 2- The problem is still not fixed? It's strange, but be sure to report it so I can fix it quickly.
 
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-

@@ -1,3 +1,4 @@
+```markdown
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
 ➡️ **click here for English Version:** [English Version](README.md)
@@ -14,6 +15,7 @@
 - **پنل بازیکنان آنلاین** – ببینید کی توی لابی هست
 - **صف انتظار (Waitlist)** – اگه یه میز پر بود (حداکثر 10 نفر)، می‌تونید توی صف انتظار باشید و وقتی جایی خالی شد، خودتون رو نشون بدید
 - **کنترل‌های ادمین** – فقط سازنده میز می‌تونه لابی رو ریست کنه یا بازیکن‌ها رو کیک کنه
+- **کیک کردن بازیکن** – ادمین می‌تونه با دکمه ❌ کنار اسمشون بازیکن‌ها رو از میز بیرون کنه
 - **بازگشت به لابی** – از میز خارج بشید و بدون قطع شدن برگردید به لیست لابی
 
 ### 🎮 گیم‌پلی اصلی (Core Gameplay)
@@ -24,6 +26,7 @@
 - **حالت مسابقه‌ای (Tournament mode)** – چیپ‌ها فقط وقتی یه نفر مونده ریست میشن؛ برنده یک امتیاز می‌گیره و همه با چیپ‌های تازه شروع می‌کنن (هنوز یه سری تغییرات لازم داره و کامل نیست)
 - **حالت نقدی (Cash mode)** – چیپ‌ها در طول بازی جمع میشن (بدون ریست اجباری) اما هنوز فرق زیادی با مود تورنومنت نداره 
 - **تایمر اکشن خودکار** – 20 ثانیه برای هر دور، چک یا فولد خودکار وقتی تایم تمام شد، از طریق یک نوار رنگی عمودی کنار بازیکن فعال قابل مشاهده است
+- **نوار تایمر رنگی** – نوار عمودی کنار بازیکن فعال (آبی >15s، سبز >10s، زرد >5s، قرمز ≤5s)
 - **مکث / ادامه** – هر وقت دوست داشتید بازی رو متوقف کنید (تایمرهای فولد خودکار متوقف میشن)
 
 ### 🎨 ظاهر و تجربه کاربری (Visual & UX)
@@ -127,25 +130,51 @@ npm run dev
 ```text
 Elite-Poker/
 ├── backend/
-│   ├── server.js              # سرور WebSocket و مدیریت لابی
-│   ├── LobbyManager.js        # مدیریت چند میز، صف انتظار، چت، تاریخچه
+│   ├── server.js              # WebSocket server & lobby management
+│   ├── LobbyManager.js        # Multi‑table management, waitlist, chat, history
+│   ├── handlers/
+│   │   ├── lobbyHandlers.js   # WS handlers for lobby operations (create, join, leave, kick, password)
+│   │   └── gameHandlers.js    # WS handlers for game actions (action, ready, sitIn, chat, sideBet, pause, resume)
+│   ├── utils/
+│   │   └── timerUtils.js      # 20s turn timer, auto‑check/fold, time remaining broadcast
 │   └── game/
-│       ├── Game.js            # منطق اصلی پوکر، دستاوردها، پات‌های جانبی
-│       ├── Player.js          # مدل بازیکن، آمار و وضعیت
-│       ├── Deck.js            # دسته کارت‌ها
-│       └── HandEvaluator.js   # ارزیابی دست 7 کارتی
+│       ├── Game.js            # Core poker logic, achievements, side pots
+│       ├── Player.js          # Player model, stats & state
+│       ├── Deck.js            # Card deck
+│       ├── HandEvaluator.js   # 7‑card hand evaluation
+│       ├── BettingRound.js    # Turn management, betting round logic, all‑in detection, auto‑reveal
+│       └── PotManager.js      # Side‑pot calculation, pot distribution, side bet payouts
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx            # ورود / لابی / جریان بازی، کنترل تم
-│   │   ├── LobbyList.jsx      # لیست لابی، چت عمومی، بازیکنان آنلاین
-│   │   ├── CreateLobbyModal.jsx # فرم ساخت میز
-│   │   ├── GameTable.jsx      # کامپوننت اصلی بازی (میز، بازیکنان، تایمر، چت)
-│   │   ├── components/        # کارت، چت، لیدربورد، دکمه‌های اکشن، پنل شرط‌بندی، اطلاعات دست، چیپ انیمیت شده، و غیره
-│   │   ├── hooks/             # useSound (Web Audio)
-│   │   ├── utils/             # equity.js (شبیه‌سازی مونت کارلو)
-│   │   └── styles/            # themes.css, animations.css
+│   │   ├── App.jsx            # Login / Lobby / Game flow, theme control
+│   │   ├── LobbyList.jsx      # Lobby list, general chat, online players
+│   │   ├── CreateLobbyModal.jsx # Table creation form
+│   │   ├── GameTable.jsx      # Main game component (table, players, timer, chat)
+│   │   ├── components/
+│   │   │   ├── Card.jsx           # Single playing card (face or hidden)
+│   │   │   ├── Chat.jsx           # Table chat interface
+│   │   │   ├── Leaderboard.jsx    # Expandable player statistics
+│   │   │   ├── ActionButtons.jsx  # Fold, Check, Call, Raise, All‑in, Reveal
+│   │   │   ├── BettingPanel.jsx   # Side bet panel for folded players
+│   │   │   ├── HandInfo.jsx       # Noob‑mode info: hand rank + equity bar
+│   │   │   ├── AnimatedChip.jsx   # Chip animation component
+│   │   │   ├── PlayerSeat.jsx     # Single player seat (cards, timer, chips, kick button)
+│   │   │   ├── SettingsPanel.jsx  # Settings dropdown (theme, card back, sound, etc.)
+│   │   │   └── Table.jsx          # Oval table, community cards, pot amount
+│   │   ├── hooks/
+│   │   │   ├── useSound.js        # Web Audio API sound effects
+│   │   │   └── useGameSocket.js   # Central WS listener, processes all incoming messages
+│   │   ├── utils/
+│   │   │   └── equity.js          # Monte Carlo simulation (2000 trials)
+│   │   └── styles/
+│   │       ├── themes.css         # 6 visual themes
+│   │       └── animations.css     # CSS keyframe animations
 │   └── index.html
-└── README.md
+├── AI_CONTEXT.md              # Project handbook for AI agents (architecture, data flow, rules)
+├── MODULES.md                 # Module reference: inputs/outputs, logic, dependencies per file
+├── DEPENDENCIES.md            # Minimal dependency justification (7 total production deps)
+├── README.md                  # This file (English)
+└── README_FA.md               # Persian version
 ```
 ---
 ## 🔧 تکنولوژی‌های استفاده شده (Tech Stack)
@@ -161,6 +190,14 @@ Elite-Poker/
 - **افزودن تم جدید** – `themes.css` رو ویرایش کنید و یک ورودی جدید توی آرایه `themes` داخل `GameTable.jsx` اضافه کنید.
 - همه رنگ‌های وابسته به تم توسط پراپرتی‌های سفارشی CSS کنترل میشن (`--table-bg`, `--winner-text`, و غیره).
 - پشت کارت‌ها و گزینه‌های شخصی‌سازی دیگه توی `localStorage` ذخیره میشن تا باقی بمونن.
+
+---
+## 📚 مستندات AI
+این پروژه شامل سه فایل طراحی شده برای کمک به مدل‌های AI (و انسان‌ها) برای درک سریع کدبیس هست:
+- **[AI_CONTEXT.md](AI_CONTEXT.md)** – نمای کلی معماری، جریان داده، انواع پیام‌های WebSocket، قوانین نانوشته، و راهنمای سریع برای اضافه کردن ویژگی‌های جدید.
+- **[MODULES.md](MODULES.md)** – مرجع هر ماژول با ورودی‌ها، خروجی‌ها، منطق اصلی و وابستگی‌ها.
+- **[DEPENDENCIES.md](DEPENDENCIES.md)** – توجیه هر کتابخانه غیربدیهی (فقط 7 وابستگی تولید).
+
 ---
 و اینکه من برای ساخت این پروژه تا اینحا از مدل های خیلی زیادی کمک گرفتم مثل:
 `Qwen3.6` `gemma-4` `deepseek` 
@@ -171,5 +208,3 @@ Elite-Poker/
 احتمالا مشکل با اپدیت رفع شده بشه چون خیلی سریع باگ هارو پیدا و فیکس میکنم معمولا و همیشه یه نسخه هست که اپدیت نکردی 
 2 - هنوز مشکلت وجود داره؟؟ هممم گزارش بده توی سریع ترین مدت فیکسش میکنم
 با گزارش دادن باگ ها یا پیشنهاداتون کمک کنید پروژه رو بی نقص کنیم :)
-
-
