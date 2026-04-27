@@ -1,0 +1,13 @@
+export const MAX_PLAYERS = 10;
+export const DEFAULT_STARTING_CHIPS = 1000;
+export const MAX_STARTING_CHIPS = 1000000;
+export const DEFAULT_SMALL_BLIND = 10;
+export const DEFAULT_BIG_BLIND = 20;
+export const TURN_TIMEOUT_MS = 20000;
+export const TIMER_BROADCAST_INTERVAL_MS = 500;
+export const CHAT_HISTORY_SIZE = 200;
+export const HAND_HISTORY_SIZE = 50;
+export const MAX_NAME_LENGTH = 15;
+export const REVEAL_STEP_DELAY_MS = 2000;
+export const AUTO_HAND_START_DELAY_MS = 7000;
+export const RESUME_HAND_START_DELAY_MS = 4000;

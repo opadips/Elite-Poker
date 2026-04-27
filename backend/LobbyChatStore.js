@@ -1,8 +1,10 @@
+import { CHAT_HISTORY_SIZE } from './constants.js';
+
 export function addChatMessage(chatMap, lobbyId, sender, message) {
   const chat = chatMap.get(lobbyId);
   if (chat) {
     chat.push({ sender, message, timestamp: Date.now() });
-    if (chat.length > 200) chat.shift();
+    if (chat.length > CHAT_HISTORY_SIZE) chat.shift();
   }
 }
 

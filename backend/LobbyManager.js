@@ -3,6 +3,13 @@ import { Player } from './game/Player.js';
 import { addToWaitlist, promoteFromWaitlist } from './WaitlistManager.js';
 import { addHandHistory, getHandHistory } from './HandHistoryStore.js';
 import { addChatMessage, getChatMessages } from './LobbyChatStore.js';
+import {
+  MAX_PLAYERS,
+  DEFAULT_STARTING_CHIPS,
+  MAX_STARTING_CHIPS,
+  DEFAULT_SMALL_BLIND,
+  DEFAULT_BIG_BLIND,
+} from './constants.js';
 
 export class LobbyManager {
   constructor() {
@@ -21,9 +28,9 @@ export class LobbyManager {
         name: settings.name || 'New Table',
         description: settings.description || '',
         password: settings.password || null,
-        startingChips: Math.min(parseInt(settings.startingChips) || 1000, 1000000),
-        smallBlind: settings.smallBlind || 10,
-        bigBlind: settings.bigBlind || 20,
+        startingChips: Math.min(parseInt(settings.startingChips) || DEFAULT_STARTING_CHIPS, MAX_STARTING_CHIPS),
+        smallBlind: settings.smallBlind || DEFAULT_SMALL_BLIND,
+        bigBlind: settings.bigBlind || DEFAULT_BIG_BLIND,
         mode: settings.mode || 'tournament',
       },
       players: new Map(),
@@ -61,7 +68,7 @@ export class LobbyManager {
         name: lobby.settings.name,
         description: lobby.settings.description,
         playerCount: lobby.players.size,
-        maxPlayers: 10,
+        maxPlayers: MAX_PLAYERS,
         hasPassword: !!lobby.settings.password,
         mode: lobby.settings.mode,
         topScore: this.getTopScore(lobby),
@@ -89,7 +96,7 @@ export class LobbyManager {
     if (lobby.settings.password && lobby.settings.password !== password) {
       return { success: false, message: 'Invalid password' };
     }
-    if (lobby.players.size >= 10) {
+    if (lobby.players.size >= MAX_PLAYERS) {
       addToWaitlist(lobby, playerId, playerName);
       return { success: false, message: 'Lobby full. Added to waiting list.', waitlisted: true };
     }

@@ -7,6 +7,7 @@ import { ClientRegistry } from './ClientRegistry.js';
 import { createMessageRouter } from './MessageRouter.js';
 import { BroadcastScheduler } from './BroadcastScheduler.js';
 import * as timerUtils from './utils/timerUtils.js';
+import { MAX_NAME_LENGTH, CHAT_HISTORY_SIZE } from './constants.js';
 
 const app = express();
 app.use(cors());
@@ -47,7 +48,7 @@ function broadcastChat(lobbyId, senderName, message) {
 function broadcastGeneralChat(senderName, message) {
   const chatMsg = JSON.stringify({ type: 'chat', sender: senderName, message, timestamp: Date.now() });
   generalChat.push({ sender: senderName, message, timestamp: Date.now() });
-  if (generalChat.length > 200) generalChat.shift();
+  if (generalChat.length > CHAT_HISTORY_SIZE) generalChat.shift();
   clientRegistry.forEach((ws, client) => {
     if (!client.lobbyId && ws.readyState === 1) ws.send(chatMsg);
   });
@@ -117,6 +118,8 @@ const messageRouter = createMessageRouter({
   setupLobbyCallbacks,
   generalChat,
   timerUtils,
+  MAX_NAME_LENGTH,
+  CHAT_HISTORY_SIZE,
 });
 
 const scheduler = new BroadcastScheduler(lobbyManager, clientRegistry, {

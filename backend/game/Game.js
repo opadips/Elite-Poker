@@ -7,6 +7,7 @@ import { applyTournamentRules } from './TournamentManager.js';
 import { checkAchievements } from './AchievementTracker.js';
 import { startHand, postBlind } from './HandLifecycle.js';
 import { validateAction } from './PlayerActionValidator.js';
+import { DEFAULT_STARTING_CHIPS, DEFAULT_SMALL_BLIND, DEFAULT_BIG_BLIND, RESUME_HAND_START_DELAY_MS, AUTO_HAND_START_DELAY_MS } from '../constants.js';
 
 export class Game {
   constructor() {
@@ -16,8 +17,8 @@ export class Game {
     this.pot = 0;
     this.currentRound = 'preflop';
     this.currentPlayerIndex = 0;
-    this.smallBlind = 10;
-    this.bigBlind = 20;
+    this.smallBlind = DEFAULT_SMALL_BLIND;
+    this.bigBlind = DEFAULT_BIG_BLIND;
     this.currentBet = 0;
     this.minRaise = this.bigBlind;
     this.lastRaiseBy = null;
@@ -34,7 +35,7 @@ export class Game {
     this._nextHandTimer = null;
     this._consecutiveWins = {};
     this._allInResolving = false;
-    this.startingChips = 1000;
+    this.startingChips = DEFAULT_STARTING_CHIPS;
     this.mode = 'tournament';
     this.onStateChange = null;
   }
@@ -273,6 +274,7 @@ export class Game {
     this.dealerIndex = 0;
     this.paused = false;
     this._allInResolving = false;
+    this.waitingForAction = false;   // <-- جدید
     if (this._nextHandTimer) {
       clearTimeout(this._nextHandTimer);
       this._nextHandTimer = null;
@@ -304,7 +306,7 @@ export class Game {
             this.startHand();
           }
           this._nextHandTimer = null;
-        }, 4000);
+        }, RESUME_HAND_START_DELAY_MS);
       }
     }
   }
@@ -328,7 +330,7 @@ export class Game {
           console.log('Only one player left. Waiting for more players or reset.');
         }
         this._nextHandTimer = null;
-      }, 7000);
+      }, AUTO_HAND_START_DELAY_MS);
     }
   }
 

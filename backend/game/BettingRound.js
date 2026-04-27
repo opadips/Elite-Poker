@@ -1,4 +1,5 @@
 import { Deck } from './Deck.js';
+import { REVEAL_STEP_DELAY_MS } from '../constants.js';
 
 export function resetBettingRound(game) {
   game.actedPlayers.clear();
@@ -76,19 +77,19 @@ export function revealRemainingCards(game) {
       console.log(`Flop: ${game.communityCards.map(c => c.rank + c.suit).join(', ')}`);
       game.currentRound = 'flop';
       if (game.onStateChange) game.onStateChange();
-      setTimeout(() => revealStep(), 2000);
+      setTimeout(() => revealStep(), REVEAL_STEP_DELAY_MS);
     } else if (game.currentRound === 'flop') {
       game.communityCards.push(game.deck.draw());
       console.log(`Turn: ${game.communityCards[3].rank}${game.communityCards[3].suit}`);
       game.currentRound = 'turn';
       if (game.onStateChange) game.onStateChange();
-      setTimeout(() => revealStep(), 2000);
+      setTimeout(() => revealStep(), REVEAL_STEP_DELAY_MS);
     } else if (game.currentRound === 'turn') {
       game.communityCards.push(game.deck.draw());
       console.log(`River: ${game.communityCards[4].rank}${game.communityCards[4].suit}`);
       game.currentRound = 'river';
       if (game.onStateChange) game.onStateChange();
-      setTimeout(() => revealStep(), 2000);
+      setTimeout(() => revealStep(), REVEAL_STEP_DELAY_MS);
     } else {
       game.runShowdown();
       game.endHand();

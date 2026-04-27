@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { cardDeal, winnerFanfare, allInSound } from './useSound';
+import { CARD_REVEAL_TIMEOUT } from '../constants.js';
 
 export function useGameStateSync(ws, soundEnabledRef) {
   const [gameState, setGameState] = useState(null);
@@ -24,7 +25,7 @@ export function useGameStateSync(ws, soundEnabledRef) {
           for (let i = oldLength; i < newCommLength; i++) newIndices.push(i);
           setNewCardIndices(newIndices);
           if (soundEnabledRef.current) cardDeal();
-          setTimeout(() => setNewCardIndices([]), 600);
+          setTimeout(() => setNewCardIndices([]), CARD_REVEAL_TIMEOUT);
         }
         prevCommunityLengthRef.current = newCommLength;
 
@@ -61,11 +62,5 @@ export function useGameStateSync(ws, soundEnabledRef) {
     return () => ws.removeEventListener('message', handleMessage);
   }, [ws]);
 
-  return {
-    gameState,
-    winnerEffect,
-    winningHandName,
-    newCardIndices,
-    isPaused,
-  };
+  return { gameState, winnerEffect, winningHandName, newCardIndices, isPaused };
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { TOAST_DURATION, SIDE_BET_WIN_DURATION, CHAT_AUTO_CLOSE_DELAY, SPEECH_BUBBLE_DURATION } from '../constants.js';
 
 export function useChatSync(ws, gameState) {
   const [chatMessages, setChatMessages] = useState([]);
@@ -26,23 +27,23 @@ export function useChatSync(ws, gameState) {
           if (bubbleTimersRef.current[senderPlayer.id]) clearTimeout(bubbleTimersRef.current[senderPlayer.id]);
           bubbleTimersRef.current[senderPlayer.id] = setTimeout(() => {
             setSpeechBubbles((prev) => prev.filter((b) => b.id !== newBubble.id));
-          }, 5000);
+          }, SPEECH_BUBBLE_DURATION);
         }
       } else if (data.type === 'system') {
         setChatMessages((prev) => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
         setSystemMessage(data.text);
-        setTimeout(() => setSystemMessage(null), 3000);
+        setTimeout(() => setSystemMessage(null), TOAST_DURATION);
         if (!showChat) {
           setShowChat(true);
           if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
           chatAutoCloseRef.current = setTimeout(() => {
             setShowChat(false);
             chatAutoCloseRef.current = null;
-          }, 5000);
+          }, CHAT_AUTO_CLOSE_DELAY);
         }
       } else if (data.type === 'achievement') {
         setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
-        setTimeout(() => setAchievementToast(null), 4000);
+        setTimeout(() => setAchievementToast(null), SIDE_BET_WIN_DURATION);
       } else if (data.type === 'sideBetWin') {
         setSideBetWin({
           bettorName: data.bettorName,
@@ -51,7 +52,7 @@ export function useChatSync(ws, gameState) {
           profit: data.profit,
           total: data.amount + data.profit,
         });
-        setTimeout(() => setSideBetWin(null), 4000);
+        setTimeout(() => setSideBetWin(null), SIDE_BET_WIN_DURATION);
       } else if (data.type === 'sitInSuccess') {
         setSystemMessage('You are now in the game!');
         setTimeout(() => setSystemMessage(null), 2000);
@@ -62,13 +63,5 @@ export function useChatSync(ws, gameState) {
     return () => ws.removeEventListener('message', handleMessage);
   }, [ws, gameState]);
 
-  return {
-    chatMessages,
-    showChat,
-    setShowChat,
-    speechBubbles,
-    systemMessage,
-    achievementToast,
-    sideBetWin,
-  };
+  return { chatMessages, showChat, setShowChat, speechBubbles, systemMessage, achievementToast, sideBetWin };
 }

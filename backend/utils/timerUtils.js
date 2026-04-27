@@ -1,3 +1,5 @@
+import { TURN_TIMEOUT_MS, TIMER_BROADCAST_INTERVAL_MS } from '../constants.js';
+
 const lobbyTimers = new Map();
 
 export function broadcastTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcastGameState) {
@@ -27,7 +29,7 @@ export function startTurnTimerBroadcast(lobbyId, playerId) {
     interval: setInterval(() => {
       const { lobbyManager, clientRegistry, broadcastGameState } = startTurnTimerBroadcast.refs || {};
       if (lobbyManager) broadcastTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcastGameState);
-    }, 500),
+    }, TIMER_BROADCAST_INTERVAL_MS),
   });
 }
 
@@ -82,7 +84,7 @@ export function setAutoActionTimer(ws, playerId, lobbyId, lobbyManager, clientRe
     broadcastGameState(lobbyId);
     stopTurnTimerBroadcast(lobbyId);
     client.timeoutId = null;
-  }, 20000);
+  }, TURN_TIMEOUT_MS);
 
   client.timeoutId = timeoutId;
 }

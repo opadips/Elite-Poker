@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GameTable from './GameTable.jsx';
 import LobbyList from './LobbyList.jsx';
+import { WS_PORT } from './constants.js';
 
 function App() {
   const [page, setPage] = useState('login');
@@ -20,7 +21,7 @@ function App() {
 
   const connectAndJoin = (name) => {
     const host = window.location.hostname;
-    const socket = new WebSocket(`ws://${host}:3000`);
+    const socket = new WebSocket(`ws://${host}:${WS_PORT}`);
     socket.onopen = () => {
       socket.send(JSON.stringify({ type: 'join', name }));
     };

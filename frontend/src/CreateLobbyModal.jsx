@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
+import {
+  DEFAULT_SMALL_BLIND,
+  DEFAULT_BIG_BLIND,
+  MAX_STARTING_CHIPS,
+} from './constants.js';
 
 export default function CreateLobbyModal({ onClose, onCreate }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [password, setPassword] = useState('');
   const [startingChips, setStartingChips] = useState(1000);
-  const [smallBlind, setSmallBlind] = useState(10);
-  const [bigBlind, setBigBlind] = useState(20);
+  const [smallBlind, setSmallBlind] = useState(DEFAULT_SMALL_BLIND);
+  const [bigBlind, setBigBlind] = useState(DEFAULT_BIG_BLIND);
   const [mode, setMode] = useState('tournament');
 
   const handleStartingChipsChange = (e) => {
     let val = parseInt(e.target.value) || 1000;
-    if (val > 1000000) val = 1000000;
+    if (val > MAX_STARTING_CHIPS) val = MAX_STARTING_CHIPS;
     if (val < 100) val = 100;
     setStartingChips(val);
-    // تنظیم خودکار بلایندها متناسب با چیپ شروع (به صورت نسبتی از چیپ شروع)
     const newSmall = Math.max(1, Math.round(val / 100));
     setSmallBlind(newSmall);
     setBigBlind(newSmall * 2);
@@ -83,7 +87,7 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
                 min={100}
                 step={100}
-                max={1000000}
+                max={MAX_STARTING_CHIPS}
               />
             </div>
             <div>
@@ -120,7 +124,6 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               </select>
             </div>
           </div>
-
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
