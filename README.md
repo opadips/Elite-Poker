@@ -169,5 +169,9 @@ And I would like you to know that I have used many models to build this project 
 ---
 
 ## 🤝 Contributing
+u found a bug or issue ?? 
+1 - It's probably fixed because I fix problems very quickly, there's usually always a version to update :)
+2- The problem is still not fixed? It's strange, but be sure to report it so I can fix it quickly.
+
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
