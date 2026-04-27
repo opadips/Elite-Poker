@@ -41,6 +41,7 @@ export class Game {
     this._consecutiveWins = {};
     this._allInResolving = false;
     this.startingChips = 1000;
+    this.mode = 'tournament';
     this.onStateChange = null;
   }
 
@@ -364,7 +365,6 @@ export class Game {
       return;
     }
 
-    // after dealing a new street, if only one player can act and someone is all‑in, skip further betting
     const nonAllIn = this.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
     if (nonAllIn.length === 1 && this.getActivePlayers().some(p => p.isAllIn)) {
       this.revealRemainingCards();
@@ -671,25 +671,27 @@ export class Game {
     this.handInProgress = false;
     console.log('Hand ended.');
 
-    const busted = this.players.filter(p => !p.isSpectator && p.chips === 0);
-    for (let p of busted) {
-      p.isSpectator = true;
-      p.ready = false;
-      console.log(`${p.name} has 0 chips and became spectator.`);
-    }
-
-    const activeNonSpectators = this.players.filter(p => !p.isSpectator);
-    if (activeNonSpectators.length === 1 && this.players.length > 1) {
-      const champion = activeNonSpectators[0];
-      this.scores[champion.id] = (this.scores[champion.id] || 0) + 1;
-      console.log(`🏆 ${champion.name} wins the tournament round! Score: ${this.scores[champion.id]}`);
-      for (let p of this.players) {
-        p.chips = this.startingChips;
-        p.isSpectator = false;
+    if (this.mode === 'tournament') {
+      const busted = this.players.filter(p => !p.isSpectator && p.chips === 0);
+      for (let p of busted) {
+        p.isSpectator = true;
         p.ready = false;
+        console.log(`${p.name} has 0 chips and became spectator.`);
       }
-    } else if (activeNonSpectators.length === 0) {
-      console.log('No players with chips. Waiting for someone to sit in.');
+
+      const activeNonSpectators = this.players.filter(p => !p.isSpectator);
+      if (activeNonSpectators.length === 1 && this.players.length > 1) {
+        const champion = activeNonSpectators[0];
+        this.scores[champion.id] = (this.scores[champion.id] || 0) + 1;
+        console.log(`🏆 ${champion.name} wins the tournament round! Score: ${this.scores[champion.id]}`);
+        for (let p of this.players) {
+          p.chips = this.startingChips;
+          p.isSpectator = false;
+          p.ready = false;
+        }
+      } else if (activeNonSpectators.length === 0) {
+        console.log('No players with chips. Waiting for someone to sit in.');
+      }
     }
 
     if (!this.paused) {

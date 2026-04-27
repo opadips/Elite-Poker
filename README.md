@@ -164,5 +164,10 @@ Elite-Poker/
 - All theme‑dependent colors are controlled by CSS custom properties (`--table-bg`, `--winner-text`, etc.).
 - Card backs and other personalisation options are stored in `localStorage` for persistence.
 ---
+And I would like you to know that I have used many models to build this project so far, such as:
+`Qwen3.6` `gemma-4` `deepseek` 
+---
+
 ## 🤝 Contributing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
