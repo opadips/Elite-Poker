@@ -4,10 +4,8 @@ import HandInfo from './HandInfo.jsx';
 import GameContext from '../context/GameContext';
 
 function formatChips(amount) {
-  if (amount >= 1000000)
-    return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (amount >= 1000)
-    return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return amount.toString();
 }
 
@@ -33,9 +31,20 @@ export default function PlayerSeat({ p, idx, pos }) {
   const isActive = gameState.currentPlayerId === p.id;
   const isWinner = winnerEffect?.winnerId === p.id;
   const isSelf = p.id === playerId;
-  const isReady =
-    p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
+  const isReady = p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
   const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
+
+  const showdownActive = p.revealed && !p.folded;
+
+  const knownOpponentHands = showdownActive
+    ? activePlayersList
+        .filter(ap => ap.id !== p.id && !ap.folded && ap.revealed)
+        .map(ap => ap.holeCards)
+    : null;
+
+  const opponentsCount = knownOpponentHands
+    ? knownOpponentHands.length
+    : activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length;
 
   return (
     <div
@@ -80,8 +89,8 @@ export default function PlayerSeat({ p, idx, pos }) {
           </div>
         )}
         {speechBubbles
-          .filter((b) => b.playerId === p.id)
-          .map((bubble) => (
+          .filter(b => b.playerId === p.id)
+          .map(bubble => (
             <div
               key={bubble.id}
               className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn"
@@ -106,9 +115,7 @@ export default function PlayerSeat({ p, idx, pos }) {
           <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
             {p.name}
             {isAdmin && p.name === currentPlayer?.name && (
-              <span className="text-xs" title="Admin">
-                👑
-              </span>
+              <span className="text-xs" title="Admin">👑</span>
             )}
             {isAdmin && !isSelf && (
               <button
@@ -161,14 +168,10 @@ export default function PlayerSeat({ p, idx, pos }) {
           </div>
           <div className="flex justify-center gap-1 mt-2 text-xs">
             {p.folded && (
-              <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">
-                FOLD
-              </span>
+              <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">FOLD</span>
             )}
             {p.isAllIn && (
-              <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">
-                ALL IN
-              </span>
+              <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>
             )}
           </div>
           {gameState.dealerIndex === p.id && (
@@ -176,15 +179,24 @@ export default function PlayerSeat({ p, idx, pos }) {
               DEALER
             </div>
           )}
-          {isSelf && showHandInfo && !p.folded && !p.isSpectator && (
+          {showdownActive && !p.isSpectator && (
             <HandInfo
               holeCards={p.holeCards}
               communityCards={gameState.communityCards}
               round={gameState.currentRound}
               playerName={p.name}
-              opponentsCount={
-                activePlayersList.filter((ap) => ap.id !== playerId && !ap.folded).length
-              }
+              opponentsCount={opponentsCount}
+              knownOpponentHands={knownOpponentHands}
+            />
+          )}
+          {isSelf && showHandInfo && !p.folded && !p.isSpectator && !showdownActive && (
+            <HandInfo
+              holeCards={p.holeCards}
+              communityCards={gameState.communityCards}
+              round={gameState.currentRound}
+              playerName={p.name}
+              opponentsCount={opponentsCount}
+              knownOpponentHands={null}
             />
           )}
         </div>

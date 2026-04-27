@@ -7,18 +7,19 @@ export default function HandInfo({
   round,
   playerName,
   opponentsCount,
+  knownOpponentHands = null,
 }) {
   const [equity, setEquity] = useState(null);
   const [handName, setHandName] = useState('');
 
   useEffect(() => {
     if (holeCards.length === 2) {
-      const res = calculateEquity(holeCards, communityCards, opponentsCount);
+      const res = calculateEquity(holeCards, communityCards, opponentsCount, knownOpponentHands);
       setEquity(res);
       const name = getBestHandName(holeCards, communityCards);
       setHandName(name);
     }
-  }, [holeCards, communityCards, opponentsCount]);
+  }, [holeCards, communityCards, opponentsCount, knownOpponentHands]);
 
   const equityPercent = equity ? Math.round(equity.win * 100) : null;
 

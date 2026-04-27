@@ -1,4 +1,3 @@
-// frontend/src/utils/equity.js
 import { MONTE_CARLO_TRIALS } from '../constants.js';
 
 function rankValue(rank) {
@@ -15,16 +14,16 @@ function evaluateHand(cards) {
   ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
   const countValues = Object.values(counts).sort((a,b)=>b-a);
   
-  if (isFlush && isStraight && ranks[4] === 14 && ranks[0] === 10) return 1; // Royal Flush
-  if (isFlush && isStraight) return 2; // Straight Flush
-  if (countValues[0] === 4) return 3; // Four of a Kind
-  if (countValues[0] === 3 && countValues[1] === 2) return 4; // Full House
-  if (isFlush) return 5; // Flush
-  if (isStraight) return 6; // Straight
-  if (countValues[0] === 3) return 7; // Three of a Kind
-  if (countValues[0] === 2 && countValues[1] === 2) return 8; // Two Pair
-  if (countValues[0] === 2) return 9; // One Pair
-  return 10; // High Card
+  if (isFlush && isStraight && ranks[4] === 14 && ranks[0] === 10) return 1;
+  if (isFlush && isStraight) return 2;
+  if (countValues[0] === 4) return 3;
+  if (countValues[0] === 3 && countValues[1] === 2) return 4;
+  if (isFlush) return 5;
+  if (isStraight) return 6;
+  if (countValues[0] === 3) return 7;
+  if (countValues[0] === 2 && countValues[1] === 2) return 8;
+  if (countValues[0] === 2) return 9;
+  return 10;
 }
 
 function checkStraight(ranks) {
@@ -54,61 +53,6 @@ function getCombinations(arr, k) {
   return result;
 }
 
-export function calculateEquity(holeCards, communityCards, opponents) {
-  const deck = [];
-  const suits = ['♠', '♥', '♦', '♣'];
-  const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-  for (let s of suits) {
-    for (let r of ranks) {
-      const card = { rank: r, suit: s };
-      if (!holeCards.some(c => c.rank === r && c.suit === s) &&
-          !communityCards.some(c => c.rank === r && c.suit === s)) {
-        deck.push(card);
-      }
-    }
-  }
-
-  let wins = 0;
-  let losses = 0;
-  let ties = 0;
-
-  for (let t = 0; t < MONTE_CARLO_TRIALS; t++) {
-    const shuffled = [...deck].sort(() => Math.random() - 0.5);
-    const remainingCommunity = 5 - communityCards.length;
-    const simCommunity = [...communityCards, ...shuffled.slice(0, remainingCommunity)];
-    const playerBest = evaluateBestHand([...holeCards, ...simCommunity]);
-    let allOpponentsBetter = true;
-    let tieDetected = false;
-
-    for (let o = 0; o < opponents; o++) {
-      const offset = remainingCommunity + o * 2;
-      const oppCards = [shuffled[offset], shuffled[offset+1]];
-      const oppBest = evaluateBestHand([...oppCards, ...simCommunity]);
-      if (oppBest === playerBest) {
-        tieDetected = true;
-        allOpponentsBetter = false;
-      } else if (oppBest < playerBest) {
-        allOpponentsBetter = false;
-      }
-    }
-
-    if (tieDetected) {
-      ties++;
-    } else if (allOpponentsBetter) {
-      losses++;
-    } else {
-      wins++;
-    }
-  }
-
-  const total = wins + losses + ties;
-  return {
-    win: wins / total,
-    lose: losses / total,
-    tie: ties / total,
-  };
-}
-
 function evaluateBestHand(cards) {
   const combos = getCombinations(cards, 5);
   let best = 999;
@@ -118,6 +62,7 @@ function evaluateBestHand(cards) {
   }
   return best;
 }
+
 export function getBestHandName(holeCards, communityCards) {
   const allCards = [...holeCards, ...communityCards];
   const combos = getCombinations(allCards, 5);
@@ -144,4 +89,96 @@ export function getBestHandName(holeCards, communityCards) {
     10: 'High Card',
   };
   return names[bestRank] || 'High Card';
+}
+
+function buildDeckExcluding(...excludedCards) {
+  const suits = ['♠', '♥', '♦', '♣'];
+  const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  const deck = [];
+  for (let s of suits) {
+    for (let r of ranks) {
+      if (!excludedCards.some(c => c.rank === r && c.suit === s)) {
+        deck.push({ rank: r, suit: s });
+      }
+    }
+  }
+  return deck;
+}
+
+function calculateExactEquity(holeCards, communityCards, knownOpponentHands) {
+  const knownCards = [...holeCards, ...communityCards, ...knownOpponentHands.flat()];
+  const remainingCardsNeeded = 5 - communityCards.length;
+  const deck = buildDeckExcluding(...knownCards);
+  const combinations = getCombinations(deck, remainingCardsNeeded);
+
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+
+  for (const remaining of combinations) {
+    const fullCommunity = [...communityCards, ...remaining];
+    const playerBest = evaluateBestHand([...holeCards, ...fullCommunity]);
+    let bestOpp = 999;
+    for (const oppHand of knownOpponentHands) {
+      const oppBest = evaluateBestHand([...oppHand, ...fullCommunity]);
+      if (oppBest < bestOpp) bestOpp = oppBest;
+    }
+    if (playerBest < bestOpp) wins++;
+    else if (playerBest === bestOpp) ties++;
+    else losses++;
+  }
+
+  const total = wins + losses + ties;
+  return { win: wins / total, lose: losses / total, tie: ties / total };
+}
+
+export function calculateEquity(holeCards, communityCards, opponents, knownOpponentHands = null) {
+  if (knownOpponentHands && knownOpponentHands.length > 0) {
+    return calculateExactEquity(holeCards, communityCards, knownOpponentHands);
+  }
+  const deck = [];
+  const suits = ['♠', '♥', '♦', '♣'];
+  const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  for (let s of suits) {
+    for (let r of ranks) {
+      const card = { rank: r, suit: s };
+      if (!holeCards.some(c => c.rank === r && c.suit === s) &&
+          !communityCards.some(c => c.rank === r && c.suit === s)) {
+        deck.push(card);
+      }
+    }
+  }
+
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+
+  for (let t = 0; t < MONTE_CARLO_TRIALS; t++) {
+    const shuffled = [...deck].sort(() => Math.random() - 0.5);
+    const remainingCommunity = 5 - communityCards.length;
+    const simCommunity = [...communityCards, ...shuffled.slice(0, remainingCommunity)];
+    const playerBest = evaluateBestHand([...holeCards, ...simCommunity]);
+    let allOpponentsBetter = true;
+    let tieDetected = false;
+
+    let offset = remainingCommunity;
+    for (let o = 0; o < opponents; o++) {
+      const oppCards = [shuffled[offset], shuffled[offset+1]];
+      offset += 2;
+      const oppBest = evaluateBestHand([...oppCards, ...simCommunity]);
+      if (oppBest === playerBest) {
+        tieDetected = true;
+        allOpponentsBetter = false;
+      } else if (oppBest < playerBest) {
+        allOpponentsBetter = false;
+      }
+    }
+
+    if (tieDetected) ties++;
+    else if (allOpponentsBetter) losses++;
+    else wins++;
+  }
+
+  const total = wins + losses + ties;
+  return { win: wins / total, lose: losses / total, tie: ties / total };
 }

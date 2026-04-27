@@ -103,6 +103,10 @@ export function runShowdown(game) {
   };
   console.log(`Winner: ${game.winner.names} with ${game.winner.handName}, wins ${game.winner.winnings}`);
 
+  for (let p of contenders) {
+    p.revealed = true;
+  }
+
   game.sideBetResults = resolveSideBets(game, allWinners);
 }
 

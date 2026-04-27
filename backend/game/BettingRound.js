@@ -61,6 +61,10 @@ export function handleAllAllIn(game) {
   const allAllIn = activePlayers.every(p => p.isAllIn) || activePlayers.length === 1;
   if (!allAllIn) return;
 
+  for (let p of activePlayers) {
+    p.revealed = true;
+  }
+
   revealRemainingCards(game);
 }
 
