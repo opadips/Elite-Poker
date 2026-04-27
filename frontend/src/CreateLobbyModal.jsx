@@ -9,16 +9,6 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
   const [bigBlind, setBigBlind] = useState(20);
   const [mode, setMode] = useState('tournament');
 
-  const handleChipsChange = (value) => {
-    const chips = parseInt(value) || 1000;
-    const capped = Math.min(Math.max(chips, 100), 1000000);
-    setStartingChips(capped);
-    const newSB = Math.max(5, Math.floor(capped / 100));
-    const newBB = Math.max(10, Math.floor(capped / 50));
-    setSmallBlind(newSB);
-    setBigBlind(newBB);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -78,11 +68,11 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               <input
                 type="number"
                 value={startingChips}
-                onChange={(e) => handleChipsChange(e.target.value)}
+                onChange={(e) => setStartingChips(e.target.value)}
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
                 min={100}
-                max={1000000}
                 step={100}
+                max={1000000}
               />
             </div>
             <div>
@@ -90,7 +80,7 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               <input
                 type="number"
                 value={smallBlind}
-                onChange={(e) => setSmallBlind(Math.max(5, parseInt(e.target.value) || 5))}
+                onChange={(e) => setSmallBlind(e.target.value)}
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
                 min={5}
                 step={5}
@@ -101,7 +91,7 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               <input
                 type="number"
                 value={bigBlind}
-                onChange={(e) => setBigBlind(Math.max(10, parseInt(e.target.value) || 10))}
+                onChange={(e) => setBigBlind(e.target.value)}
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
                 min={10}
                 step={10}
@@ -115,7 +105,7 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
               >
                 <option value="tournament">Tournament</option>
-                <option value="cash">Cash Game</option>
+                <option value="cash" disabled>Cash Game (Coming Soon)</option>
               </select>
             </div>
           </div>
