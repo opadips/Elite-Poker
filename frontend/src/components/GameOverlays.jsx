@@ -1,3 +1,4 @@
+// frontend/src/components/GameOverlays.jsx
 import React from 'react';
 import Chat from './Chat.jsx';
 import BettingPanel from './BettingPanel.jsx';
@@ -49,10 +50,10 @@ export default function GameOverlays({
         </div>
       )}
 
-      {winningHandName && (
+      {gameState?.winner && (
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
           <div className="winner-themed text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider whitespace-nowrap">
-            {winningHandName}
+            {winningHandName || 'Winner!'}
           </div>
         </div>
       )}

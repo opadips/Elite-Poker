@@ -1,7 +1,7 @@
 /* ==============================================
-   Classic
+   Classic (default :root)
 ============================================== */
-.theme-classic {
+:root {
   --bg-gradient: linear-gradient(135deg, #1a472a 0%, #0a2a1a 100%);
   --table-bg: rgba(120, 70, 30, 0.3);
   --table-border: #8b5a2b;
@@ -11,14 +11,26 @@
   --card-suit-black: #2c3e50;
   --button-primary: #2c3e50;
   --button-secondary: #8e44ad;
-  --pot-bg: rgba(0,0,0,0.6);
+  --pot-bg: rgba(0, 0, 0, 0.6);
   --winner-text: #f1c40f;
-  --sidebet-bg: rgba(0,0,0,0.7);
+  --sidebet-bg: rgba(0, 0, 0, 0.7);
   --sidebet-border: #8b5a2b;
   --sidebet-text: #f1c40f;
   --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0,0,0,0.7);
+  --handinfo-bg: rgba(0, 0, 0, 0.7);
   --handinfo-border: #8b5a2b;
+
+  /* Action button colours */
+  --btn-fold-bg: #dc2626;
+  --btn-check-bg: #4b5563;
+  --btn-call-bg: #16a34a;
+  --btn-raise-bg: #2563eb;
+  --btn-allin-bg: #ea580c;
+  --btn-disabled-bg: #6b7280;
+  --btn-text: #ffffff;
+  --action-bar-bg: rgba(0, 0, 0, 0.6);
+  --action-bar-border: rgba(255, 255, 255, 0.1);
+  --raise-panel-bg: rgba(0, 0, 0, 0.7);
 }
 
 /* ==============================================
@@ -36,18 +48,35 @@
   --button-secondary: #ff00ff;
   --pot-bg: rgba(0, 0, 0, 0.8);
   --winner-text: #ff00ff;
-  --sidebet-bg: rgba(0,0,0,0.8);
+  --sidebet-bg: rgba(0, 0, 0, 0.8);
   --sidebet-border: #00ffff;
   --sidebet-text: #00ffff;
   --winner-font: 'Courier New', monospace;
-  --handinfo-bg: rgba(0,0,0,0.8);
+  --handinfo-bg: rgba(0, 0, 0, 0.8);
   --handinfo-border: #00ffff;
+
+  --btn-fold-bg: #ff00ff;
+  --btn-check-bg: #00cccc;
+  --btn-call-bg: #00ff88;
+  --btn-raise-bg: #0088ff;
+  --btn-allin-bg: #ffaa00;
+  --btn-disabled-bg: #4a5568;
+  --btn-text: #000000;
+  --action-bar-bg: rgba(0, 20, 40, 0.8);
+  --action-bar-border: #00ffff;
+  --raise-panel-bg: rgba(0, 20, 40, 0.9);
 }
 
 .theme-cyberpunk .game-table {
   border: 2px solid #00ffff;
-  box-shadow: 0 0 30px rgba(0,255,255,0.5);
-  background: repeating-linear-gradient(45deg, rgba(0,255,255,0.05) 0px, rgba(0,255,255,0.05) 2px, transparent 2px, transparent 8px);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 255, 255, 0.05) 0px,
+    rgba(0, 255, 255, 0.05) 2px,
+    transparent 2px,
+    transparent 8px
+  );
 }
 
 /* ==============================================
@@ -63,20 +92,35 @@
   --card-suit-black: #2c3e50;
   --button-primary: #d4af37;
   --button-secondary: #9b59b6;
-  --pot-bg: rgba(0,0,0,0.7);
+  --pot-bg: rgba(0, 0, 0, 0.7);
   --winner-text: #ffd700;
-  --sidebet-bg: rgba(0,0,0,0.7);
+  --sidebet-bg: rgba(0, 0, 0, 0.7);
   --sidebet-border: #ffd700;
   --sidebet-text: #ffd700;
   --winner-font: 'Cinzel', 'Georgia', serif;
-  --handinfo-bg: rgba(0,0,0,0.7);
+  --handinfo-bg: rgba(0, 0, 0, 0.7);
   --handinfo-border: #ffd700;
+
+  --btn-fold-bg: #c0392b;
+  --btn-check-bg: #7f8c8d;
+  --btn-call-bg: #27ae60;
+  --btn-raise-bg: #8e44ad;
+  --btn-allin-bg: #d4af37;
+  --btn-disabled-bg: #95a5a6;
+  --btn-text: #ffffff;
+  --action-bar-bg: rgba(0, 0, 0, 0.7);
+  --action-bar-border: #ffd700;
+  --raise-panel-bg: rgba(0, 0, 0, 0.8);
 }
 
 .theme-fantasy .game-table {
-  background: radial-gradient(circle at center, rgba(255,215,0,0.2) 0%, rgba(0,0,0,0) 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 215, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
   border-color: #ffd700;
-  box-shadow: 0 0 40px rgba(255,215,0,0.4);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
 }
 
 /* ==============================================
@@ -92,18 +136,29 @@
   --card-suit-black: #34495e;
   --button-primary: #bdc3c7;
   --button-secondary: #7f8c8d;
-  --pot-bg: rgba(0,0,0,0.6);
+  --pot-bg: rgba(0, 0, 0, 0.6);
   --winner-text: #ecf0f1;
-  --sidebet-bg: rgba(0,0,0,0.6);
+  --sidebet-bg: rgba(0, 0, 0, 0.6);
   --sidebet-border: #c0c0c0;
   --sidebet-text: #ecf0f1;
   --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0,0,0,0.6);
+  --handinfo-bg: rgba(0, 0, 0, 0.6);
   --handinfo-border: #c0c0c0;
+
+  --btn-fold-bg: #c0392b;
+  --btn-check-bg: #7f8c8d;
+  --btn-call-bg: #27ae60;
+  --btn-raise-bg: #2980b9;
+  --btn-allin-bg: #f39c12;
+  --btn-disabled-bg: #95a5a6;
+  --btn-text: #ffffff;
+  --action-bar-bg: rgba(0, 0, 0, 0.6);
+  --action-bar-border: #c0c0c0;
+  --raise-panel-bg: rgba(0, 0, 0, 0.7);
 }
 
 .theme-midnight .game-table {
-  box-shadow: 0 0 20px rgba(192,192,192,0.3);
+  box-shadow: 0 0 20px rgba(192, 192, 192, 0.3);
   border-color: #c0c0c0;
 }
 
@@ -120,14 +175,25 @@
   --card-suit-black: #39ff14;
   --button-primary: #006600;
   --button-secondary: #cc00cc;
-  --pot-bg: rgba(0,0,0,0.8);
+  --pot-bg: rgba(0, 0, 0, 0.8);
   --winner-text: #ffd700;
   --sidebet-bg: rgba(0, 20, 0, 0.8);
   --sidebet-border: #39ff14;
   --sidebet-text: #aaffaa;
   --winner-font: 'Impact', 'Arial Black', sans-serif;
-  --handinfo-bg: rgba(0,20,0,0.8);
+  --handinfo-bg: rgba(0, 20, 0, 0.8);
   --handinfo-border: #39ff14;
+
+  --btn-fold-bg: #ff3399;
+  --btn-check-bg: #2e7d32;
+  --btn-call-bg: #39ff14;
+  --btn-raise-bg: #9c27b0;
+  --btn-allin-bg: #ffd700;
+  --btn-disabled-bg: #4a5568;
+  --btn-text: #000000;
+  --action-bar-bg: rgba(0, 20, 0, 0.8);
+  --action-bar-border: #39ff14;
+  --raise-panel-bg: rgba(0, 20, 0, 0.9);
 }
 
 .theme-neonjungle body {
@@ -171,14 +237,14 @@
   width: 100%;
   height: 100%;
   background-image:
-    radial-gradient(1px 1px at 10% 20%, rgba(57,255,20,0.8) 50%, transparent),
-    radial-gradient(1px 1px at 90% 30%, rgba(255,20,147,0.7) 50%, transparent),
-    radial-gradient(2px 2px at 50% 70%, rgba(128,0,255,0.8) 50%, transparent),
-    radial-gradient(1px 1px at 30% 80%, rgba(57,255,20,0.6) 50%, transparent),
-    radial-gradient(2px 2px at 70% 10%, rgba(0,255,255,0.7) 50%, transparent),
-    radial-gradient(1px 1px at 80% 60%, rgba(255,20,147,0.6) 50%, transparent),
-    radial-gradient(1px 1px at 20% 90%, rgba(57,255,20,0.5) 50%, transparent),
-    radial-gradient(2px 2px at 60% 40%, rgba(128,0,255,0.4) 50%, transparent);
+    radial-gradient(1px 1px at 10% 20%, rgba(57, 255, 20, 0.8) 50%, transparent),
+    radial-gradient(1px 1px at 90% 30%, rgba(255, 20, 147, 0.7) 50%, transparent),
+    radial-gradient(2px 2px at 50% 70%, rgba(128, 0, 255, 0.8) 50%, transparent),
+    radial-gradient(1px 1px at 30% 80%, rgba(57, 255, 20, 0.6) 50%, transparent),
+    radial-gradient(2px 2px at 70% 10%, rgba(0, 255, 255, 0.7) 50%, transparent),
+    radial-gradient(1px 1px at 80% 60%, rgba(255, 20, 147, 0.6) 50%, transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(57, 255, 20, 0.5) 50%, transparent),
+    radial-gradient(2px 2px at 60% 40%, rgba(128, 0, 255, 0.4) 50%, transparent);
   background-size: 300% 300%;
   animation: neonFloating 15s linear infinite;
   pointer-events: none;
@@ -203,7 +269,7 @@
 .theme-neonjungle .game-table {
   border: 2px solid #39ff14;
   box-shadow: 0 0 60px rgba(57, 255, 20, 0.5), inset 0 0 30px rgba(0, 100, 0, 0.8);
-  background: radial-gradient(circle at center, rgba(0,40,0,0.9) 0%, rgba(0,10,0,0.95) 100%);
+  background: radial-gradient(circle at center, rgba(0, 40, 0, 0.9) 0%, rgba(0, 10, 0, 0.95) 100%);
 }
 
 /* ==============================================
@@ -219,14 +285,25 @@
   --card-suit-black: #aaccff;
   --button-primary: #6a0dad;
   --button-secondary: #1e90ff;
-  --pot-bg: rgba(0,0,0,0.8);
+  --pot-bg: rgba(0, 0, 0, 0.8);
   --winner-text: #da70d6;
   --sidebet-bg: rgba(10, 10, 30, 0.8);
   --sidebet-border: #8a2be2;
   --sidebet-text: #da70d6;
   --winner-font: 'Trebuchet MS', 'Lucida Sans', sans-serif;
-  --handinfo-bg: rgba(10,10,30,0.8);
+  --handinfo-bg: rgba(10, 10, 30, 0.8);
   --handinfo-border: #8a2be2;
+
+  --btn-fold-bg: #ff4466;
+  --btn-check-bg: #4a4a8a;
+  --btn-call-bg: #6a0dad;
+  --btn-raise-bg: #1e90ff;
+  --btn-allin-bg: #da70d6;
+  --btn-disabled-bg: #4a5568;
+  --btn-text: #ffffff;
+  --action-bar-bg: rgba(10, 10, 30, 0.8);
+  --action-bar-border: #8a2be2;
+  --raise-panel-bg: rgba(10, 10, 30, 0.9);
 }
 
 .theme-void body {
@@ -278,7 +355,7 @@
   width: 0;
   height: 0;
   border-radius: 50%;
-  box-shadow: 0 0 200px 100px rgba(100,0,255,0.3);
+  box-shadow: 0 0 200px 100px rgba(100, 0, 255, 0.3);
   animation: voidRing 4s infinite ease-out;
   pointer-events: none;
   z-index: -2;
@@ -286,13 +363,13 @@
 
 @keyframes voidRing {
   0% {
-    box-shadow: 0 0 100px 60px rgba(100,0,255,0.5);
+    box-shadow: 0 0 100px 60px rgba(100, 0, 255, 0.5);
     width: 300px;
     height: 300px;
     opacity: 0.6;
   }
   100% {
-    box-shadow: 0 0 300px 150px rgba(100,0,255,0);
+    box-shadow: 0 0 300px 150px rgba(100, 0, 255, 0);
     width: 900px;
     height: 900px;
     opacity: 0;
@@ -301,8 +378,12 @@
 
 .theme-void .game-table {
   border: 2px solid #8a2be2;
-  box-shadow: 0 0 60px rgba(138,43,226,0.6), inset 0 0 20px rgba(100,0,255,0.5);
-  background: radial-gradient(ellipse at center, rgba(20,20,60,0.9) 0%, rgba(5,5,20,0.95) 100%);
+  box-shadow: 0 0 60px rgba(138, 43, 226, 0.6), inset 0 0 20px rgba(100, 0, 255, 0.5);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(20, 20, 60, 0.9) 0%,
+    rgba(5, 5, 20, 0.95) 100%
+  );
 }
 
 /* ==============================================
@@ -325,10 +406,22 @@
    Winner animation
 ============================================== */
 @keyframes winnerFadeInOut {
-  0%   { opacity: 0; transform: scale(0.8); }
-  15%  { opacity: 1; transform: scale(1); }
-  75%  { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
 }
 
 .winner-themed {
@@ -339,14 +432,24 @@
 }
 
 @keyframes neonPulse {
-  0% { text-shadow: 0 0 5px #00ffff; }
-  50% { text-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff; }
-  100% { text-shadow: 0 0 5px #00ffff; }
+  0% {
+    text-shadow: 0 0 5px #00ffff;
+  }
+  50% {
+    text-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff;
+  }
+  100% {
+    text-shadow: 0 0 5px #00ffff;
+  }
 }
 
 @keyframes fantasyGlow {
-  0% { filter: drop-shadow(0 0 2px gold); }
-  100% { filter: drop-shadow(0 0 15px gold); }
+  0% {
+    filter: drop-shadow(0 0 2px gold);
+  }
+  100% {
+    filter: drop-shadow(0 0 15px gold);
+  }
 }
 
 .theme-cyberpunk .winner-text {
@@ -361,34 +464,17 @@
    Achievement toast animation
 ============================================== */
 @keyframes fadeInSlideDown {
-  0% { opacity: 0; transform: translate(-50%, -20px); }
-  100% { opacity: 1; transform: translate(-50%, 0); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 .animate-fadeInSlideDown {
   animation: fadeInSlideDown 0.3s ease-out forwards;
-}
-
-/* ==============================================
-   Timer inside pot area
-============================================== */
-.timer-inline {
-  position: absolute;
-  top: -42px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-}
-
-/* ==============================================
-   Card reveal for all after hand (flip)
-============================================== */
-@keyframes cardFlip {
-  0% { transform: rotateY(180deg) scale(0.5); opacity: 0; }
-  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
-}
-.card-reveal-all {
-  animation: cardFlip 0.5s ease-out forwards;
-  backface-visibility: hidden;
 }
 
 /* ==============================================
@@ -398,7 +484,7 @@
   width: 4px;
 }
 .settings-scroll::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
 .settings-scroll::-webkit-scrollbar-thumb {
