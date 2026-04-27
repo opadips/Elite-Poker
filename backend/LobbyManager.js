@@ -1,5 +1,8 @@
 import { Game } from './game/Game.js';
 import { Player } from './game/Player.js';
+import { addToWaitlist, promoteFromWaitlist } from './WaitlistManager.js';
+import { addHandHistory, getHandHistory } from './HandHistoryStore.js';
+import { addChatMessage, getChatMessages } from './LobbyChatStore.js';
 
 export class LobbyManager {
   constructor() {
@@ -87,7 +90,7 @@ export class LobbyManager {
       return { success: false, message: 'Invalid password' };
     }
     if (lobby.players.size >= 10) {
-      lobby.waitingList.push({ playerId, playerName });
+      addToWaitlist(lobby, playerId, playerName);
       return { success: false, message: 'Lobby full. Added to waiting list.', waitlisted: true };
     }
 
@@ -108,27 +111,12 @@ export class LobbyManager {
     if (player) {
       lobby.game.removePlayer(player.id);
       lobby.players.delete(playerId);
-      this.promoteFromWaitlist(lobbyId);
+      promoteFromWaitlist(lobby);
     } else {
       lobby.waitingList = lobby.waitingList.filter(w => w.playerId !== playerId);
     }
     if (lobby.players.size === 0 && lobby.waitingList.length === 0) {
       this.removeLobby(lobbyId);
-    }
-  }
-
-  promoteFromWaitlist(lobbyId) {
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return;
-    while (lobby.players.size < 10 && lobby.waitingList.length > 0) {
-      const next = lobby.waitingList.shift();
-      const player = new Player(next.playerId, next.playerName);
-      player.chips = lobby.settings.startingChips;
-      player.isSpectator = true;
-      player.ready = false;
-      lobby.game.players.push(player);
-      lobby.game.scores[next.playerId] = 0;
-      lobby.players.set(next.playerId, player);
     }
   }
 
@@ -149,28 +137,21 @@ export class LobbyManager {
   }
 
   addChatMessage(lobbyId, sender, message) {
-    const chat = this.lobbyChat.get(lobbyId);
-    if (chat) {
-      chat.push({ sender, message, timestamp: Date.now() });
-      if (chat.length > 200) chat.shift();
-    }
+    addChatMessage(this.lobbyChat, lobbyId, sender, message);
   }
 
   getChatMessages(lobbyId) {
-    return this.lobbyChat.get(lobbyId) || [];
+    return getChatMessages(this.lobbyChat, lobbyId);
   }
 
   addHandHistory(lobbyId, entry) {
     const lobby = this.lobbies.get(lobbyId);
-    if (lobby) {
-      lobby.handHistory.push(entry);
-      if (lobby.handHistory.length > 50) lobby.handHistory.shift();
-    }
+    if (lobby) addHandHistory(lobby, entry);
   }
 
   getHandHistory(lobbyId) {
     const lobby = this.lobbies.get(lobbyId);
-    return lobby ? lobby.handHistory : [];
+    return lobby ? getHandHistory(lobby) : [];
   }
 
   isAdmin(lobbyId, playerId) {
