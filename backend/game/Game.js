@@ -1,3 +1,4 @@
+// backend/game/Game.js
 import { Player } from './Player.js';
 import { Deck } from './Deck.js';
 import { HandEvaluator } from './HandEvaluator.js';
@@ -35,6 +36,7 @@ export class Game {
     this._nextHandTimer = null;
     this._consecutiveWins = {};
     this._allInResolving = false;
+    this._revealInProgress = false;
     this.startingChips = DEFAULT_STARTING_CHIPS;
     this.mode = 'tournament';
     this.onStateChange = null;
@@ -99,6 +101,7 @@ export class Game {
 
   startHand() {
     startHand(this);
+    this._revealInProgress = false;
   }
 
   postBlind(player, amount) {
@@ -106,6 +109,7 @@ export class Game {
   }
 
   playerAction(playerId, action, amount = 0) {
+    if (this._revealInProgress) return;
     const validation = validateAction(this, playerId);
     if (!validation) return;
     const { player, toCall } = validation;
@@ -195,6 +199,7 @@ export class Game {
   }
 
   nextPlayer() {
+    if (this._revealInProgress) return;
     BettingRound.nextPlayer(this);
   }
 
@@ -203,6 +208,7 @@ export class Game {
   }
 
   advanceRound() {
+    if (this._revealInProgress) return;
     BettingRound.advanceRound(this);
   }
 
@@ -274,7 +280,8 @@ export class Game {
     this.dealerIndex = 0;
     this.paused = false;
     this._allInResolving = false;
-    this.waitingForAction = false;   // <-- جدید
+    this._revealInProgress = false;
+    this.waitingForAction = false;
     if (this._nextHandTimer) {
       clearTimeout(this._nextHandTimer);
       this._nextHandTimer = null;

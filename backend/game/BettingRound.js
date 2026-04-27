@@ -1,3 +1,4 @@
+// backend/game/BettingRound.js
 import { Deck } from './Deck.js';
 import { REVEAL_STEP_DELAY_MS } from '../constants.js';
 
@@ -125,24 +126,25 @@ export function advanceRound(game) {
     console.log(`Flop: ${game.communityCards.map(c => c.rank + c.suit).join(', ')}`);
     game.currentRound = 'flop';
     resetBettingRound(game);
-  } else if (game.currentRound === 'flop') {
-    game.communityCards.push(game.deck.draw());
-    console.log(`Turn: ${game.communityCards[3].rank}${game.communityCards[3].suit}`);
-    game.currentRound = 'turn';
-    resetBettingRound(game);
-  } else if (game.currentRound === 'turn') {
-    game.communityCards.push(game.deck.draw());
-    console.log(`River: ${game.communityCards[4].rank}${game.communityCards[4].suit}`);
-    game.currentRound = 'river';
+  } else if (game.currentRound === 'flop' || game.currentRound === 'turn') {
+    const nonAllIn = game.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
+    const hasAllIn = game.getActivePlayers().some(p => p.isAllIn);
+    if (nonAllIn.length === 1 && hasAllIn) {
+      revealRemainingCards(game);
+      return;
+    }
+    if (game.currentRound === 'flop') {
+      game.communityCards.push(game.deck.draw());
+      console.log(`Turn: ${game.communityCards[3].rank}${game.communityCards[3].suit}`);
+      game.currentRound = 'turn';
+    } else {
+      game.communityCards.push(game.deck.draw());
+      console.log(`River: ${game.communityCards[4].rank}${game.communityCards[4].suit}`);
+      game.currentRound = 'river';
+    }
     resetBettingRound(game);
   } else if (game.currentRound === 'river') {
     game.runShowdown();
     game.endHand();
-    return;
-  }
-
-  const nonAllIn = game.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
-  if (nonAllIn.length === 1 && game.getActivePlayers().some(p => p.isAllIn)) {
-    revealRemainingCards(game);
   }
 }

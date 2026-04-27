@@ -1,5 +1,5 @@
 // frontend/src/components/PlayerSeat.jsx
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
 import GameContext from '../context/GameContext';
@@ -37,15 +37,18 @@ export default function PlayerSeat({ p, idx, pos }) {
 
   const showdownActive = p.revealed && !p.folded;
 
-  const knownOpponentHands = showdownActive
-    ? activePlayersList
-        .filter(ap => ap.id !== p.id && !ap.folded && ap.revealed)
-        .map(ap => ap.holeCards)
-    : null;
+  const knownOpponentHands = useMemo(() => {
+    if (!showdownActive) return null;
+    return activePlayersList
+      .filter(ap => ap.id !== p.id && !ap.folded && ap.revealed)
+      .map(ap => ap.holeCards);
+  }, [showdownActive, activePlayersList, p.id]);
 
-  const opponentsCount = knownOpponentHands
-    ? knownOpponentHands.length
-    : activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length;
+  const opponentsCount = useMemo(() => {
+    return knownOpponentHands
+      ? knownOpponentHands.length
+      : activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length;
+  }, [knownOpponentHands, activePlayersList, playerId]);
 
   return (
     <div

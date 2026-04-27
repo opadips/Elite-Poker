@@ -14,7 +14,10 @@ export default function HandInfo({
 
   useEffect(() => {
     if (holeCards.length === 2) {
-      const res = calculateEquity(holeCards, communityCards, opponentsCount, knownOpponentHands);
+      const useExact = knownOpponentHands && knownOpponentHands.length <= 3;
+      const effectiveOpponents = useExact ? knownOpponentHands.length : opponentsCount;
+      const hands = useExact ? knownOpponentHands : null;
+      const res = calculateEquity(holeCards, communityCards, effectiveOpponents, hands);
       setEquity(res);
       const name = getBestHandName(holeCards, communityCards);
       setHandName(name);
