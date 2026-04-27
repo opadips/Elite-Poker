@@ -19,7 +19,7 @@
 - Full Texas Hold'em rules (preflop, flop, turn, river, blinds, side pots)
 - Real‑time multiplayer via **WebSocket** (2–10 players per table)
 - **Spectator mode** – watch the game and sit in with adjustable starting chips (displayed as `1K`, `100K`, `1M`)
-- **Side betting** – folded players can bet on active players to win extra chips (50% profit)
+- ** (Side betting)** – Players who fold can bet on active players (50% profit). The system is designed to prevent abuse of this as much as possible, for example, if a player who wins folds and the opponent wins, no one wins anything from the side bet (in the future, in this scenario, the chip amount will be returned to the player, currently nothing is returned).
 - **Tournament mode** – chips reset only when one player remains; winner gets a point and all players restart with fresh chips
 - **Cash mode** – chips keep accumulating across hands (no forced reset)
 - **Auto‑action timer** – 20s per turn, auto‑check or auto‑fold on time‑out, visible via a vertical color‑coded bar beside the active player
