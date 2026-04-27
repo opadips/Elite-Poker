@@ -9,6 +9,17 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
   const [bigBlind, setBigBlind] = useState(20);
   const [mode, setMode] = useState('tournament');
 
+  const handleStartingChipsChange = (e) => {
+    let val = parseInt(e.target.value) || 1000;
+    if (val > 1000000) val = 1000000;
+    if (val < 100) val = 100;
+    setStartingChips(val);
+    // تنظیم خودکار بلایندها متناسب با چیپ شروع (به صورت نسبتی از چیپ شروع)
+    const newSmall = Math.max(1, Math.round(val / 100));
+    setSmallBlind(newSmall);
+    setBigBlind(newSmall * 2);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -16,9 +27,9 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
       name: name.trim(),
       description: description.trim(),
       password: password || null,
-      startingChips: parseInt(startingChips) || 1000,
-      smallBlind: parseInt(smallBlind) || 10,
-      bigBlind: parseInt(bigBlind) || 20,
+      startingChips,
+      smallBlind,
+      bigBlind,
       mode,
     });
   };
@@ -68,7 +79,7 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               <input
                 type="number"
                 value={startingChips}
-                onChange={(e) => setStartingChips(e.target.value)}
+                onChange={handleStartingChipsChange}
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
                 min={100}
                 step={100}
@@ -80,10 +91,10 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               <input
                 type="number"
                 value={smallBlind}
-                onChange={(e) => setSmallBlind(e.target.value)}
+                onChange={(e) => setSmallBlind(Math.max(1, parseInt(e.target.value) || 1))}
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
-                min={5}
-                step={5}
+                min={1}
+                step={1}
               />
             </div>
             <div>
@@ -91,10 +102,10 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
               <input
                 type="number"
                 value={bigBlind}
-                onChange={(e) => setBigBlind(e.target.value)}
+                onChange={(e) => setBigBlind(Math.max(2, parseInt(e.target.value) || 2))}
                 className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
-                min={10}
-                step={10}
+                min={2}
+                step={1}
               />
             </div>
             <div>

@@ -1,4 +1,11 @@
+// src/components/Leaderboard.jsx
 import React, { useState } from 'react';
+
+function formatChips(amount) {
+  if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return amount.toString();
+}
 
 export default function Leaderboard({ players, currentRound }) {
   const [isMinimized, setIsMinimized] = useState(false);
@@ -36,7 +43,7 @@ export default function Leaderboard({ players, currentRound }) {
                   </div>
                   <div className="flex gap-3 text-xs">
                     <span className="text-yellow-400">🏅 {p.score || 0}</span>
-                    <span className="text-green-400 font-mono">💰 {p.chips}</span>
+                    <span className="text-green-400 font-mono">💰 {formatChips(p.chips)}</span>
                   </div>
                 </div>
                 {expandedPlayer === p.id && p.stats && (
@@ -44,7 +51,7 @@ export default function Leaderboard({ players, currentRound }) {
                     <div>🃏 Hands: {p.stats.handsPlayed}</div>
                     <div>🏆 Pots Won: {p.stats.potsWon}</div>
                     <div>❌ Losses: {p.stats.losses}</div>
-                    <div>💰 Biggest Pot: {p.stats.biggestPot}</div>
+                    <div>💰 Biggest Pot: {formatChips(p.stats.biggestPot)}</div>
                     <div>✨ Best Hand: {p.stats.bestHand || 'N/A'}</div>
                     {p.stats.handsPlayed > 0 && (
                       <div>📈 Win Rate: {Math.round((p.stats.potsWon / p.stats.handsPlayed) * 100)}%</div>

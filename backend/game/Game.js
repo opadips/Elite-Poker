@@ -3,6 +3,7 @@ import { Deck } from './Deck.js';
 import { HandEvaluator } from './HandEvaluator.js';
 import * as BettingRound from './BettingRound.js';
 import * as PotManager from './PotManager.js';
+import { applyTournamentRules } from './TournamentManager.js';
 
 const ACHIEVEMENTS = {
   FIRST_BLOOD: { id: 'first_blood', name: 'First Blood', desc: 'Win your first pot!' },
@@ -411,26 +412,7 @@ export class Game {
     console.log('Hand ended.');
 
     if (this.mode === 'tournament') {
-      const busted = this.players.filter(p => !p.isSpectator && p.chips === 0);
-      for (let p of busted) {
-        p.isSpectator = true;
-        p.ready = false;
-        console.log(`${p.name} has 0 chips and became spectator.`);
-      }
-
-      const activeNonSpectators = this.players.filter(p => !p.isSpectator);
-      if (activeNonSpectators.length === 1 && this.players.length > 1) {
-        const champion = activeNonSpectators[0];
-        this.scores[champion.id] = (this.scores[champion.id] || 0) + 1;
-        console.log(`🏆 ${champion.name} wins the tournament round! Score: ${this.scores[champion.id]}`);
-        for (let p of this.players) {
-          p.chips = this.startingChips;
-          p.isSpectator = false;
-          p.ready = false;
-        }
-      } else if (activeNonSpectators.length === 0) {
-        console.log('No players with chips. Waiting for someone to sit in.');
-      }
+      applyTournamentRules(this);
     }
 
     if (!this.paused) {
