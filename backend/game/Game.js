@@ -5,6 +5,7 @@ import * as BettingRound from './BettingRound.js';
 import * as PotManager from './PotManager.js';
 import { applyTournamentRules } from './TournamentManager.js';
 import { checkAchievements } from './AchievementTracker.js';
+import { startHand, postBlind } from './HandLifecycle.js';
 
 export class Game {
   constructor() {
@@ -95,64 +96,11 @@ export class Game {
   }
 
   startHand() {
-    const activePlayers = this.getActivePlayers();
-    if (activePlayers.length < 2) return;
-    console.log('===== NEW HAND START =====');
-    this.handInProgress = true;
-    this.deck = new Deck();
-    this.communityCards = [];
-    this.pot = 0;
-    this.currentBet = 0;
-    this.minRaise = this.bigBlind;
-    this.lastRaiseBy = null;
-    this.currentRound = 'preflop';
-    this.winner = null;
-    this.waitingForAction = true;
-    this.actedPlayers.clear();
-    this.sideBets = [];
-    this.sideBetResults = [];
-    this._allInResolving = false;
-
-    for (let p of activePlayers) {
-      if (p.chips <= 0) {
-        console.log(`${p.name} had 0 chips, resetting to ${this.startingChips}`);
-        p.chips = this.startingChips;
-      }
-      p.resetForNewHand();
-      p.holeCards = [this.deck.draw(), this.deck.draw()];
-      p.revealed = false;
-      console.log(`${p.name} cards: ${p.holeCards[0].rank}${p.holeCards[0].suit} ${p.holeCards[1].rank}${p.holeCards[1].suit}`);
-    }
-
-    const activeIds = activePlayers.map(p => p.id);
-    let currentDealerIndex = activeIds.indexOf(this.dealerIndex);
-    if (currentDealerIndex === -1) currentDealerIndex = 0;
-    this.dealerIndex = activeIds[(currentDealerIndex + 1) % activePlayers.length];
-    const dealerIdxInActive = activeIds.indexOf(this.dealerIndex);
-    const sbIdx = (dealerIdxInActive + 1) % activePlayers.length;
-    const bbIdx = (dealerIdxInActive + 2) % activePlayers.length;
-
-    const sbPlayer = activePlayers[sbIdx];
-    const bbPlayer = activePlayers[bbIdx];
-
-    this.postBlind(sbPlayer, this.smallBlind);
-    this.postBlind(bbPlayer, this.bigBlind);
-    this.currentBet = this.bigBlind;
-    this.minRaise = this.bigBlind;
-    this.lastRaiseBy = bbPlayer.id;
-
-    console.log(`SB: ${sbPlayer.name} (${this.smallBlind}), BB: ${bbPlayer.name} (${this.bigBlind})`);
-    this.currentPlayerIndex = activePlayers[(bbIdx + 1) % activePlayers.length].id;
-    console.log(`First to act: ${this.players.find(p => p.id === this.currentPlayerIndex)?.name}`);
+    startHand(this);
   }
 
   postBlind(player, amount) {
-    const actual = Math.min(amount, player.chips);
-    player.chips -= actual;
-    player.currentBet = actual;
-    player.totalBet += actual;
-    this.pot += actual;
-    if (player.chips === 0) player.isAllIn = true;
+    postBlind(this, player, amount);
   }
 
   playerAction(playerId, action, amount = 0) {
