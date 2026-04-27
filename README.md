@@ -171,9 +171,6 @@ Elite-Poker/
 │   │       ├── themes.css         # 6 visual themes
 │   │       └── animations.css     # CSS keyframe animations
 │   └── index.html
-├── AI_CONTEXT.md              # Project handbook for AI agents (architecture, data flow, rules)
-├── MODULES.md                 # Module reference: inputs/outputs, logic, dependencies per file
-├── DEPENDENCIES.md            # Minimal dependency justification (7 total production deps)
 ├── README.md                  # This file (English)
 └── README_FA.md               # Persian version
 ```
