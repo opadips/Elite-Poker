@@ -1,5 +1,5 @@
 // frontend/src/GameTable.jsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
 import AnimatedChip from './components/AnimatedChip.jsx';
@@ -7,6 +7,7 @@ import PlayerSeat from './components/PlayerSeat.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import Table from './components/Table.jsx';
 import GameOverlays from './components/GameOverlays.jsx';
+import ChipStack from './components/ChipStack.jsx';
 import GameContext from './context/GameContext';
 import { usePlayerPositions } from './hooks/usePlayerPositions';
 import { useGameActions } from './hooks/useGameActions';
@@ -186,6 +187,29 @@ export default function GameTable({
 
   const handleChatToggle = () => setShowChat((prev) => !prev);
 
+  const activePlayersList = gameState
+    ? gameState.players.filter((p) => !p.isSpectator)
+    : [];
+
+  const chipStacks = useMemo(() => {
+    if (!playerPositions || !gameState) return [];
+    return activePlayersList.map((p, idx) => {
+      const pos = playerPositions[p.id];
+      if (!pos) return null;
+      const total = activePlayersList.length;
+      const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
+      const distRadius = 150;
+      const offsetX = Math.cos(angle) * distRadius;
+      const offsetY = Math.sin(angle) * distRadius;
+      return {
+        id: p.id,
+        chips: p.chips,
+        x: pos.x + offsetX,
+        y: pos.y + offsetY,
+      };
+    }).filter(Boolean);
+  }, [playerPositions, gameState, activePlayersList]);
+
   if (!gameState)
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -210,8 +234,6 @@ export default function GameTable({
     currentPlayer &&
     !currentPlayer.folded &&
     !currentPlayer.revealed;
-
-  const activePlayersList = gameState.players.filter((p) => !p.isSpectator);
 
   const contextValue = {
     gameState,
@@ -318,6 +340,22 @@ export default function GameTable({
               : 0,
           }}
         />
+
+        {chipStacks.map((stack) => (
+          <div
+            key={stack.id}
+            style={{
+              position: 'absolute',
+              left: stack.x,
+              top: stack.y,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 5,
+              pointerEvents: 'none',
+            }}
+          >
+            <ChipStack amount={stack.chips} />
+          </div>
+        ))}
 
         {activePlayersList.map((p, idx) => (
           <PlayerSeat

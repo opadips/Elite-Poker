@@ -1,4 +1,3 @@
-// frontend/src/components/PlayerSeat.jsx
 import React, { useContext, useMemo } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
@@ -34,7 +33,6 @@ export default function PlayerSeat({ p, idx, pos }) {
   const isSelf = p.id === playerId;
   const isReady = p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
   const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
-
   const showdownActive = p.revealed && !p.folded;
 
   const knownOpponentHands = useMemo(() => {

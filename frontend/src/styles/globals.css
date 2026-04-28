@@ -109,6 +109,7 @@ body {
   background: #b87c3a;
   border-radius: 10px;
 }
+
 @keyframes cardReveal {
   0% {
     opacity: 0;
@@ -126,6 +127,7 @@ body {
 .animate-cardReveal {
   animation: cardReveal 0.5s ease-out forwards;
 }
+
 @keyframes fadeInSlideDown {
   0% {
     opacity: 0;
@@ -140,10 +142,41 @@ body {
   animation: fadeInSlideDown 0.2s ease-out forwards;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
+}
+
+.chip-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.chip-pile {
+  position: relative;
+  width: 40px;
+  height: 30px;
+}
+
+.chips {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f0e68c, #b8860b);
+  border: 2px solid #daa520;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.chips1 { bottom: 0; left: 8px; }
+.chips2 { bottom: 6px; left: 4px; }
+.chips3 { bottom: 12px; left: 0; }
+
+.chip-amount-text {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 2px black;
+  margin-top: 2px;
 }
