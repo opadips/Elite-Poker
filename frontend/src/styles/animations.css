@@ -1,3 +1,6 @@
+/* src/styles/animations.css */
+
+/* کارت‌های مشترک – چرخش و پرش */
 @keyframes cardRevealSpin {
   0% {
     transform: rotateY(180deg) scale(0.3);
@@ -54,25 +57,4 @@
 .card-reveal-all {
   animation: cardFlip 0.5s ease-out forwards;
   backface-visibility: hidden;
-}
-
-.timer-ring {
-  filter: drop-shadow(0 0 8px currentColor);
-  transition: filter 0.3s ease;
-}
-
-.timer-ring-burning {
-  animation: firePulse 0.15s infinite alternate;
-}
-
-@keyframes firePulse {
-  0% {
-    filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #ff6b6b);
-  }
-  50% {
-    filter: drop-shadow(0 0 18px #ff4444) drop-shadow(0 0 30px #ff9f9f);
-  }
-  100% {
-    filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #ff6b6b);
-  }
 }

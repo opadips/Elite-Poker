@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 const TOTAL_SECONDS = 20;
 
 export default function TimerRing({ remainingSec, width, height }) {
-  if (!width || !height) return null;
+  if (!width || !height || remainingSec <= 0) return null;
 
   const progress = Math.max(0, Math.min(remainingSec / TOTAL_SECONDS, 1));
   const rx = 16;
@@ -20,16 +20,14 @@ export default function TimerRing({ remainingSec, width, height }) {
     if (remainingSec > 15) return '#3b82f6';
     if (remainingSec > 10) return '#22c55e';
     if (remainingSec > 5) return '#f7b731';
-    return '#e74c3c';
+    return '#dc2626';
   }, [remainingSec]);
-
-  const isBurning = remainingSec <= 5;
 
   return (
     <svg
       width={width}
       height={height}
-      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none timer-ring ${isBurning ? 'timer-ring-burning' : ''}`}
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
       style={{ zIndex: 25 }}
     >
       <defs>

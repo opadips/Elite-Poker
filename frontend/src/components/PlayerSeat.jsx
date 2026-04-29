@@ -34,15 +34,14 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
 
   useEffect(() => {
     if (!cardRef.current) return;
-    const updateSize = () => {
+    const observer = new ResizeObserver(() => {
       if (cardRef.current) {
         const { width, height } = cardRef.current.getBoundingClientRect();
         setCardSize({ width, height });
       }
-    };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const isActive = gameState ? gameState.currentPlayerId === p.id : false;
