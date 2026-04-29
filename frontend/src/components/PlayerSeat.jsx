@@ -1,6 +1,7 @@
 import React, { useContext, useMemo } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
+import TimerRing from './TimerRing.jsx';
 import GameContext from '../context/GameContext';
 
 function formatChips(amount) {
@@ -58,21 +59,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
       style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
     >
       {isTimerActive && (
-        <div className="flex flex-col items-center mr-2 z-20">
-          <div className="text-[10px] text-white mb-1 font-mono">
-            {Math.ceil(turnRemainingSec)}s
-          </div>
-          <div className="w-2 h-16 bg-gray-800 rounded-full overflow-hidden shadow-inner">
-            <div
-              className="w-full transition-all duration-300 ease-linear"
-              style={{
-                height: `${(turnRemainingSec / 20) * 100}%`,
-                backgroundColor: getTimerColor(turnRemainingSec),
-                borderRadius: '0 0 999px 999px',
-              }}
-            />
-          </div>
-        </div>
+        <TimerRing remainingSec={turnRemainingSec} size={220} strokeWidth={5} />
       )}
       <div>
         {isWinner && (
@@ -99,7 +86,6 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           ))}
         <div
           className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
-          ${isActive ? 'ring-4 ring-yellow-400 scale-105 shadow-yellow-500/50' : ''}
           ${p.folded ? 'opacity-60 grayscale' : ''}
           ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
           ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
