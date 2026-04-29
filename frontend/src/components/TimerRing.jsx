@@ -18,19 +18,19 @@ export default function TimerRing({ remainingSec, width, height }) {
 
   const color = useMemo(() => {
     if (remainingSec > 15) return '#3b82f6';
+    if (remainingSec > 10) return '#22c55e';
     if (remainingSec > 5) return '#f7b731';
     return '#e74c3c';
   }, [remainingSec]);
+
+  const isBurning = remainingSec <= 5;
 
   return (
     <svg
       width={width}
       height={height}
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-      style={{
-        zIndex: 25,
-        filter: `drop-shadow(0 0 8px ${color})`,
-      }}
+      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none timer-ring ${isBurning ? 'timer-ring-burning' : ''}`}
+      style={{ zIndex: 25 }}
     >
       <defs>
         <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
