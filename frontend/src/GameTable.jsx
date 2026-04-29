@@ -214,6 +214,20 @@ export default function GameTable({
     ? gameState.players.filter((p) => !p.isSpectator)
     : [];
 
+  const blindIds = useMemo(() => {
+    if (!gameState || !orderedPlayerIds || orderedPlayerIds.length < 2) return { sbId: null, bbId: null };
+    const active = orderedPlayerIds.filter(id => activePlayersList.some(p => p.id === id));
+    if (active.length < 2) return { sbId: null, bbId: null };
+    const dealerIdx = active.indexOf(gameState.dealerIndex);
+    const startIdx = dealerIdx >= 0 ? dealerIdx : active.length - 1;
+    const sbIdx = (startIdx + 1) % active.length;
+    const bbIdx = (startIdx + 2) % active.length;
+    return {
+      sbId: active[sbIdx] || null,
+      bbId: active[bbIdx] || null,
+    };
+  }, [gameState, orderedPlayerIds, activePlayersList]);
+
   const chipStacks = useMemo(() => {
     if (!playerPositions || !orderedPlayerIds || !gameState) return [];
     return orderedPlayerIds.map((id, idx) => {
@@ -430,6 +444,8 @@ export default function GameTable({
     enqueueAnimation,
     getChipStackScreenPos,
     getPotScreenPos,
+    sbId: blindIds.sbId,
+    bbId: blindIds.bbId,
   }), [
     gameState,
     playerId,
@@ -447,6 +463,7 @@ export default function GameTable({
     enqueueAnimation,
     getChipStackScreenPos,
     getPotScreenPos,
+    blindIds,
   ]);
 
   if (!gameState)

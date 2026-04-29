@@ -24,6 +24,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
     turnCurrentPlayerId,
     winnerEffect,
     speechBubbles,
+    sbId,
+    bbId,
   } = useContext(GameContext);
 
   const isActive = gameState ? gameState.currentPlayerId === p.id : false;
@@ -32,6 +34,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
   const isReady = p.ready && !gameState?.firstHandStarted && !gameState?.handInProgress;
   const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
   const showdownActive = p.revealed && !p.folded;
+  const isSB = sbId === p.id;
+  const isBB = bbId === p.id;
 
   const knownOpponentHands = useMemo(() => {
     if (!showdownActive) return null;
@@ -109,6 +113,12 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
             {p.name}
             {gameState?.adminId === p.id && (
               <span className="text-xs" title="Admin">👑</span>
+            )}
+            {isSB && (
+              <span className="text-xs text-blue-300 font-bold">SB</span>
+            )}
+            {isBB && (
+              <span className="text-xs text-red-300 font-bold">BB</span>
             )}
             {isAdmin && !isSelf && (
               <button
