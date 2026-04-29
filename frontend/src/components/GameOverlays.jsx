@@ -64,9 +64,15 @@ export default function GameOverlays({
         </div>
       )}
 
-      {sideBetWin && (
+      {sideBetWin && !sideBetWin.refunded && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-800 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
           🎉 {sideBetWin.bettorName} won {sideBetWin.total} chips from side bet on {sideBetWin.targetName}! 🎉
+        </div>
+      )}
+
+      {sideBetWin && sideBetWin.refunded && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-gray-700 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
+          ↩️ {sideBetWin.targetName} folded – your side bet stake of {formatChips(sideBetWin.amount)} has been refunded.
         </div>
       )}
 

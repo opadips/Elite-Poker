@@ -198,6 +198,7 @@ export class Game {
     const activeInHand = this.getActivePlayers().filter(p => !p.folded);
     if (activeInHand.length === 1) {
       const winner = activeInHand[0];
+      const isHeadsUp = this.getActivePlayers().length === 2;
       winner.chips += this.pot;
       const handName = this.evaluatePlayerHand(winner);
       this.winner = {
@@ -208,6 +209,13 @@ export class Game {
         timestamp: Date.now()
       };
       console.log(`Winner by fold: ${winner.name}`);
+
+      if (isHeadsUp && this.sideBets.length > 0) {
+        this.sideBetResults = PotManager.resolveSideBets(this, [winner], true);
+      } else if (this.sideBets.length > 0) {
+        this.sideBetResults = PotManager.resolveSideBets(this, [winner], false);
+      }
+
       this.endHand();
     }
   }

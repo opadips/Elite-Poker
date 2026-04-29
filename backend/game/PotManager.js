@@ -108,10 +108,10 @@ export function runShowdown(game) {
     p.revealed = true;
   }
 
-  game.sideBetResults = resolveSideBets(game, allWinners);
+  game.sideBetResults = resolveSideBets(game, allWinners, false);
 }
 
-export function resolveSideBets(game, winnerPlayers) {
+export function resolveSideBets(game, winnerPlayers, refundMode = false) {
   if (!winnerPlayers.length || game.sideBets.length === 0) {
     game.sideBets = [];
     return [];
@@ -126,15 +126,28 @@ export function resolveSideBets(game, winnerPlayers) {
   for (let bet of winningBets) {
     const bettor = game.players.find(p => p.id === bet.bettorId);
     if (bettor) {
-      const profit = Math.floor(bet.amount * 0.5);
-      bettor.chips += bet.amount + profit;
-      results.push({
-        bettorName: bettor.name,
-        targetName: winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name || '',
-        amount: bet.amount,
-        profit: profit
-      });
-      console.log(`Side bet win: ${bettor.name} wins ${bet.amount + profit} (bet ${bet.amount} on ${winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name})`);
+      if (refundMode) {
+        bettor.chips += bet.amount;
+        results.push({
+          bettorName: bettor.name,
+          targetName: winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name || '',
+          amount: bet.amount,
+          profit: 0,
+          refunded: true
+        });
+        console.log(`Side bet refund: ${bettor.name} gets back ${bet.amount} (bet on ${winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name})`);
+      } else {
+        const profit = Math.floor(bet.amount * 0.5);
+        bettor.chips += bet.amount + profit;
+        results.push({
+          bettorName: bettor.name,
+          targetName: winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name || '',
+          amount: bet.amount,
+          profit: profit,
+          refunded: false
+        });
+        console.log(`Side bet win: ${bettor.name} wins ${bet.amount + profit} (bet ${bet.amount} on ${winnerPlayers.find(w => w.id === bet.targetPlayerId)?.name})`);
+      }
     }
   }
   game.sideBets = [];
