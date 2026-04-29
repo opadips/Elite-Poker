@@ -111,6 +111,7 @@ export function ensureTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcast
   if (!currentId) return;
   const timerData = lobbyTimers.get(lobbyId);
   if (!timerData || timerData.lastTurnPlayerId !== currentId) {
+    stopTurnTimerBroadcast(lobbyId);
     const targetWs = [...clientRegistry.entries()].find(([_, c]) => c.playerId === currentId && c.lobbyId === lobbyId)?.[0];
     if (targetWs) {
       setAutoActionTimer(targetWs, currentId, lobbyId, lobbyManager, clientRegistry, broadcastGameState);

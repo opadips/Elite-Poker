@@ -15,6 +15,13 @@ export function resetBettingRound(game) {
   game.waitingForAction = true;
   const nextPlayer = game.players.find(p => p.id === game.currentPlayerIndex);
   console.log(`New round (${game.currentRound}), first to act: ${nextPlayer?.name}`);
+
+  const nonAllIn = game.getActivePlayers().filter(p => !p.folded && !p.isAllIn);
+  const hasAllIn = game.getActivePlayers().some(p => p.isAllIn);
+  if (nonAllIn.length === 1 && hasAllIn && game.currentRound !== 'preflop') {
+    game.waitingForAction = false;
+    revealRemainingCards(game);
+  }
 }
 
 export function findFirstActiveAfterDealer(game) {

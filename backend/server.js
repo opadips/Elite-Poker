@@ -146,28 +146,24 @@ const scheduler = new BroadcastScheduler(lobbyManager, clientRegistry, {
 scheduler.start();
 
 wss.on('connection', (ws) => {
-  logger.info('WebSocket connected', { clientCount: clientRegistry.size + 1 });
-
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
-      logger.debug('Incoming message', { type: msg.type });
       messageRouter(msg, ws);
     } catch (err) {
-      logger.error('Non‑JSON message received', { raw: data.toString().slice(0, 80) });
+      console.error('Non‑JSON message received:', data.toString().slice(0, 80));
     }
   });
 
   ws.on('close', () => {
     const client = clientRegistry.get(ws);
     if (client) {
-      logger.info('WebSocket disconnected', { playerName: client.name, lobbyId: client.lobbyId });
       if (client.lobbyId) {
         lobbyManager.leaveLobby(client.lobbyId, client.playerId);
         broadcastGameState(client.lobbyId);
         const msg = getDealerMessage('playerLeft', { name: client.name || 'A player' });
         broadcastDealerMessage(client.lobbyId, msg);
-        timerUtils.clearAllTimers(client.lobbyId, clientRegistry);
+        timerUtils.clearTimer(ws, clientRegistry);
       }
       timerUtils.clearTimer(ws, clientRegistry);
       clientRegistry.remove(ws);
@@ -178,5 +174,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(3000, '0.0.0.0', () => {
-  logger.info('Poker server running', { port: 3000 });
+  console.log('✅ Poker server running on ws://0.0.0.0:3000');
 });

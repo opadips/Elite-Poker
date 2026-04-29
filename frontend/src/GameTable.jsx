@@ -27,12 +27,12 @@ import {
 import './styles/animations.css';
 
 const cardBackOptions = [
-  { id: 'default', name: 'Classic', icon: '🃏' },
-  { id: 'galaxy', name: 'Galaxy', icon: '🌌' },
-  { id: 'gold', name: 'Royal Gold', icon: '👑' },
-  { id: 'matrix', name: 'Matrix', icon: '💚' },
-  { id: 'ocean', name: 'Ocean', icon: '🌊' },
-  { id: 'ruby', name: 'Ruby', icon: '💎' },
+  { id: 'classic', name: 'Amber', icon: '🃏' },
+  { id: 'royal', name: 'Royal', icon: '👑' },
+  { id: 'emerald', name: 'Emerald', icon: '🍀' },
+  { id: 'sapphire', name: 'Sapphire', icon: '💎' },
+  { id: 'onyx', name: 'Onyx', icon: '🖤' },
+  { id: 'pearl', name: 'Pearl', icon: '🤍' },
 ];
 
 const ACTION_ANIMATION_WINDOW_MS = 5000;
@@ -53,7 +53,7 @@ export default function GameTable({
   const [resetConfirm, setResetConfirm] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [cardBack, setCardBack] = useState(
-    () => localStorage.getItem('pokerCardBack') || 'default'
+    () => localStorage.getItem('pokerCardBack') || 'classic'
   );
   const [seatViewFixed, setSeatViewFixed] = useState(
     () => localStorage.getItem('seatViewFixed') !== 'false'
@@ -120,9 +120,9 @@ export default function GameTable({
 
   const themes = [
     { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
-    { id: 'cyberpunk', name: 'Cyberpunk', icon: '💠', color: 'bg-purple-800' },
-    { id: 'fantasy', name: 'Fantasy', icon: '✨', color: 'bg-amber-700' },
-    { id: 'midnight', name: 'Midnight', icon: '🌙', color: 'bg-blue-900' },
+    { id: 'crimson', name: 'Royal Crimson', icon: '🍷', color: 'bg-red-950' },
+    { id: 'emerald', name: 'Emerald Luxe', icon: '🌿', color: 'bg-green-950' },
+    { id: 'sapphire', name: 'Sapphire Noir', icon: '🌌', color: 'bg-blue-950' },
     { id: 'neonjungle', name: 'Neon Jungle', icon: '🌿', color: 'bg-green-950' },
     { id: 'void', name: 'Void Pulse', icon: '🌀', color: 'bg-indigo-950' },
   ];
