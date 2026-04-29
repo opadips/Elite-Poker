@@ -83,7 +83,7 @@ const ACHIEVEMENT_DEFINITIONS = [
       if (!won) return false;
       const evaluator = new HandEvaluator();
       const hand = evaluator.evaluate(p.holeCards, game.communityCards);
-      if (hand.name !== 'Two Pair') return false;
+      if (!hand || hand.name !== 'Two Pair') return false;
       const rankCounts = {};
       for (const card of [...p.holeCards, ...game.communityCards]) {
         const r = card.rank;
@@ -264,11 +264,13 @@ export function checkAchievements(game) {
         counters.pocket2sWins[player.id]++;
       }
 
-      const hand = evaluator.evaluate(player.holeCards, game.communityCards);
-      if (hand.name === 'Flush' || hand.name === 'Straight Flush' || hand.name === 'Royal Flush') {
-        if (hand.name === 'Flush') counters.flushWins[player.id]++;
-        if (hand.name === 'Full House' || hand.name === 'Four of a Kind' || hand.name === 'Straight Flush' || hand.name === 'Royal Flush') {
-          counters.boatWins[player.id]++;
+      if (game.communityCards.length >= 3) {
+        const hand = evaluator.evaluate(player.holeCards, game.communityCards);
+        if (hand) {
+          if (hand.name === 'Flush') counters.flushWins[player.id]++;
+          if (['Full House', 'Four of a Kind', 'Straight Flush', 'Royal Flush'].includes(hand.name)) {
+            counters.boatWins[player.id]++;
+          }
         }
       }
     } else {

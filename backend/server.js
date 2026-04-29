@@ -9,6 +9,7 @@ import { BroadcastScheduler } from './BroadcastScheduler.js';
 import * as timerUtils from './utils/timerUtils.js';
 import { getDealerMessage } from './game/dealerMessages.js';
 import { MAX_NAME_LENGTH, CHAT_HISTORY_SIZE } from './constants.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 app.use(cors());
@@ -145,18 +146,22 @@ const scheduler = new BroadcastScheduler(lobbyManager, clientRegistry, {
 scheduler.start();
 
 wss.on('connection', (ws) => {
+  logger.info('WebSocket connected', { clientCount: clientRegistry.size + 1 });
+
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
+      logger.debug('Incoming message', { type: msg.type });
       messageRouter(msg, ws);
     } catch (err) {
-      console.error('Non‑JSON message received:', data.toString().slice(0, 80));
+      logger.error('Non‑JSON message received', { raw: data.toString().slice(0, 80) });
     }
   });
 
   ws.on('close', () => {
     const client = clientRegistry.get(ws);
     if (client) {
+      logger.info('WebSocket disconnected', { playerName: client.name, lobbyId: client.lobbyId });
       if (client.lobbyId) {
         lobbyManager.leaveLobby(client.lobbyId, client.playerId);
         broadcastGameState(client.lobbyId);
@@ -173,5 +178,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(3000, '0.0.0.0', () => {
-  console.log('✅ Poker server running on ws://0.0.0.0:3000');
+  logger.info('Poker server running', { port: 3000 });
 });
