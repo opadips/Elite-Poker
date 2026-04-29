@@ -1,6 +1,7 @@
+```markdown
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
-➡️ **برای دیدن نسخه فارسی کلیک کنید:[Perisan version](README_FA.md)
+➡️ **برای دیدن نسخه فارسی کلیک کنید:[Persian version](README_FA.md)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D16-brightgreen)
@@ -8,73 +9,70 @@
 ---
 ## ✨ Features
 ### 🏠 Lobby System
-- **Lobby list** – browse available tables with player count, top score, mode, and lock status
-- **Create private/public tables** – set a name, description, password, blinds, starting chips (up to 1,000,000), and game mode (Tournament / Cash)
-- **General chat** – chat with all online players before joining a table
-- **Online players panel** – see who is in the lobby
-- **Waitlist** – if a table is full (max 10 players), you can join a waitlist and be auto‑seated when a spot opens
-- **Admin controls** – only the table creator can reset the lobby or kick players
-- **Kick players** – admin can remove players from the table via a ❌ button next to their name
-- **Return to lobby** – leave the table and go back to the lobby list without disconnecting
+- **Lobby list** – browse available tables with player count, top score, mode, lock status, active players, blinds, and more.
+- **Live table cards** – see active player count, blinds, starting chips, and—when a hand is in progress—the current pot size and round.
+- **Create private/public tables** – set a name, description, password, blinds, starting chips (up to 1,000,000), and game mode (Tournament / Cash).
+- **General chat** – chat with all online players before joining a table.
+- **Online players panel** – see who is in the lobby.
+- **Waitlist** – if a table is full (max 10 players), join the waitlist and be auto‑seated when a spot opens.
+- **Admin controls** – only the table creator can reset the lobby or kick players.
+- **Kick players** – admin can remove players from the table.
+- **Return to lobby** – leave the table and go back to the lobby list without disconnecting.
+
+### 🎤 A Dealer with Attitude
+- A sarcastic, witty Dealer narrates every action—fold, call, raise, all‑in, and more—with over 100 unique lines.
+- Dealer messages appear instantly at the top of the screen and fade after a moment.
+
 ### 🎮 Core Gameplay
-- Full Texas Hold'em rules (preflop, flop, turn, river, blinds, side pots)
-- Real‑time multiplayer via **WebSocket** (2–10 players per table)
-- **Spectator mode** – watch the game and sit in with adjustable starting chips (displayed as `1K`, `100K`, `1M`)
-- ** (Side betting)** – Players who fold can bet on active players (50% profit). The system is designed to prevent abuse of this as much as possible, for example, if a player who wins folds and the opponent wins, no one wins anything from the side bet (in the future, in this scenario, the chip amount will be returned to the player, currently nothing is returned).
-- **Tournament mode** – chips reset only when one player remains; winner gets a point and all players restart with fresh chips
-- **Cash mode** – chips keep accumulating across hands (no forced reset)
-- **Auto‑action timer** – 20s per turn, auto‑check or auto‑fold on time‑out, visible via a vertical color‑coded bar beside the active player
-- **Turn timer bar** – vertical bar next to active player (blue >15s, green >10s, yellow >5s, red ≤5s)
-- **Pause / Resume** – pause the game anytime (pauses auto‑fold timers), with player attribution
+- Full Texas Hold'em rules (preflop, flop, turn, river, blinds, side pots).
+- Real‑time multiplayer via **WebSocket** (2–10 players per table).
+- **Spectator mode** – watch the game and sit in with adjustable starting chips.
+- **Side betting** – folded players can bet on active players (50% profit). In heads‑up scenarios where the opponent folds, the side bet is refunded to prevent abuse.
+- **Tournament mode** – chips reset when one player remains; winner gets a point and everyone restarts with fresh chips.
+- **Cash mode** – chips accumulate across hands (no forced reset).
+- **Auto‑action timer** – 20 seconds per turn; auto‑check or auto‑fold on time‑out. The active player’s card is wrapped with a sleek neon progress ring that changes colour from blue → green → orange → red.
+- **Pause / Resume** – pause the game anytime (pauses auto‑fold timers), with player attribution.
+
 ### 🎨 Visual & UX
-- **6 stunning themes** with pure CSS backgrounds (no external files):
-  - `Classic` · `Cyberpunk` · `Fantasy` · `Midnight` · `Neon Jungle` · `Void Pulse`
-- **Card back customization** (6 designs) – saved in `localStorage`
-- **Seat view** – fixed (your seat always at the bottom) or dynamic (rotating), adjustable in settings
-- **Ready / Unready system** – large button at bottom‑right, green glow ring around ready players
+- **6 polished themes** with pure CSS backgrounds (no external files):
+  - `Classic` · `Royal Crimson` · `Emerald Luxe` · `Sapphire Noir` · `Neon Jungle` · `Void Pulse`
+- **Card back customization** (6 designs) – saved in `localStorage`.
+- **Seat view** – fixed (your seat always at the bottom) or dynamic (rotating), adjustable in settings.
 - **Advanced animations**:
   - Community card reveal with 3D spin
-  - Chip movement with parabolic arc and bounce
-  - Winner hand text with per‑theme font & color, smooth fade‑in‑out
-  - Post‑hand card flip animation (manual show cards button after hand ends)
-  - All‑in delayed community card reveal (2s between flop, turn, river for suspense)
-- **Table size** optimized for a clean view (elliptical shape, responsive)
+  - Chip movement with parabolic arc
+  - Winner hand text with per‑theme font & colour
+  - All‑in delayed community card reveal (2s between streets)
+- **Visual indicators** – admin crown, SB/BB badges, dealer badge (hidden until the first hand starts).
+
 ### 🔊 Sound Effects (Web Audio API)
-- **No audio files required** – all sounds generated live with Web Audio API
-- Card dealing, chip clicking, winner fanfare, timer beep, and a rich **all‑in coin‑machine sound**
-- Sound on/off toggle in settings with visual feedback
-### 📊 Live Hand Equity (Noob Mode)
-- When **Noob Mode** is enabled, a **live probability bar** appears showing your chance of winning the hand
-- Monte Carlo simulation with **2000 trials**, runs entirely on the client
-- Color‑coded bar: **green** (low equity) → **orange** (medium) → **red** (high)
-- The panel appears directly inside your own player card, without obstructing the table
+- **No audio files required** – all sounds generated live with Web Audio API.
+- Card dealing, chip clicking, winner fanfare, timer beep, and a rich all‑in coin‑machine sound.
+
+### 📊 Noob Mode
+- A live probability bar shows your chance of winning the hand (Monte Carlo simulation, 2000 trials).
+- Colour‑coded: green (low) → orange (medium) → red (high).
+
 ### 🏆 Achievements
-- **8 unique achievements** unlock and show a toast notification:
-  - `First Blood` – Win your first pot
-  - `Hat Trick` – Win 3 pots in a row
-  - `High Roller` – Win a pot of 500+ chips
-  - `Royal Touch` – Win with a Royal Flush
-  - `Bluff Master` – Win with a High Card
-  - `All‑In King` – Win while being all‑in
-  - `Sheriff` – Eliminate a player
-  - `Veteran` – Play 10 hands
-- Achievements are stored per player and shown in real‑time
-### 💬 Chat & Speech Bubbles
-- Table chat with **persistent history** (messages stay even when you close the chat panel)
-- **Speech bubbles** appear above the sender’s seat for a few seconds
-- System messages for joins, wins, side bets, pauses, achievements, etc.
-- **Auto‑open / close** chat when a system message arrives (5 second timeout)
+- Only ultra‑rare moments unlock achievements now—no more spammy notifications.
+- Examples: winning with a Royal Flush, dragging a million‑chip pot, a 10‑hand win streak, or winning a hand after being reduced to exactly 1 chip.
+
+### 💬 Chat & Quick Chat
+- Table chat with persistent history.
+- **Speech bubbles** appear above the sender’s seat.
+- **Quick Chat pad** – one‑click emoji messages in three categories (Emotions, Game, Greetings).
+- **Private messages** – use `/w PlayerName` to whisper directly to someone (purple styling, visible only to sender and receiver).
+- Chat panel auto‑hides after a few seconds of inactivity.
+
 ### 👤 Player Stats & History
-- Expandable leaderboard at top‑left showing:
-  - Hands played, pots won, losses, biggest pot, best hand, win rate
-- Stats are updated after every hand
-- **Hand history** – view recent hands from the settings menu
+- Expandable leaderboard showing hands played, pots won, losses, biggest pot, best hand, and win rate.
+- **Hand history** – view recent hands from the settings menu.
+
 ### 🛡️ Other Improvements
-- Duplicate player names are prevented
-- Pause / Resume messages show who performed the action
-- Settings panel scrolls when content overflows
-- Chat and settings remain fully visible even when game is paused
-- Lobbies automatically removed when empty
+- Auto‑fold when the acting player disconnects—no more frozen tables.
+- Structured JSON logger on the server for live debugging.
+- Chat panel always stays on top of chips, seats, and cards.
+
 ---
 ## 🚀 Quick Start
 ### Prerequisites
@@ -109,19 +107,18 @@ Open `http://localhost:5173` (or your LAN IP) and start playing.
 - Click on a table to join. If it’s password‑protected, enter the password.
 
 ### 2. Start Playing
-- You'll enter as a **spectator** – click **Sit In** (bottom‑right) to join the game with the table’s starting chips.
-- When not in a hand, use the **Ready** button (bottom‑right) to signal you’re ready.
+- You'll enter as a **spectator** – click **Sit In** (bottom‑right) to join the game.
+- When not in a hand, use the **Ready** button to signal you’re ready.
   - A green glow appears around your seat when ready.
   - When all active players are ready, the first hand starts automatically.
 
 ### 3. Take Action
 - On your turn, use the action buttons (Fold, Check, Call, Raise, All‑in).
-- Folded players can place **side bets** on active players via the panel that appears.
+- Folded players can place **side bets** on active players.
 
-### 4. Review & Settings
-- Use the **⚙️ Settings** menu to:
-  - Change theme, card back, seat view, sound, Noob Mode, pause the game, view hand history, or return to the lobby.
-- After a hand ends, press **👁️ Show Cards** to reveal your hole cards.
+### 4. Chat & Settings
+- Use the **⚙️ Settings** menu to change theme, card back, seat view, sound, Noob Mode, pause, view hand history, or return to the lobby.
+- Type in chat, use Quick Chat emojis, or whisper to someone with `/w PlayerName message`.
 
 ### 5. Admin Control
 - The table creator can reset the lobby or kick players.
@@ -131,66 +128,69 @@ Open `http://localhost:5173` (or your LAN IP) and start playing.
 ```text
 Elite-Poker/
 ├── backend/
-│ ├── server.js # HTTP/WS setup, WebSocket message dispatch
-│ ├── LobbyManager.js # Multi‑lobby creation, join, leave, password, waitlist
-│ ├── ClientRegistry.js # WebSocket → client mapping and lifecycle
-│ ├── MessageRouter.js # Routes incoming WS messages to handlers
-│ ├── BroadcastScheduler.js # Periodic state broadcasts, winner announcements, timers
-│ ├── WaitlistManager.js # Waitlist add/promote logic
-│ ├── HandHistoryStore.js # Persistent hand history per lobby
-│ ├── LobbyChatStore.js # Persistent chat store per lobby
-│ ├── constants.js # Shared backend magic numbers
-│ ├── handlers/
-│ │ ├── lobbyHandlers.js # Handlers for lobby operations
-│ │ └── gameHandlers.js # Handlers for in‑game actions
-│ ├── utils/
-│ │ └── timerUtils.js # 20s turn timer, auto‑check/fold
-│ └── game/
-│ ├── Game.js # Core poker engine, delegates to specialist modules
-│ ├── Player.js # Player model with stats and achievements
-│ ├── Deck.js # Standard 52‑card deck
-│ ├── HandEvaluator.js # 7‑card hand evaluation (best 5 of 7)
-│ ├── HandLifecycle.js # New hand initialisation and blind posting
-│ ├── BettingRound.js # Turn order, round completion, all‑in reveal
-│ ├── PotManager.js # Side‑pot calculation, showdown, winnings distribution
-│ ├── PlayerActionValidator.js # Validates a player action before execution
-│ ├── TournamentManager.js # Tournament bust detection and reset
-│ └── AchievementTracker.js # Achievement definitions and unlock logic
+│   ├── server.js
+│   ├── LobbyManager.js
+│   ├── ClientRegistry.js
+│   ├── MessageRouter.js
+│   ├── BroadcastScheduler.js
+│   ├── WaitlistManager.js
+│   ├── HandHistoryStore.js
+│   ├── LobbyChatStore.js
+│   ├── constants.js
+│   ├── handlers/
+│   │   ├── lobbyHandlers.js
+│   │   └── gameHandlers.js
+│   ├── utils/
+│   │   ├── timerUtils.js
+│   │   └── logger.js
+│   └── game/
+│       ├── Game.js
+│       ├── Player.js
+│       ├── Deck.js
+│       ├── HandEvaluator.js
+│       ├── HandLifecycle.js
+│       ├── BettingRound.js
+│       ├── PotManager.js
+│       ├── PlayerActionValidator.js
+│       ├── TournamentManager.js
+│       ├── AchievementTracker.js
+│       └── dealerMessages.js
 ├── frontend/
-│ ├── index.html
-│ └── src/
-│ ├── App.jsx # Top‑level routing (login → lobby → game)
-│ ├── LobbyList.jsx # Displays tables, general chat, online players
-│ ├── CreateLobbyModal.jsx # Modal for creating a new table
-│ ├── GameTable.jsx # Main game coordinator
-│ ├── components/
-│ │ ├── Card.jsx # Single playing card
-│ │ ├── Chat.jsx # Table chat panel
-│ │ ├── Leaderboard.jsx # Expandable player statistics
-│ │ ├── ActionButtons.jsx # Fold, check, call, raise, all‑in, reveal
-│ │ ├── BettingPanel.jsx # Side‑bet panel for folded players
-│ │ ├── HandInfo.jsx # Noob‑mode hand rank and equity bar
-│ │ ├── AnimatedChip.jsx # Chip animation component
-│ │ ├── PlayerSeat.jsx # Single player seat with all indicators
-│ │ ├── SettingsPanel.jsx # Settings dropdown (theme, sound, seat view…)
-│ │ ├── Table.jsx # Oval table, community cards, pot
-│ │ └── GameOverlays.jsx # Chat, pause, winner, spectator, history overlays
-│ ├── context/
-│ │ └── GameContext.js # Shared game state context
-│ ├── hooks/
-│ │ ├── useSound.js # Web Audio API synthesised sound effects
-│ │ ├── useGameSocket.js # Central WebSocket listener
-│ │ ├── useGameStateSync.js
-│ │ ├── useTimerSync.js
-│ │ ├── useChatSync.js
-│ │ ├── useHandHistorySync.js
-│ │ ├── usePlayerPositions.js
-│ │ └── useGameActions.js
-│ ├── utils/
-│ │ └── equity.js # Monte Carlo and exact equity calculation
-│ └── styles/
-│ ├── themes.css # Six visual themes
-│ └── animations.css # CSS keyframe animations
+│   ├── index.html
+│   └── src/
+│       ├── App.jsx
+│       ├── LobbyList.jsx
+│       ├── CreateLobbyModal.jsx
+│       ├── GameTable.jsx
+│       ├── components/
+│       │   ├── Card.jsx
+│       │   ├── Chat.jsx
+│       │   ├── Leaderboard.jsx
+│       │   ├── ActionButtons.jsx
+│       │   ├── BettingPanel.jsx
+│       │   ├── HandInfo.jsx
+│       │   ├── AnimatedChip.jsx
+│       │   ├── ChipStack.jsx
+│       │   ├── TimerRing.jsx
+│       │   ├── PlayerSeat.jsx
+│       │   ├── SettingsPanel.jsx
+│       │   ├── Table.jsx
+│       │   └── GameOverlays.jsx
+│       ├── context/
+│       │   └── GameContext.js
+│       ├── hooks/
+│       │   ├── useSound.js
+│       │   ├── useGameStateSync.js
+│       │   ├── useTimerSync.js
+│       │   ├── useChatSync.js
+│       │   ├── useHandHistorySync.js
+│       │   ├── usePlayerPositions.js
+│       │   └── useGameActions.js
+│       ├── utils/
+│       │   └── equity.js
+│       └── styles/
+│           ├── themes.css
+│           └── animations.css
 ├── README.md
 ├── README_FA.md
 └── package.json
@@ -208,7 +208,7 @@ Elite-Poker/
 ## 🌈 Customisation
 - **Add new themes** – edit `themes.css` and add a new entry in the `themes` array inside `GameTable.jsx`.
 - All theme‑dependent colors are controlled by CSS custom properties (`--table-bg`, `--winner-text`, etc.).
-- Card backs and other personalisation options are stored in `localStorage` for persistence.
+- Card backs and other personalisation options are stored in `localStorage`.
 
 ---
 And I would like you to know that I have used many models to build this project so far, such as:
@@ -216,8 +216,8 @@ And I would like you to know that I have used many models to build this project 
 ---
 
 ## 🤝 Contributing
-u found a bug or issue ?? 
-1 - just update by useing 'update-Elite-poker.bat'
+Found a bug or issue?
+1 - just update by using 'update-Elite-poker.bat'
     It's probably fixed because I fix problems very quickly, there's usually always a version to update :)
 2- The problem is still not fixed? It's strange, but be sure to report it so I can fix it quickly.
 
