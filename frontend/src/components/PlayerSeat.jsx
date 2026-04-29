@@ -9,7 +9,7 @@ function formatChips(amount) {
   return amount.toString();
 }
 
-export default function PlayerSeat({ p, idx, pos }) {
+const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
   const {
     gameState,
     playerId,
@@ -196,4 +196,27 @@ export default function PlayerSeat({ p, idx, pos }) {
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  const prevP = prevProps.p;
+  const nextP = nextProps.p;
+  return (
+    prevP.chips === nextP.chips &&
+    prevP.folded === nextP.folded &&
+    prevP.isAllIn === nextP.isAllIn &&
+    prevP.ready === nextP.ready &&
+    prevP.revealed === nextP.revealed &&
+    prevP.isSpectator === nextP.isSpectator &&
+    prevP.currentBet === nextP.currentBet &&
+    prevP.holeCards?.[0]?.rank === nextP.holeCards?.[0]?.rank &&
+    prevP.holeCards?.[0]?.suit === nextP.holeCards?.[0]?.suit &&
+    prevP.holeCards?.[1]?.rank === nextP.holeCards?.[1]?.rank &&
+    prevP.holeCards?.[1]?.suit === nextP.holeCards?.[1]?.suit &&
+    prevP.lastAction?.type === nextP.lastAction?.type &&
+    prevP.lastAction?.amount === nextP.lastAction?.amount &&
+    prevProps.pos?.x === nextProps.pos?.x &&
+    prevProps.pos?.y === nextProps.pos?.y &&
+    prevProps.idx === nextProps.idx
+  );
+});
+
+export default PlayerSeat;

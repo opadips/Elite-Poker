@@ -25,6 +25,8 @@ export default function SettingsPanel({
   setResetConfirm,
   requestHandHistory,
   onReturnToLobby,
+  performanceMode,
+  setPerformanceMode,
 }) {
   if (!showSettings) return null;
 
@@ -78,6 +80,13 @@ export default function SettingsPanel({
           <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>🔊</span> Sound</div>
           <button onClick={() => setSoundEnabled(prev => !prev)} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${soundEnabled ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'}`}>
             <span className="text-sm font-medium">{soundEnabled ? 'ON' : 'OFF'}</span><span className="text-lg">{soundEnabled ? '🔊' : '🔇'}</span>
+          </button>
+        </div>
+        <div className="px-4 py-3 border-b border-gray-700/50">
+          <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><span>⚡</span> Performance Mode</div>
+          <button onClick={() => setPerformanceMode(prev => !prev)} className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${performanceMode ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'bg-gray-800 text-gray-400 border border-transparent'}`}>
+            <span className="text-sm font-medium">{performanceMode ? 'Fast (Reduced animations)' : 'Full animations'}</span>
+            <span className="text-lg">{performanceMode ? '⚡' : '🐢'}</span>
           </button>
         </div>
         <div className="px-4 py-3 border-b border-gray-700/50">

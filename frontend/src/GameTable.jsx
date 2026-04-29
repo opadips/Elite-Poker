@@ -1,5 +1,5 @@
 // frontend/src/GameTable.jsx
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
 import AnimatedChip from './components/AnimatedChip.jsx';
@@ -15,11 +15,14 @@ import { useGameStateSync } from './hooks/useGameStateSync';
 import { useTimerSync } from './hooks/useTimerSync';
 import { useChatSync } from './hooks/useChatSync';
 import { useHandHistorySync } from './hooks/useHandHistorySync';
+import { chipLandSound } from './hooks/useSound';
 import {
   MIN_RAISE,
   TIMER_COLOR_BREAKPOINTS,
   WINNER_CHIP_ANIMATION_COUNT,
   WINNER_CHIP_ANIMATION_INTERVAL,
+  MAX_FLYING_CHIPS,
+  WIN_CHIP_DURATION,
 } from './constants.js';
 import './styles/animations.css';
 
@@ -31,6 +34,9 @@ const cardBackOptions = [
   { id: 'ocean', name: 'Ocean', icon: '🌊' },
   { id: 'ruby', name: 'Ruby', icon: '💎' },
 ];
+
+const ACTION_ANIMATION_WINDOW_MS = 500;
+const WINNER_ANIMATION_WINDOW_MS = 500;
 
 export default function GameTable({
   ws,
@@ -56,14 +62,32 @@ export default function GameTable({
   const [cardBackExpanded, setCardBackExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [animatingChips, setAnimatingChips] = useState([]);
+  const [performanceMode, setPerformanceMode] = useState(
+    () => localStorage.getItem('performanceMode') === 'true'
+  );
 
   const tableContainerRef = useRef(null);
   const playerRefs = useRef({});
   const soundEnabledRef = useRef(true);
+  const prevActionsRef = useRef({});
+  const runningCountRef = useRef(0);
+  const queueRef = useRef([]);
+  const pendingActionsRef = useRef([]);
+  const maxFlyingChipsRef = useRef(MAX_FLYING_CHIPS);
+  const winnerChipCountRef = useRef(WINNER_CHIP_ANIMATION_COUNT);
+  const performanceModeRef = useRef(performanceMode);
+  const winLandCountRef = useRef(0);
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
+
+  useEffect(() => {
+    performanceModeRef.current = performanceMode;
+    maxFlyingChipsRef.current = performanceMode ? 2 : MAX_FLYING_CHIPS;
+    winnerChipCountRef.current = performanceMode ? 3 : WINNER_CHIP_ANIMATION_COUNT;
+    localStorage.setItem('performanceMode', performanceMode);
+  }, [performanceMode]);
 
   const {
     gameState,
@@ -102,62 +126,228 @@ export default function GameTable({
     { id: 'void', name: 'Void Pulse', icon: '🌀', color: 'bg-indigo-950' },
   ];
 
-  const sendWs = (msg) => {
+  const sendWs = useCallback((msg) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(msg));
     }
-  };
+  }, [ws]);
 
-  const currentPlayer = gameState?.players?.find((p) => p.id === playerId);
+  const playLandSound = useCallback(() => {
+    if (soundEnabledRef.current) {
+      chipLandSound();
+    }
+  }, []);
 
-  const {
-    handleAction,
-    handleRevealCards,
-    toggleReady,
-    sitIn,
-    resetLobby,
-    togglePause,
-    requestHandHistory,
-    addChipAnimation,
-  } = useGameActions(
-    ws,
-    isPaused,
-    soundEnabled,
-    setShowSettings,
-    setResetConfirm,
-    gameState,
-    playerId,
-    currentPlayer,
-    setAnimatingChips,
-    playerRefs,
-    sendWs
-  );
+  const processQueue = useCallback(() => {
+    if (runningCountRef.current >= maxFlyingChipsRef.current) return;
+    if (queueRef.current.length === 0) return;
 
-  const removeChipAnimation = (id) =>
-    setAnimatingChips((prev) => prev.filter((c) => c.id !== id));
+    const item = queueRef.current.shift();
+    runningCountRef.current++;
+
+    const newChip = {
+      id: Date.now() + Math.random(),
+      value: item.value,
+      from: item.from,
+      to: item.to,
+      duration: item.duration || 800,
+      type: item.type || 'bet',
+    };
+
+    setAnimatingChips((prev) => [...prev, newChip]);
+  }, []);
+
+  const enqueueAnimation = useCallback((item) => {
+    if (!item.from || !item.to) return;
+    if (typeof item.from.x !== 'number' || typeof item.from.y !== 'number') return;
+    if (typeof item.to.x !== 'number' || typeof item.to.y !== 'number') return;
+    if (performanceModeRef.current) {
+      playLandSound();
+      return;
+    }
+    queueRef.current.push(item);
+    processQueue();
+  }, [processQueue, playLandSound]);
+
+  const removeChipAnimation = useCallback((id) => {
+    setAnimatingChips((prev) => {
+      const chip = prev.find(c => c.id === id);
+      if (chip) {
+        if (chip.type === 'win') {
+          if (winLandCountRef.current < 3) {
+            playLandSound();
+            winLandCountRef.current++;
+          }
+        } else {
+          playLandSound();
+        }
+      }
+      return prev.filter((c) => c.id !== id);
+    });
+    runningCountRef.current = Math.max(0, runningCountRef.current - 1);
+    setTimeout(() => processQueue(), 50);
+  }, [processQueue, playLandSound]);
+
+  const toScreenCoords = useCallback((relativeX, relativeY) => {
+    if (!tableContainerRef.current) {
+      return { x: relativeX, y: relativeY };
+    }
+    const rect = tableContainerRef.current.getBoundingClientRect();
+    return {
+      x: rect.left + relativeX,
+      y: rect.top + relativeY,
+    };
+  }, []);
+
+  const getPotScreenPos = useCallback(() => {
+    if (!tableContainerRef.current) {
+      return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    }
+    const rect = tableContainerRef.current.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+  }, []);
+
+  const activePlayersList = gameState
+    ? gameState.players.filter((p) => !p.isSpectator)
+    : [];
+
+  const chipStacks = useMemo(() => {
+    if (!playerPositions || !gameState) return [];
+    return activePlayersList.map((p, idx) => {
+      const pos = playerPositions[p.id];
+      if (!pos) return null;
+      const total = activePlayersList.length;
+      const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
+      const distRadius = 150;
+      const offsetX = Math.cos(angle) * distRadius;
+      const offsetY = Math.sin(angle) * distRadius;
+      return {
+        id: p.id,
+        chips: p.chips,
+        currentBet: p.folded ? 0 : (p.currentBet || 0),
+        x: pos.x + offsetX,
+        y: pos.y + offsetY,
+      };
+    }).filter(Boolean);
+  }, [playerPositions, gameState, activePlayersList]);
+
+  const chipStackPositionsMap = useMemo(() => {
+    const map = {};
+    chipStacks.forEach(cs => {
+      map[cs.id] = { x: cs.x, y: cs.y };
+    });
+    return map;
+  }, [chipStacks]);
+
+  const getChipStackScreenPos = useCallback((pid) => {
+    const relPos = chipStackPositionsMap[pid];
+    if (!relPos) {
+      const seatPos = playerPositions?.[pid];
+      if (seatPos) return toScreenCoords(seatPos.x, seatPos.y);
+      return getPotScreenPos();
+    }
+    return toScreenCoords(relPos.x, relPos.y);
+  }, [chipStackPositionsMap, playerPositions, toScreenCoords, getPotScreenPos]);
+
+  const flushPendingActions = useCallback(() => {
+    if (pendingActionsRef.current.length === 0) return;
+    const now = Date.now();
+    const actions = pendingActionsRef.current.filter(item => {
+      return !item.timestamp || (now - item.timestamp) < ACTION_ANIMATION_WINDOW_MS;
+    });
+    pendingActionsRef.current = [];
+    actions.forEach(item => {
+      enqueueAnimation(item);
+    });
+  }, [enqueueAnimation]);
 
   useEffect(() => {
-    if (winnerEffect?.winnerId && gameState) {
-      const winnerEl = playerRefs.current[winnerEffect.winnerId];
-      if (!winnerEl) return;
-      const rect = winnerEl.getBoundingClientRect();
-      const toPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      const fromPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-      for (let i = 0; i < WINNER_CHIP_ANIMATION_COUNT; i++) {
-        setTimeout(() => {
-          setAnimatingChips((prev) => [
-            ...prev,
-            {
-              id: Date.now() + Math.random(),
-              value: Math.floor(gameState.totalPot / WINNER_CHIP_ANIMATION_COUNT),
-              fromPos,
-              toPosition: toPos,
-            },
-          ]);
-        }, i * WINNER_CHIP_ANIMATION_INTERVAL);
+    if (!gameState || !gameState.players) return;
+
+    const hasChipStackPositions = Object.keys(chipStackPositionsMap).length > 0;
+    const now = Date.now();
+
+    gameState.players.forEach((p) => {
+      const prevAction = prevActionsRef.current[p.id];
+      const newAction = p.lastAction;
+      if (
+        newAction &&
+        newAction.type &&
+        (!prevAction ||
+          prevAction.type !== newAction.type ||
+          prevAction.amount !== newAction.amount)
+      ) {
+        if (
+          (newAction.type === 'call' ||
+            newAction.type === 'raise' ||
+            newAction.type === 'allin') &&
+          newAction.amount > 0
+        ) {
+          const actionAge = newAction.timestamp ? now - newAction.timestamp : 0;
+          if (actionAge > ACTION_ANIMATION_WINDOW_MS) {
+            prevActionsRef.current[p.id] = newAction;
+            return;
+          }
+
+          const fromPos = getChipStackScreenPos(p.id);
+          const toPos = getPotScreenPos();
+          const animItem = {
+            value: newAction.amount,
+            from: fromPos,
+            to: toPos,
+            type: newAction.type,
+            timestamp: newAction.timestamp,
+          };
+
+          if (hasChipStackPositions) {
+            enqueueAnimation(animItem);
+          } else {
+            pendingActionsRef.current.push(animItem);
+          }
+        }
       }
+      prevActionsRef.current[p.id] = newAction;
+    });
+  }, [gameState, getChipStackScreenPos, getPotScreenPos, enqueueAnimation, chipStackPositionsMap]);
+
+  useEffect(() => {
+    if (Object.keys(chipStackPositionsMap).length > 0) {
+      requestAnimationFrame(() => {
+        flushPendingActions();
+      });
     }
-  }, [winnerEffect, gameState]);
+  }, [chipStackPositionsMap, flushPendingActions]);
+
+  useEffect(() => {
+    if (winnerEffect?.winnerId && gameState?.winner?.timestamp) {
+      const winnerAge = Date.now() - gameState.winner.timestamp;
+      if (winnerAge > WINNER_ANIMATION_WINDOW_MS) return;
+
+      queueRef.current = [];
+      runningCountRef.current = 0;
+      winLandCountRef.current = 0;
+
+      const count = performanceModeRef.current ? 2 : winnerChipCountRef.current;
+      setTimeout(() => {
+        const fromPos = getPotScreenPos();
+        const winnerStackPos = getChipStackScreenPos(winnerEffect.winnerId);
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => {
+            enqueueAnimation({
+              value: Math.floor(gameState.totalPot / (count || 1)),
+              from: { ...fromPos },
+              to: { ...winnerStackPos },
+              type: 'win',
+              duration: WIN_CHIP_DURATION,
+            });
+          }, i * WINNER_CHIP_ANIMATION_INTERVAL);
+        }
+      }, 150);
+    }
+  }, [winnerEffect, gameState, getPotScreenPos, getChipStackScreenPos, enqueueAnimation]);
 
   const getTimerColor = (sec) => {
     if (sec > TIMER_COLOR_BREAKPOINTS.BLUE) return '#3b82f6';
@@ -187,28 +377,30 @@ export default function GameTable({
 
   const handleChatToggle = () => setShowChat((prev) => !prev);
 
-  const activePlayersList = gameState
-    ? gameState.players.filter((p) => !p.isSpectator)
-    : [];
+  const currentPlayer = gameState?.players?.find((p) => p.id === playerId);
 
-  const chipStacks = useMemo(() => {
-    if (!playerPositions || !gameState) return [];
-    return activePlayersList.map((p, idx) => {
-      const pos = playerPositions[p.id];
-      if (!pos) return null;
-      const total = activePlayersList.length;
-      const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
-      const distRadius = 150;
-      const offsetX = Math.cos(angle) * distRadius;
-      const offsetY = Math.sin(angle) * distRadius;
-      return {
-        id: p.id,
-        chips: p.chips,
-        x: pos.x + offsetX,
-        y: pos.y + offsetY,
-      };
-    }).filter(Boolean);
-  }, [playerPositions, gameState, activePlayersList]);
+  const {
+    handleAction,
+    handleRevealCards,
+    toggleReady,
+    sitIn,
+    resetLobby,
+    togglePause,
+    requestHandHistory,
+  } = useGameActions(
+    ws,
+    isPaused,
+    soundEnabled,
+    setShowSettings,
+    setResetConfirm,
+    gameState,
+    playerId,
+    currentPlayer,
+    sendWs,
+    enqueueAnimation,
+    getChipStackScreenPos,
+    getPotScreenPos
+  );
 
   if (!gameState)
     return (
@@ -232,10 +424,9 @@ export default function GameTable({
     !gameState.handInProgress &&
     gameState.winner &&
     currentPlayer &&
-    !currentPlayer.folded &&
-    !currentPlayer.revealed;
+    !currentPlayer.isSpectator;
 
-  const contextValue = {
+  const contextValue = useMemo(() => ({
     gameState,
     playerId,
     isAdmin,
@@ -251,11 +442,32 @@ export default function GameTable({
     speechBubbles,
     playerRefs,
     setAnimatingChips,
-  };
+    enqueueAnimation,
+    getChipStackScreenPos,
+    getPotScreenPos,
+  }), [
+    gameState,
+    playerId,
+    isAdmin,
+    currentPlayer,
+    sendWs,
+    cardBack,
+    showHandInfo,
+    activePlayersList,
+    getTimerColor,
+    turnRemainingSec,
+    turnCurrentPlayerId,
+    winnerEffect,
+    speechBubbles,
+    enqueueAnimation,
+    getChipStackScreenPos,
+    getPotScreenPos,
+  ]);
 
   return (
     <GameContext.Provider value={contextValue}>
       <div
+        ref={tableContainerRef}
         className="fixed inset-0 overflow-hidden"
         style={{ background: 'var(--bg-gradient)' }}
       >
@@ -320,6 +532,8 @@ export default function GameTable({
               setResetConfirm={setResetConfirm}
               requestHandHistory={requestHandHistory}
               onReturnToLobby={onReturnToLobby}
+              performanceMode={performanceMode}
+              setPerformanceMode={setPerformanceMode}
             />
           </div>
         </div>
@@ -353,7 +567,7 @@ export default function GameTable({
               pointerEvents: 'none',
             }}
           >
-            <ChipStack amount={stack.chips} />
+            <ChipStack amount={stack.chips} currentBet={stack.currentBet} />
           </div>
         ))}
 
@@ -370,8 +584,9 @@ export default function GameTable({
           <AnimatedChip
             key={chip.id}
             value={chip.value}
-            fromPosition={chip.fromPos}
-            toPosition={chip.toPosition}
+            from={chip.from}
+            to={chip.to}
+            duration={chip.duration}
             onComplete={() => removeChipAnimation(chip.id)}
           />
         ))}

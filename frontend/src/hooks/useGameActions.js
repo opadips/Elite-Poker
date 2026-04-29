@@ -1,4 +1,3 @@
-// frontend/src/hooks/useGameActions.js
 import { chipClick, allInSound as allInSoundFunc } from './useSound';
 
 export function useGameActions(
@@ -10,39 +9,20 @@ export function useGameActions(
   gameState,
   playerId,
   currentPlayer,
-  setAnimatingChips,
-  playerRefs,
-  sendWs
+  sendWs,
+  enqueueAnimation,
+  getSeatPosition,
+  getPotPosition
 ) {
-  const toCall =
-    gameState &&
-    gameState.currentPlayerId === playerId &&
-    gameState.waitingForAction &&
-    !gameState.winner &&
-    currentPlayer &&
-    !currentPlayer.isAllIn &&
-    !currentPlayer.isSpectator
-      ? gameState.currentBet - (currentPlayer.currentBet || 0)
-      : 0;
-
-  const addChipAnimation = (fromPlayerId, value) => {
-    const playerEl = playerRefs?.current?.[fromPlayerId];
-    if (playerEl) {
-      const rect = playerEl.getBoundingClientRect();
-      const fromPos = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      };
-      setAnimatingChips((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          value,
-          fromPos,
-          toPosition: null,
-        },
-      ]);
-    }
+  const addChipToQueue = (amount) => {
+    const fromPos = getSeatPosition(playerId);
+    const toPos = getPotPosition();
+    enqueueAnimation({
+      value: amount,
+      from: fromPos,
+      to: toPos,
+      type: 'bet',
+    });
   };
 
   const handleAction = (type, amount = 0) => {
@@ -50,15 +30,20 @@ export function useGameActions(
     if (type === 'fold' || type === 'check') {
       sendWs({ type: 'action', action: type });
     } else if (type === 'call') {
-      addChipAnimation(playerId, toCall);
-      if (soundEnabled) chipClick();
+      const toCallVal = gameState && gameState.currentPlayerId === playerId && !currentPlayer?.isSpectator
+        ? gameState.currentBet - (currentPlayer?.currentBet || 0)
+        : 0;
+      if (toCallVal > 0) {
+        addChipToQueue(toCallVal);
+        if (soundEnabled) chipClick();
+      }
       sendWs({ type: 'action', action: 'call' });
     } else if (type === 'raise') {
-      addChipAnimation(playerId, amount);
+      addChipToQueue(amount);
       if (soundEnabled) chipClick();
       sendWs({ type: 'action', action: 'raise', amount });
     } else if (type === 'allin') {
-      addChipAnimation(playerId, currentPlayer?.chips);
+      addChipToQueue(currentPlayer?.chips || 0);
       if (soundEnabled) {
         chipClick();
         allInSoundFunc();
@@ -89,6 +74,5 @@ export function useGameActions(
     resetLobby,
     togglePause,
     requestHandHistory,
-    addChipAnimation,
   };
 }

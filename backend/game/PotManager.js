@@ -99,7 +99,8 @@ export function runShowdown(game) {
     names: results.map(r => r.name).join(', '),
     winnings: results.reduce((s, r) => s + r.amount, 0),
     handName: results[0]?.handName || '',
-    players: results.map(r => ({ name: r.name, cards: game.players.find(p => p.name === r.name)?.holeCards || [] }))
+    players: results.map(r => ({ name: r.name, cards: game.players.find(p => p.name === r.name)?.holeCards || [] })),
+    timestamp: Date.now()
   };
   console.log(`Winner: ${game.winner.names} with ${game.winner.handName}, wins ${game.winner.winnings}`);
 

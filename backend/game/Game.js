@@ -116,7 +116,7 @@ export class Game {
 
     console.log(`${player.name} action: ${action}, toCall=${toCall}, chips=${player.chips}`);
 
-    player.lastAction = { type: action, amount: amount || 0 };
+    player.lastAction = { type: action, amount: amount || 0, timestamp: Date.now() };
 
     if (action === 'fold') {
       player.folded = true;
@@ -191,7 +191,8 @@ export class Game {
         names: winner.name,
         winnings: this.pot,
         handName: handName,
-        players: [{ name: winner.name, cards: winner.holeCards }]
+        players: [{ name: winner.name, cards: winner.holeCards }],
+        timestamp: Date.now()
       };
       console.log(`Winner by fold: ${winner.name}`);
       this.endHand();

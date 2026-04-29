@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { calculateEquity, getBestHandName } from '../utils/equity.js';
 
 export default function HandInfo({
@@ -9,19 +9,16 @@ export default function HandInfo({
   opponentsCount,
   knownOpponentHands = null,
 }) {
-  const [equity, setEquity] = useState(null);
-  const [handName, setHandName] = useState('');
-
-  useEffect(() => {
-    if (holeCards.length === 2) {
-      const useExact = knownOpponentHands && knownOpponentHands.length <= 3;
-      const effectiveOpponents = useExact ? knownOpponentHands.length : opponentsCount;
-      const hands = useExact ? knownOpponentHands : null;
-      const res = calculateEquity(holeCards, communityCards, effectiveOpponents, hands);
-      setEquity(res);
-      const name = getBestHandName(holeCards, communityCards);
-      setHandName(name);
+  const { equity, handName } = useMemo(() => {
+    if (!holeCards || holeCards.length < 2) {
+      return { equity: null, handName: '' };
     }
+    const useExact = knownOpponentHands && knownOpponentHands.length <= 3;
+    const effectiveOpponents = useExact ? knownOpponentHands.length : opponentsCount;
+    const hands = useExact ? knownOpponentHands : null;
+    const res = calculateEquity(holeCards, communityCards, effectiveOpponents, hands);
+    const name = getBestHandName(holeCards, communityCards);
+    return { equity: res, handName: name };
   }, [holeCards, communityCards, opponentsCount, knownOpponentHands]);
 
   const equityPercent = equity ? Math.round(equity.win * 100) : null;
