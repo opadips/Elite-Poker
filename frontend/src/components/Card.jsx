@@ -1,18 +1,17 @@
-// src/components/Card.jsx
 import React from 'react';
 
 const cardBacks = {
-  default: 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600',
-  galaxy: 'bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700 border-purple-500',
-  gold: 'bg-gradient-to-br from-yellow-600 to-amber-800 border-yellow-500',
-  matrix: 'bg-black border-green-500',
-  ocean: 'bg-gradient-to-br from-blue-800 to-cyan-600 border-cyan-400',
-  ruby: 'bg-gradient-to-br from-red-800 to-rose-900 border-red-500',
+  classic: 'bg-gradient-to-br from-amber-700 to-yellow-800 border-amber-500',
+  royal: 'bg-gradient-to-br from-yellow-600 to-red-800 border-yellow-500',
+  emerald: 'bg-gradient-to-br from-emerald-700 to-green-900 border-emerald-400',
+  sapphire: 'bg-gradient-to-br from-blue-800 to-indigo-900 border-blue-300',
+  onyx: 'bg-gradient-to-br from-gray-900 to-black border-gray-400',
+  pearl: 'bg-gradient-to-br from-gray-200 to-white border-gray-400',
 };
 
-export default function Card({ rank, suit, hidden = false, cardBack = 'default', isSelf = false, isCommunity = false, revealAnim = false }) {
+export default function Card({ rank, suit, hidden = false, cardBack = 'classic', isSelf = false, isCommunity = false, revealAnim = false }) {
   if (hidden) {
-    const backStyle = cardBacks[cardBack] || cardBacks.default;
+    const backStyle = cardBacks[cardBack] || cardBacks.classic;
     return (
       <div className={`w-14 h-20 rounded-md shadow-md border-2 flex items-center justify-center ${backStyle}`}>
         <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xl font-bold">
