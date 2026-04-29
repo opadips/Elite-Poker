@@ -55,6 +55,18 @@ export class Game {
   }
 
   removePlayer(id) {
+    if (this.handInProgress && this.currentPlayerIndex === id && this.waitingForAction) {
+      const player = this.players.find(p => p.id === id);
+      if (player) {
+        if (!player.isAllIn) {
+          this.playerAction(id, 'fold');
+        } else {
+          this.actedPlayers.add(id);
+          BettingRound.nextPlayer(this);
+          if (this.onStateChange) this.onStateChange();
+        }
+      }
+    }
     this.players = this.players.filter(p => p.id !== id);
     delete this.scores[id];
     const activePlayers = this.getActivePlayers();
