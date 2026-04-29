@@ -111,7 +111,7 @@ export default function GameTable({
 
   const { handHistory } = useHandHistorySync(ws);
 
-  const { playerPositions, tableRef } = usePlayerPositions(
+  const { playerPositions, tableRef, setContainerRef, orderedPlayerIds } = usePlayerPositions(
     gameState,
     playerId,
     seatViewFixed
@@ -215,24 +215,26 @@ export default function GameTable({
     : [];
 
   const chipStacks = useMemo(() => {
-    if (!playerPositions || !gameState) return [];
-    return activePlayersList.map((p, idx) => {
-      const pos = playerPositions[p.id];
+    if (!playerPositions || !orderedPlayerIds || !gameState) return [];
+    return orderedPlayerIds.map((id, idx) => {
+      const p = activePlayersList.find(ap => ap.id === id);
+      if (!p) return null;
+      const pos = playerPositions[id];
       if (!pos) return null;
-      const total = activePlayersList.length;
+      const total = orderedPlayerIds.length;
       const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
       const distRadius = 150;
       const offsetX = Math.cos(angle) * distRadius;
       const offsetY = Math.sin(angle) * distRadius;
       return {
-        id: p.id,
+        id,
         chips: p.chips,
         currentBet: p.folded ? 0 : (p.currentBet || 0),
         x: pos.x + offsetX,
         y: pos.y + offsetY,
       };
     }).filter(Boolean);
-  }, [playerPositions, gameState, activePlayersList]);
+  }, [playerPositions, orderedPlayerIds, gameState, activePlayersList]);
 
   const chipStackPositionsMap = useMemo(() => {
     const map = {};
@@ -476,7 +478,10 @@ export default function GameTable({
   return (
     <GameContext.Provider value={contextValue}>
       <div
-        ref={tableContainerRef}
+        ref={(el) => {
+          tableContainerRef.current = el;
+          setContainerRef(el);
+        }}
         className="fixed inset-0 overflow-hidden"
         style={{ background: 'var(--bg-gradient)' }}
       >
