@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateLobbyModal from './CreateLobbyModal.jsx';
 
+function formatChips(amount) {
+  if (amount >= 1_000_000) return (amount / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (amount >= 1_000) return (amount / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return amount.toString();
+}
+
 export default function LobbyList({ ws, playerName, onCreateLobby, onJoinLobby, onLogout }) {
   const [lobbies, setLobbies] = useState([]);
   const [onlinePlayers, setOnlinePlayers] = useState([]);
@@ -108,11 +114,25 @@ export default function LobbyList({ ws, playerName, onCreateLobby, onJoinLobby, 
                 </div>
                 {lobby.hasPassword && <span className="text-lg">🔒</span>}
               </div>
-              <div className="flex justify-between text-sm text-gray-400 mb-3">
-                <span>{lobby.playerCount}/10</span>
-                {lobby.waitingCount > 0 && <span className="text-amber-400"> Queue: {lobby.waitingCount}</span>}
-                <span className="uppercase text-xs bg-gray-800 px-2 py-0.5 rounded-full">{lobby.mode}</span>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400 mb-3">
+                <div>👥 Players: <span className="text-white">{lobby.playerCount}/{lobby.maxPlayers}</span></div>
+                <div>🃏 Active: <span className="text-white">{lobby.activePlayerCount}</span></div>
+                <div>💵 Blinds: <span className="text-white">{lobby.smallBlind}/{lobby.bigBlind}</span></div>
+                <div>💰 Chips: <span className="text-white">{formatChips(lobby.startingChips)}</span></div>
+                {lobby.handInProgress && (
+                  <div className="col-span-2 flex justify-between text-amber-400 mt-1">
+                    <span>Pot: {formatChips(lobby.totalPot)}</span>
+                    <span className="capitalize">{lobby.currentRound}</span>
+                  </div>
+                )}
               </div>
+
+              <div className="flex justify-between text-xs text-gray-400 mb-2">
+                {lobby.waitingCount > 0 && <span className="text-amber-400">Queue: {lobby.waitingCount}</span>}
+                <span className="uppercase text-[10px] bg-gray-800 px-2 py-0.5 rounded-full">{lobby.mode}</span>
+              </div>
+
               {lobby.topScore && lobby.topScore.name && (
                 <div className="text-xs text-yellow-400 flex items-center gap-1">
                   <span>👑</span> Top: {lobby.topScore.name} ({lobby.topScore.score} pts)

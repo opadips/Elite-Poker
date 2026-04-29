@@ -16,15 +16,15 @@ export default function ActionButtons({
   canReveal,
   onReveal,
 }) {
-  const [raiseAmount, setRaiseAmount] = useState(minRaise);
-  const [raiseOpen, setRaiseOpen] = useState(false);
+  const minRaiseAmount = toCall + minRaise;
+  const [raiseAmountStr, setRaiseAmountStr] = useState(minRaiseAmount.toString());
 
   const showCall = toCall > 0;
   const showCheck = toCall === 0;
-  const minRaiseAmount = toCall + minRaise;
   const canRaise = playerChips >= minRaiseAmount;
   const canCall = playerChips > 0 && showCall;
   const canAllIn = playerChips > 0;
+  const [raiseOpen, setRaiseOpen] = useState(false);
 
   if (canReveal) {
     return (
@@ -32,10 +32,7 @@ export default function ActionButtons({
         <button
           onClick={onReveal}
           className="px-6 py-3 rounded-xl font-bold text-sm shadow-xl transition-colors"
-          style={{
-            backgroundColor: '#7e22ce',
-            color: '#fff',
-          }}
+          style={{ backgroundColor: '#7e22ce', color: '#fff' }}
         >
           Show Cards
         </button>
@@ -45,14 +42,28 @@ export default function ActionButtons({
 
   if (!myTurn) return null;
 
+  const parseRaiseAmount = () => {
+    let val = parseInt(raiseAmountStr, 10);
+    if (isNaN(val) || val < minRaiseAmount) val = minRaiseAmount;
+    if (val > playerChips) val = playerChips;
+    return val;
+  };
+
+  const adjustRaise = (delta) => {
+    const current = parseRaiseAmount();
+    const newVal = Math.min(playerChips, Math.max(minRaiseAmount, current + delta));
+    setRaiseAmountStr(newVal.toString());
+  };
+
   const setPct = (pct) => {
     const amt = Math.floor((currentPot * pct) / 100);
     const clamped = Math.min(Math.max(amt, minRaiseAmount), playerChips);
-    setRaiseAmount(clamped);
+    setRaiseAmountStr(clamped.toString());
   };
 
   const commitRaise = () => {
-    onRaise(raiseAmount);
+    const amount = parseRaiseAmount();
+    onRaise(amount);
     setRaiseOpen(false);
   };
 
@@ -68,24 +79,27 @@ export default function ActionButtons({
         >
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setRaiseAmount((p) => Math.max(minRaiseAmount, p - minRaise))}
+              onClick={() => adjustRaise(-minRaise)}
               className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold"
             >
               −
             </button>
             <input
-              type="number"
-              value={raiseAmount}
+              type="text"
+              inputMode="numeric"
+              value={raiseAmountStr}
               onChange={(e) => {
-                let val = parseInt(e.target.value) || minRaiseAmount;
-                if (val < minRaiseAmount) val = minRaiseAmount;
-                if (val > playerChips) val = playerChips;
-                setRaiseAmount(val);
+                const raw = e.target.value.replace(/[^0-9]/g, '');
+                setRaiseAmountStr(raw);
+              }}
+              onBlur={() => {
+                const val = parseRaiseAmount();
+                setRaiseAmountStr(val.toString());
               }}
               className="flex-1 bg-gray-900 text-white text-center rounded-lg py-1 border border-gray-600 focus:border-amber-400 outline-none"
             />
             <button
-              onClick={() => setRaiseAmount((p) => Math.min(playerChips, p + minRaise))}
+              onClick={() => adjustRaise(minRaise)}
               className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold"
             >
               +
@@ -109,12 +123,11 @@ export default function ActionButtons({
             className="w-full py-2 rounded-lg font-bold text-sm text-white transition-colors"
             style={{ backgroundColor: 'var(--btn-raise-bg, #2563eb)' }}
           >
-            Raise to {raiseAmount}
+            Raise to {parseRaiseAmount()}
           </button>
         </div>
       )}
 
-      {/* Main action bar */}
       <div
         className="flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur-md border shadow-2xl"
         style={{

@@ -64,6 +64,8 @@ export class LobbyManager {
   getLobbyList() {
     const list = [];
     for (const [id, lobby] of this.lobbies.entries()) {
+      const game = lobby.game;
+      const state = game.getState();
       list.push({
         id,
         name: lobby.settings.name,
@@ -74,6 +76,13 @@ export class LobbyManager {
         mode: lobby.settings.mode,
         topScore: this.getTopScore(lobby),
         waitingCount: lobby.waitingList.length,
+        smallBlind: lobby.settings.smallBlind,
+        bigBlind: lobby.settings.bigBlind,
+        startingChips: lobby.settings.startingChips,
+        totalPot: game.pot,
+        currentRound: game.currentRound,
+        handInProgress: game.handInProgress,
+        activePlayerCount: game.getActivePlayers().length,
       });
     }
     return list;

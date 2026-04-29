@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Chat from './Chat.jsx';
 import BettingPanel from './BettingPanel.jsx';
 
@@ -30,6 +30,33 @@ const GameOverlays = React.memo(function GameOverlays({
   sitIn,
   dealerMessage,
 }) {
+  const [displayedDealerMsg, setDisplayedDealerMsg] = useState(null);
+  const dealerTimerRef = useRef(null);
+  const lastMessageRef = useRef(null);
+
+  useEffect(() => {
+    if (dealerMessage && dealerMessage !== lastMessageRef.current) {
+      lastMessageRef.current = dealerMessage;
+      if (dealerTimerRef.current) clearTimeout(dealerTimerRef.current);
+      setDisplayedDealerMsg(dealerMessage);
+    } else if (!dealerMessage) {
+      lastMessageRef.current = null;
+    }
+  }, [dealerMessage]);
+
+  useEffect(() => {
+    if (displayedDealerMsg) {
+      if (dealerTimerRef.current) clearTimeout(dealerTimerRef.current);
+      dealerTimerRef.current = setTimeout(() => {
+        setDisplayedDealerMsg(null);
+        lastMessageRef.current = null;
+      }, 2000);
+    }
+    return () => {
+      if (dealerTimerRef.current) clearTimeout(dealerTimerRef.current);
+    };
+  }, [displayedDealerMsg]);
+
   return (
     <>
       {showChat && (
@@ -62,9 +89,9 @@ const GameOverlays = React.memo(function GameOverlays({
         </div>
       )}
 
-      {dealerMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-amber-700/90 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-fadeIn">
-          {dealerMessage}
+      {displayedDealerMsg && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 bg-amber-700/90 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-fadeIn">
+          {displayedDealerMsg}
         </div>
       )}
 

@@ -48,7 +48,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
   const isWinner = winnerEffect?.winnerId === p.id;
   const isSelf = p.id === playerId;
   const isReady = p.ready && !gameState?.firstHandStarted && !gameState?.handInProgress;
-  const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0 && gameState?.waitingForAction && !gameState?.winner;
+  const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
   const showdownActive = p.revealed && !p.folded;
   const isSB = sbId === p.id;
   const isBB = bbId === p.id;
