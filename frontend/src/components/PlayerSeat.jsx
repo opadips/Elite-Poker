@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState, useEffect, useRef } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
 import TimerRing from './TimerRing.jsx';
@@ -29,6 +29,22 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
     bbId,
   } = useContext(GameContext);
 
+  const cardRef = useRef(null);
+  const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const updateSize = () => {
+      if (cardRef.current) {
+        const { width, height } = cardRef.current.getBoundingClientRect();
+        setCardSize({ width, height });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   const isActive = gameState ? gameState.currentPlayerId === p.id : false;
   const isWinner = winnerEffect?.winnerId === p.id;
   const isSelf = p.id === playerId;
@@ -58,8 +74,12 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
       className="absolute transition-all duration-300 flex items-center"
       style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
     >
-      {isTimerActive && (
-        <TimerRing remainingSec={turnRemainingSec} size={220} strokeWidth={5} />
+      {isTimerActive && cardSize.width > 0 && (
+        <TimerRing
+          remainingSec={turnRemainingSec}
+          width={cardSize.width}
+          height={cardSize.height}
+        />
       )}
       <div>
         {isWinner && (
@@ -85,6 +105,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
             </div>
           ))}
         <div
+          ref={cardRef}
           className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
           ${p.folded ? 'opacity-60 grayscale' : ''}
           ${p.isAllIn ? 'ring-2 ring-red-500' : ''}

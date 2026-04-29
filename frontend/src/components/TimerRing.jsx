@@ -2,11 +2,19 @@ import React, { useMemo } from 'react';
 
 const TOTAL_SECONDS = 20;
 
-export default function TimerRing({ remainingSec, size = 200, strokeWidth = 6 }) {
+export default function TimerRing({ remainingSec, width, height }) {
+  if (!width || !height) return null;
+
   const progress = Math.max(0, Math.min(remainingSec / TOTAL_SECONDS, 1));
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - progress);
+  const rx = 16;
+  const ry = 16;
+
+  const perimeter =
+    2 * (width - 2 * rx) +
+    2 * (height - 2 * ry) +
+    2 * Math.PI * rx;
+
+  const dashOffset = perimeter * (1 - progress);
 
   const color = useMemo(() => {
     if (remainingSec > 15) return '#3b82f6';
@@ -16,30 +24,37 @@ export default function TimerRing({ remainingSec, size = 200, strokeWidth = 6 })
 
   return (
     <svg
-      width={size}
-      height={size}
+      width={width}
+      height={height}
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-      style={{ zIndex: 25 }}
+      style={{
+        zIndex: 25,
+        filter: `drop-shadow(0 0 8px ${color})`,
+      }}
     >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="rgba(255,255,255,0.08)"
-        strokeWidth={strokeWidth}
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
+      <defs>
+        <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <rect
+        x={2}
+        y={2}
+        width={width - 4}
+        height={height - 4}
+        rx={rx}
+        ry={ry}
         fill="none"
         stroke={color}
-        strokeWidth={strokeWidth}
+        strokeWidth={4}
         strokeLinecap="round"
-        strokeDasharray={circumference}
+        strokeDasharray={perimeter}
         strokeDashoffset={dashOffset}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        filter="url(#neonGlow)"
         style={{ transition: 'stroke-dashoffset 0.5s linear, stroke 0.5s linear' }}
       />
     </svg>
