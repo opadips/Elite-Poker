@@ -107,7 +107,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           </div>
           <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
             {p.name}
-            {isAdmin && p.name === currentPlayer?.name && (
+            {gameState?.adminId === p.id && (
               <span className="text-xs" title="Admin">👑</span>
             )}
             {isAdmin && !isSelf && (

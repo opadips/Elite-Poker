@@ -42,6 +42,7 @@ export class LobbyManager {
     lobby.game.bigBlind = lobby.settings.bigBlind;
     lobby.game.startingChips = lobby.settings.startingChips;
     lobby.game.mode = lobby.settings.mode;
+    lobby.game.adminId = adminId;
     this.lobbies.set(lobbyId, lobby);
     this.lobbyChat.set(lobbyId, []);
     return lobbyId;

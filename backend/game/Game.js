@@ -40,6 +40,7 @@ export class Game {
     this.startingChips = DEFAULT_STARTING_CHIPS;
     this.mode = 'tournament';
     this.onStateChange = null;
+    this.adminId = null;
   }
 
   addPlayer(name, isSpectator = true) {
@@ -375,6 +376,7 @@ export class Game {
       firstHandStarted: this.firstHandStarted,
       paused: this.paused,
       startingChips: this.startingChips,
+      adminId: this.adminId,
     };
   }
 }
