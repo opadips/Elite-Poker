@@ -205,3 +205,23 @@ export function calculateEquity(holeCards, communityCards, opponents, knownOppon
   }
   return calculateMonteCarloEquity(holeCards, communityCards, opponents);
 }
+
+export function getRelativeStrength(holeCards, communityCards, opponentHands) {
+  if (!holeCards || holeCards.length < 2 || !opponentHands || opponentHands.length === 0) return null;
+  const allCards = [...holeCards, ...communityCards];
+  const myBest = getBestHand(allCards);
+  if (!myBest) return null;
+  let weaker = 0;
+  let total = 0;
+  for (const oppHand of opponentHands) {
+    if (!oppHand || oppHand.length < 2) continue;
+    const oppCards = [...oppHand, ...communityCards];
+    const oppBest = getBestHand(oppCards);
+    if (!oppBest) continue;
+    total++;
+    if (compareHands(myBest, oppBest) > 0) weaker++;
+    else if (compareHands(myBest, oppBest) === 0) weaker += 0.5;
+  }
+  if (total === 0) return null;
+  return Math.round((weaker / total) * 100);
+}

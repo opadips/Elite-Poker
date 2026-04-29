@@ -172,7 +172,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               DEALER
             </div>
           )}
-          {showdownActive && !p.isSpectator && (
+          {showdownActive && !p.isSpectator && isSelf && !showHandInfo && (
             <HandInfo
               holeCards={p.holeCards}
               communityCards={gameState.communityCards}
@@ -180,6 +180,20 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               playerName={p.name}
               opponentsCount={opponentsCount}
               knownOpponentHands={knownOpponentHands}
+              showEquity={false}
+              simpleStrength={true}
+            />
+          )}
+          {showdownActive && !p.isSpectator && !isSelf && (
+            <HandInfo
+              holeCards={p.holeCards}
+              communityCards={gameState.communityCards}
+              round={gameState.currentRound}
+              playerName={p.name}
+              opponentsCount={opponentsCount}
+              knownOpponentHands={knownOpponentHands}
+              showEquity={false}
+              simpleStrength={true}
             />
           )}
           {isSelf && showHandInfo && !p.folded && !p.isSpectator && !showdownActive && (
@@ -190,6 +204,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               playerName={p.name}
               opponentsCount={opponentsCount}
               knownOpponentHands={null}
+              showEquity={true}
+              simpleStrength={false}
             />
           )}
         </div>

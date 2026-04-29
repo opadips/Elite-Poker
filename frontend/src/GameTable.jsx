@@ -35,7 +35,7 @@ const cardBackOptions = [
   { id: 'ruby', name: 'Ruby', icon: '💎' },
 ];
 
-const ACTION_ANIMATION_WINDOW_MS = 500;
+const ACTION_ANIMATION_WINDOW_MS = 3000;
 const WINNER_ANIMATION_WINDOW_MS = 500;
 
 export default function GameTable({
@@ -402,30 +402,6 @@ export default function GameTable({
     getPotScreenPos
   );
 
-  if (!gameState)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Waiting...
-      </div>
-    );
-
-  const myTurn =
-    gameState.currentPlayerId === playerId &&
-    gameState.waitingForAction &&
-    !gameState.winner &&
-    currentPlayer &&
-    !currentPlayer.isAllIn &&
-    !currentPlayer.isSpectator;
-  const toCall =
-    myTurn && currentPlayer
-      ? gameState.currentBet - (currentPlayer.currentBet || 0)
-      : 0;
-  const canReveal =
-    !gameState.handInProgress &&
-    gameState.winner &&
-    currentPlayer &&
-    !currentPlayer.isSpectator;
-
   const contextValue = useMemo(() => ({
     gameState,
     playerId,
@@ -463,6 +439,32 @@ export default function GameTable({
     getChipStackScreenPos,
     getPotScreenPos,
   ]);
+
+  if (!gameState)
+    return (
+      <GameContext.Provider value={contextValue}>
+        <div className="min-h-screen flex items-center justify-center text-white">
+          Waiting...
+        </div>
+      </GameContext.Provider>
+    );
+
+  const myTurn =
+    gameState.currentPlayerId === playerId &&
+    gameState.waitingForAction &&
+    !gameState.winner &&
+    currentPlayer &&
+    !currentPlayer.isAllIn &&
+    !currentPlayer.isSpectator;
+  const toCall =
+    myTurn && currentPlayer
+      ? gameState.currentBet - (currentPlayer.currentBet || 0)
+      : 0;
+  const canReveal =
+    !gameState.handInProgress &&
+    gameState.winner &&
+    currentPlayer &&
+    currentPlayer.folded;
 
   return (
     <GameContext.Provider value={contextValue}>
