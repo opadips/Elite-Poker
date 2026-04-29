@@ -129,48 +129,69 @@ npm run dev
 ```text
 Elite-Poker/
 ├── backend/
-│   ├── server.js              # WebSocket server & lobby management
-│   ├── LobbyManager.js        # Multi‑table management, waitlist, chat, history
-│   ├── handlers/
-│   │   ├── lobbyHandlers.js   # WS handlers for lobby operations (create, join, leave, kick, password)
-│   │   └── gameHandlers.js    # WS handlers for game actions (action, ready, sitIn, chat, sideBet, pause, resume)
-│   ├── utils/
-│   │   └── timerUtils.js      # 20s turn timer, auto‑check/fold, time remaining broadcast
-│   └── game/
-│       ├── Game.js            # Core poker logic, achievements, side pots
-│       ├── Player.js          # Player model, stats & state
-│       ├── Deck.js            # Card deck
-│       ├── HandEvaluator.js   # 7‑card hand evaluation
-│       ├── BettingRound.js    # Turn management, betting round logic, all‑in detection, auto‑reveal
-│       └── PotManager.js      # Side‑pot calculation, pot distribution, side bet payouts
+│ ├── server.js # HTTP/WS setup, WebSocket message dispatch
+│ ├── LobbyManager.js # Multi‑lobby creation, join, leave, password, waitlist
+│ ├── ClientRegistry.js # WebSocket → client mapping and lifecycle
+│ ├── MessageRouter.js # Routes incoming WS messages to handlers
+│ ├── BroadcastScheduler.js # Periodic state broadcasts, winner announcements, timers
+│ ├── WaitlistManager.js # Waitlist add/promote logic
+│ ├── HandHistoryStore.js # Persistent hand history per lobby
+│ ├── LobbyChatStore.js # Persistent chat store per lobby
+│ ├── constants.js # Shared backend magic numbers
+│ ├── handlers/
+│ │ ├── lobbyHandlers.js # Handlers for lobby operations
+│ │ └── gameHandlers.js # Handlers for in‑game actions
+│ ├── utils/
+│ │ └── timerUtils.js # 20s turn timer, auto‑check/fold
+│ └── game/
+│ ├── Game.js # Core poker engine, delegates to specialist modules
+│ ├── Player.js # Player model with stats and achievements
+│ ├── Deck.js # Standard 52‑card deck
+│ ├── HandEvaluator.js # 7‑card hand evaluation (best 5 of 7)
+│ ├── HandLifecycle.js # New hand initialisation and blind posting
+│ ├── BettingRound.js # Turn order, round completion, all‑in reveal
+│ ├── PotManager.js # Side‑pot calculation, showdown, winnings distribution
+│ ├── PlayerActionValidator.js # Validates a player action before execution
+│ ├── TournamentManager.js # Tournament bust detection and reset
+│ └── AchievementTracker.js # Achievement definitions and unlock logic
 ├── frontend/
-│   ├── src/
-│   │   ├── App.jsx            # Login / Lobby / Game flow, theme control
-│   │   ├── LobbyList.jsx      # Lobby list, general chat, online players
-│   │   ├── CreateLobbyModal.jsx # Table creation form
-│   │   ├── GameTable.jsx      # Main game component (table, players, timer, chat)
-│   │   ├── components/
-│   │   │   ├── Card.jsx           # Single playing card (face or hidden)
-│   │   │   ├── Chat.jsx           # Table chat interface
-│   │   │   ├── Leaderboard.jsx    # Expandable player statistics
-│   │   │   ├── ActionButtons.jsx  # Fold, Check, Call, Raise, All‑in, Reveal
-│   │   │   ├── BettingPanel.jsx   # Side bet panel for folded players
-│   │   │   ├── HandInfo.jsx       # Noob‑mode info: hand rank + equity bar
-│   │   │   ├── AnimatedChip.jsx   # Chip animation component
-│   │   │   ├── PlayerSeat.jsx     # Single player seat (cards, timer, chips, kick button)
-│   │   │   ├── SettingsPanel.jsx  # Settings dropdown (theme, card back, sound, etc.)
-│   │   │   └── Table.jsx          # Oval table, community cards, pot amount
-│   │   ├── hooks/
-│   │   │   ├── useSound.js        # Web Audio API sound effects
-│   │   │   └── useGameSocket.js   # Central WS listener, processes all incoming messages
-│   │   ├── utils/
-│   │   │   └── equity.js          # Monte Carlo simulation (2000 trials)
-│   │   └── styles/
-│   │       ├── themes.css         # 6 visual themes
-│   │       └── animations.css     # CSS keyframe animations
-│   └── index.html
-├── README.md                  # This file (English)
-└── README_FA.md               # Persian version
+│ ├── index.html
+│ └── src/
+│ ├── App.jsx # Top‑level routing (login → lobby → game)
+│ ├── LobbyList.jsx # Displays tables, general chat, online players
+│ ├── CreateLobbyModal.jsx # Modal for creating a new table
+│ ├── GameTable.jsx # Main game coordinator
+│ ├── components/
+│ │ ├── Card.jsx # Single playing card
+│ │ ├── Chat.jsx # Table chat panel
+│ │ ├── Leaderboard.jsx # Expandable player statistics
+│ │ ├── ActionButtons.jsx # Fold, check, call, raise, all‑in, reveal
+│ │ ├── BettingPanel.jsx # Side‑bet panel for folded players
+│ │ ├── HandInfo.jsx # Noob‑mode hand rank and equity bar
+│ │ ├── AnimatedChip.jsx # Chip animation component
+│ │ ├── PlayerSeat.jsx # Single player seat with all indicators
+│ │ ├── SettingsPanel.jsx # Settings dropdown (theme, sound, seat view…)
+│ │ ├── Table.jsx # Oval table, community cards, pot
+│ │ └── GameOverlays.jsx # Chat, pause, winner, spectator, history overlays
+│ ├── context/
+│ │ └── GameContext.js # Shared game state context
+│ ├── hooks/
+│ │ ├── useSound.js # Web Audio API synthesised sound effects
+│ │ ├── useGameSocket.js # Central WebSocket listener
+│ │ ├── useGameStateSync.js
+│ │ ├── useTimerSync.js
+│ │ ├── useChatSync.js
+│ │ ├── useHandHistorySync.js
+│ │ ├── usePlayerPositions.js
+│ │ └── useGameActions.js
+│ ├── utils/
+│ │ └── equity.js # Monte Carlo and exact equity calculation
+│ └── styles/
+│ ├── themes.css # Six visual themes
+│ └── animations.css # CSS keyframe animations
+├── README.md
+├── README_FA.md
+└── package.json
 ```
 ---
 ## 🔧 تکنولوژی‌های استفاده شده (Tech Stack)
