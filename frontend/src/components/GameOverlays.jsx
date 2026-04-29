@@ -33,13 +33,11 @@ const GameOverlays = React.memo(function GameOverlays({
   return (
     <>
       {showChat && (
-        <div style={{ zIndex: 70 }}>
-          <Chat
-            messages={chatMessages}
-            playerName={currentPlayer?.name || '?'}
-            onSendMessage={handleSendChat}
-          />
-        </div>
+        <Chat
+          messages={chatMessages}
+          playerName={currentPlayer?.name || '?'}
+          onSendMessage={handleSendChat}
+        />
       )}
 
       {isPaused && (

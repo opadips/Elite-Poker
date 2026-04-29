@@ -1,5 +1,5 @@
-// frontend/src/components/Chat.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 
 const QUICK_CHATS = {
   Emotions: [
@@ -49,7 +49,7 @@ export default function Chat({ messages, playerName, onSendMessage }) {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
       if (!hovered) setIsVisible(false);
-    }, 5000);
+    }, 3000);
   }, [hovered]);
 
   const cancelHideTimer = useCallback(() => {
@@ -60,6 +60,11 @@ export default function Chat({ messages, playerName, onSendMessage }) {
     setIsVisible(true);
   }, []);
 
+  const resetActivity = useCallback(() => {
+    cancelHideTimer();
+    startHideTimer();
+  }, [cancelHideTimer, startHideTimer]);
+
   const handleMouseEnter = () => {
     setHovered(true);
     cancelHideTimer();
@@ -67,11 +72,6 @@ export default function Chat({ messages, playerName, onSendMessage }) {
 
   const handleMouseLeave = () => {
     setHovered(false);
-    startHideTimer();
-  };
-
-  const resetActivity = () => {
-    cancelHideTimer();
     startHideTimer();
   };
 
@@ -100,13 +100,18 @@ export default function Chat({ messages, playerName, onSendMessage }) {
     return () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-  }, []);
+  }, [startHideTimer]);
 
-  return (
+  useEffect(() => {
+    resetActivity();
+  }, [messages, resetActivity]);
+
+  const chatElement = (
     <div
-      className={`fixed bottom-16 left-4 z-50 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
+      className={`fixed bottom-16 left-4 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
+      style={{ zIndex: 2147483647, isolation: 'isolate', pointerEvents: 'auto' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -184,4 +189,6 @@ export default function Chat({ messages, playerName, onSendMessage }) {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(chatElement, document.getElementById('chat-root'));
 }

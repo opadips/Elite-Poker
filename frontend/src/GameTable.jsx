@@ -596,8 +596,8 @@ export default function GameTable({
               position: 'absolute',
               left: stack.x,
               top: stack.y,
-              transform: 'translate(-50%, -50%)',
-              zIndex: 5,
+              marginLeft: -20,
+              marginTop: -20,
               pointerEvents: 'none',
             }}
           >
