@@ -1,3 +1,4 @@
+// backend/MessageRouter.js
 import * as lobbyHandlers from './handlers/lobbyHandlers.js';
 import * as gameHandlers from './handlers/gameHandlers.js';
 
@@ -17,6 +18,7 @@ export function createMessageRouter(deps) {
     setupLobbyCallbacks,
     generalChat,
     timerUtils,
+    broadcastDealerMessage,
   } = deps;
 
   return function route(msg, ws) {
@@ -28,15 +30,15 @@ export function createMessageRouter(deps) {
     } else if (type === 'joinLobby') {
       lobbyHandlers.handleJoinLobby(msg, ws, clientRegistry, lobbyManager, broadcastGameState, broadcastSystemMessage, broadcastLobbyList, broadcastOnlinePlayers, setupLobbyCallbacks);
     } else if (type === 'leaveLobby') {
-      lobbyHandlers.handleLeaveLobby(ws, clientRegistry, lobbyManager, broadcastGameState, broadcastSystemMessage, broadcastLobbyList, broadcastOnlinePlayers);
+      lobbyHandlers.handleLeaveLobby(ws, clientRegistry, lobbyManager, broadcastGameState, broadcastDealerMessage, broadcastLobbyList, broadcastOnlinePlayers);
     } else if (type === 'returnToLobby') {
-      lobbyHandlers.handleReturnToLobby(ws, clientRegistry, lobbyManager, broadcastGameState, broadcastSystemMessage, broadcastLobbyList, broadcastOnlinePlayers, timerUtils.clearAllTimers);
+      lobbyHandlers.handleReturnToLobby(ws, clientRegistry, lobbyManager, broadcastGameState, broadcastDealerMessage, broadcastLobbyList, broadcastOnlinePlayers, timerUtils.clearAllTimers);
     } else if (type === 'listLobbies') {
       lobbyHandlers.handleListLobbies(ws, clientRegistry, broadcastLobbyList, broadcastOnlinePlayers);
     } else if (type === 'lobbyChat') {
       lobbyHandlers.handleLobbyChat(msg, ws, clientRegistry, broadcastGeneralChat);
     } else if (type === 'resetLobby') {
-      gameHandlers.handleResetLobby(msg, ws, clientRegistry, lobbyManager, broadcastGameState, broadcastSystemMessage, timerUtils.clearAllTimers);
+      gameHandlers.handleResetLobby(msg, ws, clientRegistry, lobbyManager, broadcastGameState, broadcastSystemMessage, timerUtils.clearAllTimers, broadcastDealerMessage);
     } else if (type === 'action') {
       gameHandlers.handleAction(msg, ws, clientRegistry, lobbyManager, broadcastGameState, broadcastAllInSound, timerUtils.stopTurnTimerBroadcast, timerUtils.ensureTurnTimer);
     } else if (type === 'ready') {
@@ -61,6 +63,8 @@ export function createMessageRouter(deps) {
       lobbyHandlers.handleSetPassword(msg, ws, clientRegistry, lobbyManager);
     } else if (type === 'getHandHistory') {
       lobbyHandlers.handleGetHandHistory(msg, ws, clientRegistry, lobbyManager);
+    } else if (type === 'privateMessage') {
+      gameHandlers.handlePrivateMessage(msg, ws, clientRegistry, lobbyManager);
     }
   };
 }

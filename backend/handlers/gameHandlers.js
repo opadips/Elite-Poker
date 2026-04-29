@@ -1,3 +1,4 @@
+// backend/handlers/gameHandlers.js
 import { getDealerMessage } from '../game/dealerMessages.js';
 
 export function handleResetLobby(msg, ws, clients, lobbyManager, broadcastGameState, broadcastSystemMessage, clearAllTimers) {
@@ -155,4 +156,46 @@ export function handleResume(msg, ws, clients, lobbyManager, broadcastGameState,
   if (lobby.game.waitingForAction) {
     ensureTurnTimer(client.lobbyId, lobbyManager, clients, broadcastGameState);
   }
+}
+
+export function handlePrivateMessage(msg, ws, clients, lobbyManager) {
+  const client = clients.get(ws);
+  if (!client || !client.lobbyId) return;
+  const { targetName, message } = msg;
+  if (!targetName || !message || !message.trim()) return;
+  const senderName = client.name;
+  const lobbyId = client.lobbyId;
+
+  let targetClient = null;
+  let targetWs = null;
+  for (const [sock, cl] of clients.entries()) {
+    if (cl.lobbyId === lobbyId && cl.name === targetName) {
+      targetClient = cl;
+      targetWs = sock;
+      break;
+    }
+  }
+  if (!targetClient) {
+    ws.send(JSON.stringify({ type: 'error', message: 'Player not found' }));
+    return;
+  }
+
+  const now = Date.now();
+  const privateMsg = JSON.stringify({
+    type: 'privateMessage',
+    sender: senderName,
+    message: message.substring(0, 200),
+    timestamp: now,
+  });
+  if (targetWs.readyState === 1) targetWs.send(privateMsg);
+
+  const senderMsg = JSON.stringify({
+    type: 'privateMessage',
+    sender: 'You',
+    target: targetName,
+    message: message.substring(0, 200),
+    timestamp: now,
+    sent: true,
+  });
+  if (ws.readyState === 1) ws.send(senderMsg);
 }

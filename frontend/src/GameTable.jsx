@@ -391,7 +391,13 @@ export default function GameTable({
     localStorage.setItem('pokerCardBack', backId);
   };
 
-  const handleSendChat = (text) => sendWs({ type: 'chat', message: text });
+  const handleSendChat = (data) => {
+    if (data.type === 'private') {
+      sendWs({ type: 'privateMessage', targetName: data.targetName, message: data.message });
+    } else {
+      sendWs({ type: 'chat', message: data.message });
+    }
+  };
 
   const toggleSeatView = () =>
     setSeatViewFixed((prev) => {

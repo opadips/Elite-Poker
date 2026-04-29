@@ -1,3 +1,4 @@
+// frontend/src/hooks/useChatSync.js
 import { useState, useEffect, useRef } from 'react';
 import { TOAST_DURATION, SIDE_BET_WIN_DURATION, CHAT_AUTO_CLOSE_DELAY, SPEECH_BUBBLE_DURATION } from '../constants.js';
 
@@ -58,6 +59,15 @@ export function useChatSync(ws, gameState) {
       } else if (data.type === 'sitInSuccess') {
         setSystemMessage('You are now in the game!');
         setTimeout(() => setSystemMessage(null), 2000);
+      } else if (data.type === 'privateMessage') {
+        const msg = {
+          sender: data.sender,
+          text: data.message,
+          isPrivate: true,
+          sent: data.sent || false,
+          target: data.target,
+        };
+        setChatMessages((prev) => [...prev, msg]);
       }
     };
 

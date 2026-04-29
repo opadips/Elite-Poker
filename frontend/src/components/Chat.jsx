@@ -1,3 +1,4 @@
+// frontend/src/components/Chat.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 
@@ -81,13 +82,25 @@ export default function Chat({ messages, playerName, onSendMessage }) {
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    onSendMessage(input.trim());
+    const text = input.trim();
+    if (text.startsWith('/w ') || text.startsWith('/msg ')) {
+      const parts = text.split(' ');
+      if (parts.length >= 3) {
+        const target = parts[1];
+        const msg = parts.slice(2).join(' ');
+        onSendMessage({ type: 'private', targetName: target, message: msg });
+        setInput('');
+        resetActivity();
+        return;
+      }
+    }
+    onSendMessage({ type: 'chat', message: text });
     setInput('');
     resetActivity();
   };
 
   const sendQuickMessage = (text) => {
-    onSendMessage(text);
+    onSendMessage({ type: 'chat', message: text });
     resetActivity();
   };
 
@@ -122,10 +135,29 @@ export default function Chat({ messages, playerName, onSendMessage }) {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`${msg.sender === 'Dealer' ? 'dealer-chat' : msg.sender === playerName ? 'text-green-300' : 'text-white'} break-words`}
+            className={`${
+              msg.isPrivate
+                ? 'bg-purple-900/60 text-purple-200 break-words px-1 py-0.5 rounded'
+                : msg.sender === 'Dealer'
+                ? 'dealer-chat'
+                : msg.sender === playerName
+                ? 'text-green-300'
+                : 'text-white'
+            } break-words`}
           >
-            {msg.sender !== 'Dealer' && <span className="font-bold text-amber-400">[{msg.sender}]</span>}{' '}
-            <span>{msg.text || msg.message}</span>
+            {msg.isPrivate ? (
+              <>
+                <span className="font-bold text-purple-400">
+                  {msg.sent ? `To ${msg.target}` : `From ${msg.sender}`}
+                </span>{' '}
+                <span>{msg.text}</span>
+              </>
+            ) : (
+              <>
+                {msg.sender !== 'Dealer' && <span className="font-bold text-amber-400">[{msg.sender}]</span>}{' '}
+                <span>{msg.text || msg.message}</span>
+              </>
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
@@ -177,7 +209,7 @@ export default function Chat({ messages, playerName, onSendMessage }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={handleKeyPress}
           onFocus={resetActivity}
-          placeholder="Say something..."
+          placeholder="/w name msg"
           className="flex-1 bg-gray-800/80 rounded-lg px-3 py-1 text-white text-sm outline-none focus:ring-1 focus:ring-amber-500"
         />
         <button
