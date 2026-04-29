@@ -495,3 +495,9 @@
   box-shadow: 0 0 15px 3px rgba(34, 197, 94, 0.7) !important;
   border-color: #22c55e !important;
 }
+.dealer-chat {
+  font-style: italic;
+  color: #fbbf24;
+  font-weight: 500;
+  font-size: 0.75rem;
+}

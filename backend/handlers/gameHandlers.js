@@ -1,3 +1,5 @@
+import { getDealerMessage } from '../game/dealerMessages.js';
+
 export function handleResetLobby(msg, ws, clients, lobbyManager, broadcastGameState, broadcastSystemMessage, clearAllTimers) {
   const client = clients.get(ws);
   if (!client || !client.lobbyId) return;
@@ -9,8 +11,8 @@ export function handleResetLobby(msg, ws, clients, lobbyManager, broadcastGameSt
   if (lobby) {
     lobby.game.resetLobby();
     clearAllTimers(client.lobbyId, clients);
-    broadcastGameState(client.lobbyId);
-    broadcastSystemMessage(client.lobbyId, `🔄 Lobby reset by ${client.name}.`);
+    const dealerMsg = getDealerMessage('reset', { name: client.name });
+    broadcastGameState(client.lobbyId, dealerMsg);
   }
 }
 
@@ -21,10 +23,30 @@ export function handleAction(msg, ws, clients, lobbyManager, broadcastGameState,
   if (!lobby || lobby.game.paused) return;
   const { action, amount } = msg;
   lobby.game.playerAction(client.playerId, action, amount);
+
+  let dealerMsg = null;
+  switch (action) {
+    case 'fold':
+      dealerMsg = getDealerMessage('fold', { name: client.name });
+      break;
+    case 'check':
+      dealerMsg = getDealerMessage('check', { name: client.name });
+      break;
+    case 'call':
+      dealerMsg = getDealerMessage('call', { name: client.name, amount: amount || 0 });
+      break;
+    case 'raise':
+      dealerMsg = getDealerMessage('raise', { name: client.name, amount: amount || 0 });
+      break;
+    case 'allin':
+      dealerMsg = getDealerMessage('allin', { name: client.name, amount: lobby.game.players.find(p => p.id === client.playerId)?.chips + (lobby.game.currentBet || 0) });
+      break;
+  }
+
   if (action === 'allin') {
     broadcastAllInSound(client.lobbyId);
   }
-  broadcastGameState(client.lobbyId);
+  broadcastGameState(client.lobbyId, dealerMsg);
   if (!lobby.game.handInProgress || lobby.game.winner) {
     stopTurnTimerBroadcast(client.lobbyId);
   } else {
@@ -41,7 +63,7 @@ export function handleReady(msg, ws, clients, lobbyManager, broadcastGameState, 
   if (result.success) {
     broadcastGameState(client.lobbyId);
     if (!lobby.game.handInProgress && lobby.game.getActivePlayers().length >= 2 && lobby.game.getActivePlayers().every(p => p.ready)) {
-      broadcastSystemMessage(client.lobbyId, 'All players ready! Game starting...');
+      broadcastSystemMessage(client.lobbyId, getDealerMessage('gameStarted'));
       broadcastGameState(client.lobbyId);
     }
   } else {
@@ -59,8 +81,8 @@ export function handleSitIn(msg, ws, clients, lobbyManager, broadcastGameState, 
     const player = lobby.game.players.find(p => p.id === client.playerId);
     if (player) player.chips = lobby.settings.startingChips;
     ws.send(JSON.stringify({ type: 'sitInSuccess' }));
-    broadcastSystemMessage(client.lobbyId, `${client.name} sat in the game!`);
-    broadcastGameState(client.lobbyId);
+    const dealerMsg = getDealerMessage('sitIn', { name: client.name });
+    broadcastGameState(client.lobbyId, dealerMsg);
   } else {
     ws.send(JSON.stringify({ type: 'error', message: result.message }));
   }
@@ -88,8 +110,12 @@ export function handleSideBet(msg, ws, clients, lobbyManager, broadcastChat, bro
   const { targetId, amount } = msg;
   const result = lobby.game.placeSideBet(client.playerId, targetId, amount);
   if (result.success) {
-    broadcastChat(client.lobbyId, 'SYSTEM', `🎲 ${result.bettorName} bet ${result.amount} chips on ${result.targetName} to win the hand!`);
-    broadcastGameState(client.lobbyId);
+    const dealerMsg = getDealerMessage('sideBetPlaced', {
+      bettor: result.bettorName,
+      target: result.targetName,
+      amount: result.amount
+    });
+    broadcastGameState(client.lobbyId, dealerMsg);
   } else {
     ws.send(JSON.stringify({ type: 'sideBetResult', message: result.message, success: false }));
   }
@@ -114,8 +140,8 @@ export function handlePause(msg, ws, clients, lobbyManager, broadcastGameState, 
   if (!lobby || lobby.game.paused) return;
   lobby.game.pause();
   clearAllTimers(client.lobbyId, clients);
-  broadcastGameState(client.lobbyId);
-  broadcastSystemMessage(client.lobbyId, `⏸️ Game paused by ${client.name}.`);
+  const dealerMsg = getDealerMessage('pause', { name: client.name });
+  broadcastGameState(client.lobbyId, dealerMsg);
 }
 
 export function handleResume(msg, ws, clients, lobbyManager, broadcastGameState, broadcastSystemMessage, ensureTurnTimer) {
@@ -124,8 +150,8 @@ export function handleResume(msg, ws, clients, lobbyManager, broadcastGameState,
   const lobby = lobbyManager.getLobby(client.lobbyId);
   if (!lobby || !lobby.game.paused) return;
   lobby.game.resume();
-  broadcastGameState(client.lobbyId);
-  broadcastSystemMessage(client.lobbyId, `▶️ Game resumed by ${client.name}.`);
+  const dealerMsg = getDealerMessage('resume', { name: client.name });
+  broadcastGameState(client.lobbyId, dealerMsg);
   if (lobby.game.waitingForAction) {
     ensureTurnTimer(client.lobbyId, lobbyManager, clients, broadcastGameState);
   }

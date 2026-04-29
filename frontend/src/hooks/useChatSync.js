@@ -11,6 +11,11 @@ export function useChatSync(ws, gameState) {
 
   const bubbleTimersRef = useRef({});
   const chatAutoCloseRef = useRef(null);
+  const gameStateRef = useRef(gameState);
+
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   useEffect(() => {
     if (!ws) return;
@@ -19,8 +24,14 @@ export function useChatSync(ws, gameState) {
       const data = JSON.parse(event.data);
 
       if (data.type === 'chat') {
-        setChatMessages((prev) => [...prev, { sender: data.sender, text: data.message, isSystem: false }]);
-        const senderPlayer = gameState?.players?.find((p) => p.name === data.sender);
+        setChatMessages((prev) => {
+          if (prev.length > 0 && prev[prev.length - 1].text === data.message && prev[prev.length - 1].sender === data.sender) {
+            return prev;
+          }
+          return [...prev, { sender: data.sender, text: data.message, isSystem: false }];
+        });
+        const currentGameState = gameStateRef.current;
+        const senderPlayer = currentGameState?.players?.find((p) => p.name === data.sender);
         if (senderPlayer) {
           const newBubble = { id: Date.now() + Math.random(), playerId: senderPlayer.id, text: data.message };
           setSpeechBubbles((prev) => [...prev.filter((b) => b.playerId !== senderPlayer.id), newBubble]);
@@ -30,17 +41,8 @@ export function useChatSync(ws, gameState) {
           }, SPEECH_BUBBLE_DURATION);
         }
       } else if (data.type === 'system') {
-        setChatMessages((prev) => [...prev, { sender: 'SYSTEM', text: data.text, isSystem: true }]);
         setSystemMessage(data.text);
         setTimeout(() => setSystemMessage(null), TOAST_DURATION);
-        if (!showChat) {
-          setShowChat(true);
-          if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
-          chatAutoCloseRef.current = setTimeout(() => {
-            setShowChat(false);
-            chatAutoCloseRef.current = null;
-          }, CHAT_AUTO_CLOSE_DELAY);
-        }
       } else if (data.type === 'achievement') {
         setAchievementToast({ player: data.playerName, name: data.name, desc: data.desc });
         setTimeout(() => setAchievementToast(null), SIDE_BET_WIN_DURATION);
@@ -61,7 +63,16 @@ export function useChatSync(ws, gameState) {
 
     ws.addEventListener('message', handleMessage);
     return () => ws.removeEventListener('message', handleMessage);
-  }, [ws, gameState]);
+  }, [ws]);
 
-  return { chatMessages, showChat, setShowChat, speechBubbles, systemMessage, achievementToast, sideBetWin };
+  const openChatTemporarily = () => {
+    setShowChat(true);
+    if (chatAutoCloseRef.current) clearTimeout(chatAutoCloseRef.current);
+    chatAutoCloseRef.current = setTimeout(() => {
+      setShowChat(false);
+      chatAutoCloseRef.current = null;
+    }, CHAT_AUTO_CLOSE_DELAY);
+  };
+
+  return { chatMessages, showChat, setShowChat, openChatTemporarily, speechBubbles, systemMessage, achievementToast, sideBetWin };
 }

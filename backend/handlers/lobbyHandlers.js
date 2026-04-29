@@ -1,3 +1,5 @@
+import { getDealerMessage } from '../game/dealerMessages.js';
+
 export function handleJoin(msg, ws, clients, broadcastLobbyList, broadcastOnlinePlayers, generalChat) {
   const { name } = msg;
   if (!name || name.trim() === '') {
@@ -26,8 +28,8 @@ export function handleCreateLobby(msg, ws, clients, lobbyManager, broadcastGameS
     client.lobbyId = lobbyId;
     ws.send(JSON.stringify({ type: 'lobbyCreated', lobbyId, isAdmin: true }));
     setupLobbyCallbacks(lobbyId);
-    broadcastGameState(lobbyId);
-    broadcastSystemMessage(lobbyId, `${client.name} created the lobby.`);
+    const dealerMsg = getDealerMessage('lobbyCreated', { name: client.name });
+    broadcastGameState(lobbyId, dealerMsg);
     broadcastLobbyList();
     broadcastOnlinePlayers();
   } else {
@@ -48,8 +50,8 @@ export function handleJoinLobby(msg, ws, clients, lobbyManager, broadcastGameSta
     client.lobbyId = lobbyId;
     ws.send(JSON.stringify({ type: 'joinedLobby', lobbyId, isAdmin: lobbyManager.isAdmin(lobbyId, client.playerId) }));
     setupLobbyCallbacks(lobbyId);
-    broadcastGameState(lobbyId);
-    broadcastSystemMessage(lobbyId, `${client.name} joined the table.`);
+    const dealerMsg = getDealerMessage('playerJoined', { name: client.name });
+    broadcastGameState(lobbyId, dealerMsg);
     broadcastLobbyList();
     broadcastOnlinePlayers();
   } else if (joinResult.waitlisted) {
@@ -59,25 +61,25 @@ export function handleJoinLobby(msg, ws, clients, lobbyManager, broadcastGameSta
   }
 }
 
-export function handleLeaveLobby(ws, clients, lobbyManager, broadcastGameState, broadcastSystemMessage, broadcastLobbyList, broadcastOnlinePlayers) {
+export function handleLeaveLobby(ws, clients, lobbyManager, broadcastGameState, broadcastDealerMessage, broadcastLobbyList, broadcastOnlinePlayers) {
   const client = clients.get(ws);
   if (!client || !client.lobbyId) return;
   lobbyManager.leaveLobby(client.lobbyId, client.playerId);
-  broadcastSystemMessage(client.lobbyId, `${client.name} left the table.`);
-  broadcastGameState(client.lobbyId);
+  const dealerMsg = getDealerMessage('playerLeft', { name: client.name });
+  broadcastGameState(client.lobbyId, dealerMsg);
   client.lobbyId = null;
   ws.send(JSON.stringify({ type: 'leftLobby' }));
   broadcastLobbyList();
   broadcastOnlinePlayers();
 }
 
-export function handleReturnToLobby(ws, clients, lobbyManager, broadcastGameState, broadcastSystemMessage, broadcastLobbyList, broadcastOnlinePlayers, clearAllTimers) {
+export function handleReturnToLobby(ws, clients, lobbyManager, broadcastGameState, broadcastDealerMessage, broadcastLobbyList, broadcastOnlinePlayers, clearAllTimers) {
   const client = clients.get(ws);
   if (!client || !client.lobbyId) return;
   clearAllTimers(client.lobbyId, clients);
   lobbyManager.leaveLobby(client.lobbyId, client.playerId);
-  broadcastGameState(client.lobbyId);
-  broadcastSystemMessage(client.lobbyId, `${client.name} left the table.`);
+  const dealerMsg = getDealerMessage('playerLeft', { name: client.name });
+  broadcastGameState(client.lobbyId, dealerMsg);
   client.lobbyId = null;
   ws.send(JSON.stringify({ type: 'leftLobby' }));
   broadcastLobbyList();
@@ -102,8 +104,8 @@ export function handleKickPlayer(msg, ws, clients, lobbyManager, broadcastGameSt
   const { targetId } = msg;
   const result = lobbyManager.kickPlayer(client.lobbyId, targetId, client.playerId);
   if (result.success) {
-    broadcastSystemMessage(client.lobbyId, `${client.name} kicked a player.`);
-    broadcastGameState(client.lobbyId);
+    const dealerMsg = getDealerMessage('playerKicked', { name: '' });
+    broadcastGameState(client.lobbyId, dealerMsg);
     broadcastLobbyList();
     broadcastOnlinePlayers();
   } else {

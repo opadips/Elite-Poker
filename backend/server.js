@@ -7,6 +7,7 @@ import { ClientRegistry } from './ClientRegistry.js';
 import { createMessageRouter } from './MessageRouter.js';
 import { BroadcastScheduler } from './BroadcastScheduler.js';
 import * as timerUtils from './utils/timerUtils.js';
+import { getDealerMessage } from './game/dealerMessages.js';
 import { MAX_NAME_LENGTH, CHAT_HISTORY_SIZE } from './constants.js';
 
 const app = express();
@@ -20,10 +21,11 @@ const generalChat = [];
 
 timerUtils.setTurnTimerRefs({ lobbyManager, clientRegistry, broadcastGameState });
 
-function broadcastGameState(lobbyId) {
+function broadcastGameState(lobbyId, dealerMessage = null) {
   const lobby = lobbyManager.getLobby(lobbyId);
   if (!lobby) return;
   const state = lobby.game.getState();
+  if (dealerMessage) state.dealerMessage = dealerMessage;
   const msg = JSON.stringify({ type: 'gameState', state });
   clientRegistry.forEach((ws, client) => {
     if (client.lobbyId === lobbyId && ws.readyState === 1) ws.send(msg);
@@ -35,6 +37,11 @@ function broadcastSystemMessage(lobbyId, message) {
   clientRegistry.forEach((ws, client) => {
     if (client.lobbyId === lobbyId && ws.readyState === 1) ws.send(msg);
   });
+}
+
+function broadcastDealerMessage(lobbyId, message) {
+  if (!message) return;
+  broadcastChat(lobbyId, 'Dealer', message);
 }
 
 function broadcastChat(lobbyId, senderName, message) {
@@ -72,8 +79,8 @@ function broadcastAchievement(lobbyId, achievement) {
   });
 }
 
-function broadcastSideBetWin(lobbyId, bettorName, targetName, amount, profit) {
-  const winMsg = JSON.stringify({ type: 'sideBetWin', bettorName, targetName, amount, profit });
+function broadcastSideBetWin(lobbyId, bettorName, targetName, amount, profit, refunded) {
+  const winMsg = JSON.stringify({ type: 'sideBetWin', bettorName, targetName, amount, profit, refunded });
   clientRegistry.forEach((ws, client) => {
     if (client.lobbyId === lobbyId && ws.readyState === 1) ws.send(winMsg);
   });
@@ -120,6 +127,8 @@ const messageRouter = createMessageRouter({
   timerUtils,
   MAX_NAME_LENGTH,
   CHAT_HISTORY_SIZE,
+  broadcastDealerMessage,
+  getDealerMessage,
 });
 
 const scheduler = new BroadcastScheduler(lobbyManager, clientRegistry, {
@@ -130,6 +139,7 @@ const scheduler = new BroadcastScheduler(lobbyManager, clientRegistry, {
   broadcastSideBetWin,
   broadcastLobbyList,
   broadcastOnlinePlayers,
+  broadcastDealerMessage,
 }, timerUtils);
 
 scheduler.start();
@@ -140,7 +150,7 @@ wss.on('connection', (ws) => {
       const msg = JSON.parse(data);
       messageRouter(msg, ws);
     } catch (err) {
-      ws.send(JSON.stringify({ type: 'error', message: 'Invalid message' }));
+      console.error('Non‑JSON message received:', data.toString().slice(0, 80));
     }
   });
 
@@ -150,7 +160,8 @@ wss.on('connection', (ws) => {
       if (client.lobbyId) {
         lobbyManager.leaveLobby(client.lobbyId, client.playerId);
         broadcastGameState(client.lobbyId);
-        broadcastSystemMessage(client.lobbyId, `❌ ${client.name} left the table.`);
+        const msg = getDealerMessage('playerLeft', { name: client.name || 'A player' });
+        broadcastDealerMessage(client.lobbyId, msg);
         timerUtils.clearAllTimers(client.lobbyId, clientRegistry);
       }
       timerUtils.clearTimer(ws, clientRegistry);

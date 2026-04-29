@@ -103,6 +103,7 @@ export default function GameTable({
     chatMessages,
     showChat,
     setShowChat,
+    openChatTemporarily,
     speechBubbles,
     systemMessage,
     achievementToast,
@@ -283,49 +284,51 @@ export default function GameTable({
   useEffect(() => {
     if (!gameState || !gameState.players) return;
 
-    const hasChipStackPositions = Object.keys(chipStackPositionsMap).length > 0;
-    const now = Date.now();
+    requestAnimationFrame(() => {
+      const hasChipStackPositions = Object.keys(chipStackPositionsMap).length > 0;
+      const now = Date.now();
 
-    gameState.players.forEach((p) => {
-      const prevAction = prevActionsRef.current[p.id];
-      const newAction = p.lastAction;
-      if (
-        newAction &&
-        newAction.type &&
-        (!prevAction ||
-          prevAction.type !== newAction.type ||
-          prevAction.amount !== newAction.amount)
-      ) {
+      gameState.players.forEach((p) => {
+        const prevAction = prevActionsRef.current[p.id];
+        const newAction = p.lastAction;
         if (
-          (newAction.type === 'call' ||
-            newAction.type === 'raise' ||
-            newAction.type === 'allin') &&
-          newAction.amount > 0
+          newAction &&
+          newAction.type &&
+          (!prevAction ||
+            prevAction.type !== newAction.type ||
+            prevAction.amount !== newAction.amount)
         ) {
-          const actionAge = newAction.timestamp ? now - newAction.timestamp : 0;
-          if (actionAge > ACTION_ANIMATION_WINDOW_MS) {
-            prevActionsRef.current[p.id] = newAction;
-            return;
-          }
+          if (
+            (newAction.type === 'call' ||
+              newAction.type === 'raise' ||
+              newAction.type === 'allin') &&
+            newAction.amount > 0
+          ) {
+            const actionAge = newAction.timestamp ? now - newAction.timestamp : 0;
+            if (actionAge > ACTION_ANIMATION_WINDOW_MS) {
+              prevActionsRef.current[p.id] = newAction;
+              return;
+            }
 
-          const fromPos = getChipStackScreenPos(p.id);
-          const toPos = getPotScreenPos();
-          const animItem = {
-            value: newAction.amount,
-            from: fromPos,
-            to: toPos,
-            type: newAction.type,
-            timestamp: newAction.timestamp,
-          };
+            const fromPos = getChipStackScreenPos(p.id);
+            const toPos = getPotScreenPos();
+            const animItem = {
+              value: newAction.amount,
+              from: fromPos,
+              to: toPos,
+              type: newAction.type,
+              timestamp: newAction.timestamp,
+            };
 
-          if (hasChipStackPositions) {
-            enqueueAnimation(animItem);
-          } else {
-            pendingActionsRef.current.push(animItem);
+            if (hasChipStackPositions) {
+              enqueueAnimation(animItem);
+            } else {
+              pendingActionsRef.current.push(animItem);
+            }
           }
         }
-      }
-      prevActionsRef.current[p.id] = newAction;
+        prevActionsRef.current[p.id] = newAction;
+      });
     });
   }, [gameState, getChipStackScreenPos, getPotScreenPos, enqueueAnimation, chipStackPositionsMap]);
 
@@ -659,6 +662,7 @@ export default function GameTable({
           ws={ws}
           playerId={playerId}
           sitIn={sitIn}
+          dealerMessage={gameState?.dealerMessage}
         />
       </div>
     </GameContext.Provider>

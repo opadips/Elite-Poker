@@ -1,4 +1,4 @@
-// src/components/Chat.jsx
+// frontend/src/components/Chat.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
 export default function Chat({ messages, playerName, onSendMessage }) {
@@ -73,9 +73,12 @@ export default function Chat({ messages, playerName, onSendMessage }) {
       </div>
       <div className="h-48 overflow-y-auto p-2 text-xs space-y-1">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`${msg.isSystem ? 'text-yellow-400' : msg.sender === playerName ? 'text-green-300' : 'text-white'} break-words`}>
-            {!msg.isSystem && <span className="font-bold text-amber-400">[{msg.sender}]</span>}{' '}
-            <span>{msg.text}</span>
+          <div
+            key={idx}
+            className={`${msg.sender === 'Dealer' ? 'dealer-chat' : msg.sender === playerName ? 'text-green-300' : 'text-white'} break-words`}
+          >
+            {msg.sender !== 'Dealer' && <span className="font-bold text-amber-400">[{msg.sender}]</span>}{' '}
+            <span>{msg.text || msg.message}</span>
           </div>
         ))}
         <div ref={messagesEndRef} />

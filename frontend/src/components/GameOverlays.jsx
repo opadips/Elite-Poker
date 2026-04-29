@@ -1,4 +1,3 @@
-// frontend/src/components/GameOverlays.jsx
 import React from 'react';
 import Chat from './Chat.jsx';
 import BettingPanel from './BettingPanel.jsx';
@@ -9,7 +8,7 @@ function formatChips(amount) {
   return amount.toString();
 }
 
-export default function GameOverlays({
+const GameOverlays = React.memo(function GameOverlays({
   gameState,
   currentPlayer,
   isPaused,
@@ -29,6 +28,7 @@ export default function GameOverlays({
   ws,
   playerId,
   sitIn,
+  dealerMessage,
 }) {
   return (
     <>
@@ -61,6 +61,12 @@ export default function GameOverlays({
       {systemMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-yellow-600 text-black font-bold px-6 py-2 rounded-full shadow-lg animate-bounce">
           {systemMessage}
+        </div>
+      )}
+
+      {dealerMessage && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-amber-700/90 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-fadeIn">
+          {dealerMessage}
         </div>
       )}
 
@@ -162,4 +168,6 @@ export default function GameOverlays({
       )}
     </>
   );
-}
+});
+
+export default GameOverlays;

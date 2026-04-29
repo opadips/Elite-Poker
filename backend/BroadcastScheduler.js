@@ -1,3 +1,5 @@
+import { getDealerMessage } from './game/dealerMessages.js';
+
 export class BroadcastScheduler {
   constructor(lobbyManager, clientRegistry, broadcastFns, timerUtils) {
     this.lobbyManager = lobbyManager;
@@ -9,10 +11,12 @@ export class BroadcastScheduler {
     this.broadcastSideBetWin = broadcastFns.broadcastSideBetWin;
     this.broadcastLobbyList = broadcastFns.broadcastLobbyList;
     this.broadcastOnlinePlayers = broadcastFns.broadcastOnlinePlayers;
+    this.broadcastDealerMessage = broadcastFns.broadcastDealerMessage;
     this.timerUtils = timerUtils;
 
     this.lastWinnerMessageMap = new Map();
     this.lastSideBetMessageMap = new Map();
+    this.broadcastedAchievementKeys = new Map();
   }
 
   start() {
@@ -37,19 +41,29 @@ export class BroadcastScheduler {
       const lastWinner = this.lastWinnerMessageMap.get(lobbyId);
       if (state.winner && state.winner !== lastWinner) {
         this.lastWinnerMessageMap.set(lobbyId, state.winner);
-        const totalWinning = state.winner.winnings;
-        const hand = state.winner.handName;
-        const winnerNames = state.winner.names;
-        this.broadcastChat(lobbyId, 'SYSTEM', `🏆 ${winnerNames} won ${totalWinning} chips with ${hand}! 🏆`);
-        this.broadcastSystemMessage(lobbyId, `🏆 ${winnerNames} wins with ${hand}!`);
+        const msg = getDealerMessage('handComplete', {
+          names: state.winner.names,
+          winnings: state.winner.winnings,
+          hand: state.winner.handName
+        });
+        if (msg) this.broadcastDealerMessage(lobbyId, msg);
 
         const newAchievements = lobby.game.checkAchievements();
         for (const ach of newAchievements) {
-          this.broadcastAchievement(lobbyId, ach);
-          this.broadcastSystemMessage(lobbyId, `🎖️ ${ach.playerName} earned: ${ach.name} – ${ach.desc}`);
+          const key = `${lobbyId}-${ach.playerId || ach.playerName}-${ach.name}`;
+          if (!this.broadcastedAchievementKeys.has(key)) {
+            this.broadcastedAchievementKeys.set(key, true);
+            this.broadcastAchievement(lobbyId, ach);
+            const achMsg = getDealerMessage('achievementEarned', {
+              player: ach.playerName,
+              name: ach.name,
+              desc: ach.desc
+            });
+            if (achMsg) this.broadcastDealerMessage(lobbyId, achMsg);
+          }
         }
 
-        const historyEntry = `Hand: ${state.winner.handName} - Winner: ${winnerNames} (Pot: ${totalWinning})`;
+        const historyEntry = `Hand: ${state.winner.handName} - Winner: ${state.winner.names} (Pot: ${state.winner.winnings})`;
         this.lobbyManager.addHandHistory(lobbyId, historyEntry);
       }
 
@@ -57,10 +71,22 @@ export class BroadcastScheduler {
       if (state.sideBetResults && state.sideBetResults !== lastSide) {
         this.lastSideBetMessageMap.set(lobbyId, state.sideBetResults);
         for (let res of state.sideBetResults) {
-          const totalWin = res.amount + res.profit;
-          this.broadcastChat(lobbyId, 'SYSTEM', `🎉 ${res.bettorName} won ${totalWin} chips from side bet on ${res.targetName}! 🎉`);
-          this.broadcastSystemMessage(lobbyId, `🎲 Side bet: ${res.bettorName} won ${totalWin} chips (bet on ${res.targetName})`);
-          this.broadcastSideBetWin(lobbyId, res.bettorName, res.targetName, res.amount, res.profit);
+          let msg = null;
+          if (res.refunded) {
+            msg = getDealerMessage('sideBetRefund', {
+              bettor: res.bettorName,
+              amount: res.amount
+            });
+          } else {
+            msg = getDealerMessage('sideBetWin', {
+              bettor: res.bettorName,
+              target: res.targetName,
+              amount: res.amount,
+              profit: res.profit
+            });
+          }
+          if (msg) this.broadcastDealerMessage(lobbyId, msg);
+          this.broadcastSideBetWin(lobbyId, res.bettorName, res.targetName, res.amount, res.profit, res.refunded || false);
         }
       }
 
