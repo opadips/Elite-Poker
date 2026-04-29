@@ -1,3 +1,4 @@
+// frontend/src/hooks/useGameActions.js
 import { chipClick, allInSound as allInSoundFunc } from './useSound';
 
 export function useGameActions(
@@ -12,7 +13,8 @@ export function useGameActions(
   sendWs,
   enqueueAnimation,
   getSeatPosition,
-  getPotPosition
+  getPotPosition,
+  setShowHistory
 ) {
   const addChipToQueue = (amount) => {
     const fromPos = getSeatPosition(playerId);
@@ -64,7 +66,11 @@ export function useGameActions(
 
   const togglePause = () =>
     sendWs({ type: isPaused ? 'resume' : 'pause' });
-  const requestHandHistory = () => sendWs({ type: 'getHandHistory' });
+
+  const requestHandHistory = () => {
+    sendWs({ type: 'getHandHistory' });
+    if (setShowHistory) setShowHistory(true);
+  };
 
   return {
     handleAction,

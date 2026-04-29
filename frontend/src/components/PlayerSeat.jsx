@@ -26,12 +26,10 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
     speechBubbles,
   } = useContext(GameContext);
 
-  if (!pos) return null;
-
-  const isActive = gameState.currentPlayerId === p.id;
+  const isActive = gameState ? gameState.currentPlayerId === p.id : false;
   const isWinner = winnerEffect?.winnerId === p.id;
   const isSelf = p.id === playerId;
-  const isReady = p.ready && !gameState.firstHandStarted && !gameState.handInProgress;
+  const isReady = p.ready && !gameState?.firstHandStarted && !gameState?.handInProgress;
   const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
   const showdownActive = p.revealed && !p.folded;
 
@@ -47,6 +45,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
       ? knownOpponentHands.length
       : activePlayersList.filter(ap => ap.id !== playerId && !ap.folded).length;
   }, [knownOpponentHands, activePlayersList, playerId]);
+
+  if (!pos) return null;
 
   return (
     <div
@@ -167,7 +167,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>
             )}
           </div>
-          {gameState.dealerIndex === p.id && (
+          {gameState?.dealerIndex === p.id && (
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">
               DEALER
             </div>
@@ -175,8 +175,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           {showdownActive && !p.isSpectator && isSelf && !showHandInfo && (
             <HandInfo
               holeCards={p.holeCards}
-              communityCards={gameState.communityCards}
-              round={gameState.currentRound}
+              communityCards={gameState?.communityCards}
+              round={gameState?.currentRound}
               playerName={p.name}
               opponentsCount={opponentsCount}
               knownOpponentHands={knownOpponentHands}
@@ -187,8 +187,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           {showdownActive && !p.isSpectator && !isSelf && (
             <HandInfo
               holeCards={p.holeCards}
-              communityCards={gameState.communityCards}
-              round={gameState.currentRound}
+              communityCards={gameState?.communityCards}
+              round={gameState?.currentRound}
               playerName={p.name}
               opponentsCount={opponentsCount}
               knownOpponentHands={knownOpponentHands}
@@ -199,8 +199,8 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           {isSelf && showHandInfo && !p.folded && !p.isSpectator && !showdownActive && (
             <HandInfo
               holeCards={p.holeCards}
-              communityCards={gameState.communityCards}
-              round={gameState.currentRound}
+              communityCards={gameState?.communityCards}
+              round={gameState?.currentRound}
               playerName={p.name}
               opponentsCount={opponentsCount}
               knownOpponentHands={null}

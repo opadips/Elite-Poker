@@ -35,7 +35,7 @@ const cardBackOptions = [
   { id: 'ruby', name: 'Ruby', icon: '💎' },
 ];
 
-const ACTION_ANIMATION_WINDOW_MS = 3000;
+const ACTION_ANIMATION_WINDOW_MS = 5000;
 const WINNER_ANIMATION_WINDOW_MS = 500;
 
 export default function GameTable({
@@ -322,6 +322,12 @@ export default function GameTable({
   }, [chipStackPositionsMap, flushPendingActions]);
 
   useEffect(() => {
+    requestAnimationFrame(() => {
+      flushPendingActions();
+    });
+  }, [gameState, flushPendingActions]);
+
+  useEffect(() => {
     if (winnerEffect?.winnerId && gameState?.winner?.timestamp) {
       const winnerAge = Date.now() - gameState.winner.timestamp;
       if (winnerAge > WINNER_ANIMATION_WINDOW_MS) return;
@@ -399,7 +405,8 @@ export default function GameTable({
     sendWs,
     enqueueAnimation,
     getChipStackScreenPos,
-    getPotScreenPos
+    getPotScreenPos,
+    setShowHistory
   );
 
   const contextValue = useMemo(() => ({
