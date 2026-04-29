@@ -177,7 +177,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>
             )}
           </div>
-          {gameState?.dealerIndex === p.id && (
+          {(gameState?.handInProgress || gameState?.firstHandStarted) && gameState?.dealerIndex === p.id && (
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">
               DEALER
             </div>
