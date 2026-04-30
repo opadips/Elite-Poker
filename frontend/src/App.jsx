@@ -114,9 +114,9 @@ function App() {
   if (page === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="bg-gray-900/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-gray-700 w-96">
+        <div className="bg-gray-900/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-gray-700 max-w-md w-full mx-4">
           <h1 className="text-4xl font-extrabold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500">
-            ♠️ Elite Poker ♠️
+            Elite Poker
           </h1>
           <input
             ref={nameInputRef}

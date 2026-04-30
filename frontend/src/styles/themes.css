@@ -32,6 +32,10 @@
   --raise-panel-bg: rgba(0, 0, 0, 0.7);
 }
 
+body {
+  font-family: 'Verdana', sans-serif;
+}
+
 .theme-classic body {
   background: var(--bg-gradient);
 }
@@ -54,7 +58,7 @@
   --sidebet-bg: rgba(0, 20, 0, 0.8);
   --sidebet-border: #39ff14;
   --sidebet-text: #aaffaa;
-  --winner-font: 'Impact', 'Arial Black', sans-serif;
+  --winner-font: 'Georgia', serif;
   --handinfo-bg: rgba(0, 20, 0, 0.8);
   --handinfo-border: #39ff14;
 
@@ -164,7 +168,7 @@
   --sidebet-bg: rgba(10, 10, 30, 0.8);
   --sidebet-border: #8a2be2;
   --sidebet-text: #da70d6;
-  --winner-font: 'Trebuchet MS', 'Lucida Sans', sans-serif;
+  --winner-font: 'Georgia', serif;
   --handinfo-bg: rgba(10, 10, 30, 0.8);
   --handinfo-border: #8a2be2;
 
@@ -278,7 +282,7 @@
   --sidebet-bg: rgba(0, 0, 0, 0.8);
   --sidebet-border: #c49a2a;
   --sidebet-text: #ffd700;
-  --winner-font: 'Cinzel', 'Georgia', serif;
+  --winner-font: 'Georgia', serif;
   --handinfo-bg: rgba(0, 0, 0, 0.8);
   --handinfo-border: #c49a2a;
 
