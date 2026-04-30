@@ -1,3 +1,4 @@
+// backend/server.js
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
@@ -101,6 +102,9 @@ function setupLobbyCallbacks(lobbyId) {
     broadcastGameState(lobbyId);
     timerUtils.ensureTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcastGameState);
   };
+  lobby.game._onTimerReset = () => {
+    timerUtils.removeTurnTimer(lobbyId);
+  };
 }
 
 function broadcastLobbyList() {
@@ -163,7 +167,7 @@ wss.on('connection', (ws) => {
         broadcastGameState(client.lobbyId);
         const msg = getDealerMessage('playerLeft', { name: client.name || 'A player' });
         broadcastDealerMessage(client.lobbyId, msg);
-        timerUtils.clearTimer(ws, clientRegistry);
+        timerUtils.clearAllTimers(client.lobbyId, clientRegistry);
       }
       timerUtils.clearTimer(ws, clientRegistry);
       clientRegistry.remove(ws);

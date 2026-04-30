@@ -113,6 +113,7 @@ export class Game {
   }
 
   startHand() {
+    if (this._onTimerReset) this._onTimerReset();
     startHand(this);
     this._revealInProgress = false;
   }

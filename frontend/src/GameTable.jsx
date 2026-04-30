@@ -1,4 +1,3 @@
-// frontend/src/GameTable.jsx
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import ActionButtons from './components/ActionButtons.jsx';
 import Leaderboard from './components/Leaderboard.jsx';
@@ -26,13 +25,39 @@ import {
 } from './constants.js';
 import './styles/animations.css';
 
+function ChatBubbleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
 const cardBackOptions = [
-  { id: 'classic', name: 'Amber', icon: '🃏' },
-  { id: 'royal', name: 'Royal', icon: '👑' },
-  { id: 'emerald', name: 'Emerald', icon: '🍀' },
-  { id: 'sapphire', name: 'Sapphire', icon: '💎' },
-  { id: 'onyx', name: 'Onyx', icon: '🖤' },
-  { id: 'pearl', name: 'Pearl', icon: '🤍' },
+  { id: 'classic', name: 'Amber' },
+  { id: 'royal', name: 'Royal' },
+  { id: 'emerald', name: 'Emerald' },
+  { id: 'sapphire', name: 'Sapphire' },
+  { id: 'onyx', name: 'Onyx' },
+  { id: 'pearl', name: 'Pearl' },
+];
+
+const themes = [
+  { id: 'classic', name: 'Classic', color: 'bg-emerald-800' },
+  { id: 'crimson', name: 'Royal Crimson', color: 'bg-red-950' },
+  { id: 'emerald', name: 'Emerald Luxe', color: 'bg-green-950' },
+  { id: 'sapphire', name: 'Sapphire Noir', color: 'bg-blue-950' },
+  { id: 'neonjungle', name: 'Neon Jungle', color: 'bg-green-950' },
+  { id: 'void', name: 'Void Pulse', color: 'bg-indigo-950' },
 ];
 
 const ACTION_ANIMATION_WINDOW_MS = 5000;
@@ -117,15 +142,6 @@ export default function GameTable({
     playerId,
     seatViewFixed
   );
-
-  const themes = [
-    { id: 'classic', name: 'Classic', icon: '🃏', color: 'bg-emerald-800' },
-    { id: 'crimson', name: 'Royal Crimson', icon: '🍷', color: 'bg-red-950' },
-    { id: 'emerald', name: 'Emerald Luxe', icon: '🌿', color: 'bg-green-950' },
-    { id: 'sapphire', name: 'Sapphire Noir', icon: '🌌', color: 'bg-blue-950' },
-    { id: 'neonjungle', name: 'Neon Jungle', icon: '🌿', color: 'bg-green-950' },
-    { id: 'void', name: 'Void Pulse', icon: '🌀', color: 'bg-indigo-950' },
-  ];
 
   const sendWs = useCallback((msg) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -334,7 +350,8 @@ export default function GameTable({
   }, [gameState, flushPendingActions]);
 
   useEffect(() => {
-    if (winnerEffect?.winnerId && gameState?.winner?.timestamp) {
+    const winnerIdsList = winnerEffect?.winnerIds;
+    if (winnerIdsList && winnerIdsList.length > 0 && gameState?.winner?.timestamp) {
       const winnerAge = Date.now() - gameState.winner.timestamp;
       if (winnerAge > WINNER_ANIMATION_WINDOW_MS) return;
 
@@ -345,18 +362,20 @@ export default function GameTable({
       const count = performanceModeRef.current ? 2 : winnerChipCountRef.current;
       setTimeout(() => {
         const fromPos = getPotScreenPos();
-        const winnerStackPos = getChipStackScreenPos(winnerEffect.winnerId);
-        for (let i = 0; i < count; i++) {
-          setTimeout(() => {
-            enqueueAnimation({
-              value: Math.floor(gameState.totalPot / (count || 1)),
-              from: { ...fromPos },
-              to: { ...winnerStackPos },
-              type: 'win',
-              duration: WIN_CHIP_DURATION,
-            });
-          }, i * WINNER_CHIP_ANIMATION_INTERVAL);
-        }
+        winnerIdsList.forEach((winnerId) => {
+          const winnerStackPos = getChipStackScreenPos(winnerId);
+          for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+              enqueueAnimation({
+                value: Math.floor(gameState.totalPot / (count * winnerIdsList.length || 1)),
+                from: { ...fromPos },
+                to: { ...winnerStackPos },
+                type: 'win',
+                duration: WIN_CHIP_DURATION,
+              });
+            }, i * WINNER_CHIP_ANIMATION_INTERVAL);
+          }
+        });
       }, 150);
     }
   }, [winnerEffect, gameState, getPotScreenPos, getChipStackScreenPos, enqueueAnimation]);
@@ -432,7 +451,7 @@ export default function GameTable({
     setShowHistory
   );
 
-    const contextValue = useMemo(() => ({
+  const contextValue = useMemo(() => ({
     gameState,
     playerId,
     isAdmin,
@@ -511,11 +530,11 @@ export default function GameTable({
       >
         <button
           onClick={handleChatToggle}
-          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white transition-all"
           title={showChat ? 'Close chat' : 'Open chat'}
           style={{ zIndex: 70 }}
         >
-          💬
+          <ChatBubbleIcon />
         </button>
 
         {!gameState.firstHandStarted &&
@@ -531,7 +550,7 @@ export default function GameTable({
                     : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
-                {currentPlayer.ready ? '🔴 UNREADY' : '🟢 READY'}
+                {currentPlayer.ready ? 'UNREADY' : 'READY'}
               </button>
             </div>
           )}
@@ -540,10 +559,10 @@ export default function GameTable({
           <div className="relative">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white text-xl transition-all"
+              className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white transition-all"
               title="Settings"
             >
-              ⚙️
+              <GearIcon />
             </button>
             <SettingsPanel
               showSettings={showSettings}

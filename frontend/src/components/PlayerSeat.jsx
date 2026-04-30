@@ -10,6 +10,24 @@ function formatChips(amount) {
   return amount.toString();
 }
 
+function CrownIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
+      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
+      <path d="M2 20h20" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
 const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
   const {
     gameState,
@@ -87,7 +105,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text"
               style={{ color: 'var(--winner-text)' }}
             >
-              🏆 WINNER! 🏆
+              WINNER
             </div>
           </div>
         )}
@@ -105,12 +123,15 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           ))}
         <div
           ref={cardRef}
-          className={`bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
+          className={`rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
           ${p.folded ? 'opacity-60 grayscale' : ''}
           ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
           ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
           ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
-          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          style={{
+            backgroundImage: 'none',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+          }}
         >
           <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">
             #{idx + 1}
@@ -118,7 +139,9 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
             {p.name}
             {gameState?.adminId === p.id && (
-              <span className="text-xs" title="Admin">👑</span>
+              <span className="text-xs" title="Admin">
+                <CrownIcon />
+              </span>
             )}
             {isSB && (
               <span className="text-xs text-blue-300 font-bold">SB</span>
@@ -137,11 +160,11 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
                 className="text-red-400 hover:text-red-300 text-xs ml-1"
                 title="Kick player"
               >
-                ❌
+                <XIcon />
               </button>
             )}
           </div>
-          <div className="text-green-400 text-center">💰 {formatChips(p.chips)}</div>
+          <div className="text-green-400 text-center">{formatChips(p.chips)}</div>
           {p.lastAction?.type && (
             <div
               className={`text-xs text-center ${

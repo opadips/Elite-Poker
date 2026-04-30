@@ -1,48 +1,38 @@
-// frontend/src/components/Chat.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 
-const QUICK_CHATS = {
-  Emotions: [
-    { emoji: '👏', text: 'Nice hand!' },
-    { emoji: '😲', text: 'Wow!' },
-    { emoji: '😅', text: 'Sorry' },
-    { emoji: '😂', text: 'LOL' },
-    { emoji: '😡', text: 'Angry!' },
-    { emoji: '😢', text: 'So unlucky' },
-    { emoji: '🤔', text: 'Hmm...' },
-    { emoji: '🙄', text: 'Seriously?' }
-  ],
-  Game: [
-    { emoji: '🚀', text: 'All in!' },
-    { emoji: '⏩', text: 'Fold faster!' },
-    { emoji: '🃏', text: 'What a bluff!' },
-    { emoji: '🎯', text: 'Nice catch!' },
-    { emoji: '💰', text: 'Take my chips!' },
-    { emoji: '🤞', text: 'Good luck' },
-    { emoji: '👀', text: 'I saw that' },
-    { emoji: '🔄', text: 'Same again?' }
-  ],
-  Greetings: [
-    { emoji: '👋', text: 'Hello!' },
-    { emoji: '✌️', text: 'Good game!' },
-    { emoji: '🍀', text: 'Good luck all' },
-    { emoji: '🤝', text: 'Well played' },
-    { emoji: '👑', text: 'Respect' },
-    { emoji: '💪', text: 'Bring it on!' },
-    { emoji: '🔥', text: 'On fire!' },
-    { emoji: '❄️', text: 'Cold deck' }
-  ]
-};
-
-const CATEGORIES = Object.keys(QUICK_CHATS);
+const QUICK_CHATS = [
+  { text: 'Nice hand' },
+  { text: 'Wow' },
+  { text: 'Sorry' },
+  { text: 'LOL' },
+  { text: 'Angry' },
+  { text: 'Unlucky' },
+  { text: 'Hmm...' },
+  { text: 'Seriously?' },
+  { text: 'All in' },
+  { text: 'Fold faster' },
+  { text: 'What a bluff' },
+  { text: 'Nice catch' },
+  { text: 'Take my chips' },
+  { text: 'Good luck' },
+  { text: 'I saw that' },
+  { text: 'Same again' },
+  { text: 'Hello' },
+  { text: 'Good game' },
+  { text: 'Good luck all' },
+  { text: 'Well played' },
+  { text: 'Respect' },
+  { text: 'Bring it on' },
+  { text: 'On fire' },
+  { text: 'Cold deck' },
+];
 
 export default function Chat({ messages, playerName, onSendMessage }) {
   const [input, setInput] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [hovered, setHovered] = useState(false);
   const [quickChatOpen, setQuickChatOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const hideTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -129,7 +119,7 @@ export default function Chat({ messages, playerName, onSendMessage }) {
       onMouseLeave={handleMouseLeave}
     >
       <div className="text-amber-400 font-bold text-center border-b border-amber-700/50 py-1 text-sm cursor-pointer" onClick={resetActivity}>
-        💬 Table Chat
+        Table Chat
       </div>
       <div className="h-48 overflow-y-auto p-2 text-xs space-y-1">
         {messages.map((msg, idx) => (
@@ -169,32 +159,20 @@ export default function Chat({ messages, playerName, onSendMessage }) {
           onClick={() => setQuickChatOpen(!quickChatOpen)}
         >
           <span className="text-xs text-amber-300 font-medium">Quick Chat</span>
-          <span className="text-xs text-amber-300">{quickChatOpen ? '▲' : '▼'}</span>
+          <span className="text-xs text-amber-300" style={{ transform: quickChatOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+            &#9660;
+          </span>
         </div>
         {quickChatOpen && (
           <div className="px-2 pb-2">
-            <div className="flex gap-1 mb-2 overflow-x-auto">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-2 py-0.5 text-xs rounded-full transition-colors whitespace-nowrap ${
-                    activeCategory === cat ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
             <div className="grid grid-cols-4 gap-2">
-              {QUICK_CHATS[activeCategory].map((item) => (
+              {QUICK_CHATS.map((item) => (
                 <button
                   key={item.text}
-                  onClick={() => sendQuickMessage(`${item.emoji} ${item.text}`)}
-                  className="chat-quick-btn flex flex-col items-center justify-center p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 hover:border-amber-500/50"
+                  onClick={() => sendQuickMessage(item.text)}
+                  className="chat-quick-btn flex items-center justify-center p-1.5 rounded-lg border text-gray-200 text-xs font-medium"
                 >
-                  <span className="text-base chat-emoji-bounce">{item.emoji}</span>
-                  <span className="text-[9px] text-gray-300 mt-0.5 leading-tight text-center">{item.text}</span>
+                  {item.text}
                 </button>
               ))}
             </div>

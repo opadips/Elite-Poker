@@ -32,6 +32,10 @@
   --raise-panel-bg: rgba(0, 0, 0, 0.7);
 }
 
+.theme-classic body {
+  background: var(--bg-gradient);
+}
+
 /* ==============================================
    Neon Jungle
 ============================================== */
@@ -290,6 +294,10 @@
   --raise-panel-bg: rgba(0, 0, 0, 0.9);
 }
 
+.theme-crimson body {
+  background: var(--bg-gradient);
+}
+
 .theme-crimson .game-table {
   border: 2px solid #c49a2a;
   box-shadow: 0 0 50px rgba(196, 154, 42, 0.3), inset 0 0 30px rgba(139, 0, 0, 0.3);
@@ -328,6 +336,10 @@
   --action-bar-bg: rgba(0, 0, 0, 0.8);
   --action-bar-border: #2e7d32;
   --raise-panel-bg: rgba(0, 0, 0, 0.9);
+}
+
+.theme-emerald body {
+  background: var(--bg-gradient);
 }
 
 .theme-emerald .game-table {
@@ -370,6 +382,10 @@
   --raise-panel-bg: rgba(0, 0, 0, 0.9);
 }
 
+.theme-sapphire body {
+  background: var(--bg-gradient);
+}
+
 .theme-sapphire .game-table {
   border: 2px solid #191970;
   box-shadow: 0 0 40px rgba(25, 25, 112, 0.3), inset 0 0 20px rgba(0, 0, 139, 0.2);
@@ -382,6 +398,7 @@
 .community-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .community-card:hover {
   transform: scale(1.5);
   z-index: 20;
@@ -393,43 +410,28 @@
 }
 
 /* ==============================================
-   Winner animation
+   Winner display
 ============================================== */
-@keyframes winnerFadeInOut {
+@keyframes winnerReveal {
   0% {
     opacity: 0;
     transform: scale(0.8);
   }
-  15% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  75% {
-    opacity: 1;
-    transform: scale(1);
-  }
   100% {
-    opacity: 0;
-    transform: scale(1.1);
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 .winner-themed {
-  animation: winnerFadeInOut 3s ease-out forwards;
   color: var(--winner-text);
   font-family: var(--winner-font);
-  text-shadow: 0 0 20px var(--winner-text);
+  animation: winnerReveal 0.4s ease-out forwards;
 }
 
-@keyframes neonPulse {
-  0% {
-    text-shadow: 0 0 5px #00ffff;
-  }
-  50% {
-    text-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff;
-  }
-  100% {
-    text-shadow: 0 0 5px #00ffff;
+@media (prefers-reduced-motion: reduce) {
+  .winner-themed {
+    animation: none;
   }
 }
 
@@ -446,8 +448,17 @@
     transform: translate(-50%, 0);
   }
 }
+
 .animate-fadeInSlideDown {
   animation: fadeInSlideDown 0.3s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInSlideDown {
+    animation: none;
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* ==============================================
@@ -456,31 +467,36 @@
 .settings-scroll::-webkit-scrollbar {
   width: 4px;
 }
+
 .settings-scroll::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
+
 .settings-scroll::-webkit-scrollbar-thumb {
   background: #b87c3a;
   border-radius: 4px;
 }
+
 .ready-glow {
   box-shadow: 0 0 15px 3px rgba(34, 197, 94, 0.7) !important;
   border-color: #22c55e !important;
 }
+
 .dealer-chat {
   font-style: italic;
   color: #fbbf24;
   font-weight: 500;
   font-size: 0.75rem;
 }
-.chat-emoji-bounce {
-  animation: emojiBounce 1.5s ease-in-out infinite;
+
+/* Quick Chat Buttons (text-only) */
+.chat-quick-btn {
+  border: 1px solid #4b5563;
+  background: rgba(0, 0, 0, 0.4);
+  transition: background 0.15s ease;
 }
-.chat-quick-btn:hover .chat-emoji-bounce {
-  animation: emojiBounce 0.5s ease-in-out;
-}
-@keyframes emojiBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+
+.chat-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
