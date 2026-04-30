@@ -1,3 +1,4 @@
+// backend/BroadcastScheduler.js
 import { getDealerMessage } from './game/dealerMessages.js';
 
 export class BroadcastScheduler {
@@ -40,6 +41,7 @@ export class BroadcastScheduler {
       const state = lobby.game.getState();
       const lastWinner = this.lastWinnerMessageMap.get(lobbyId);
       if (state.winner && state.winner !== lastWinner) {
+        this.timerUtils.stopTurnTimerBroadcast(lobbyId);
         this.lastWinnerMessageMap.set(lobbyId, state.winner);
         const msg = getDealerMessage('handComplete', {
           names: state.winner.names,

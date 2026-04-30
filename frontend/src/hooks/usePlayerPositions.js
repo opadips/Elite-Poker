@@ -38,8 +38,8 @@ export function usePlayerPositions(gameState, playerId, seatViewFixed) {
     orderedPlayers.forEach((p, idx) => {
       const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
       newPositions[p.id] = {
-        x: centerX_abs - containerX + a * Math.cos(angle),
-        y: centerY_abs - containerY + b * Math.sin(angle)
+        x: centerX_abs - containerX + (a + 30) * Math.cos(angle),
+        y: centerY_abs - containerY + (b + 30) * Math.sin(angle)
       };
       ids.push(p.id);
     });

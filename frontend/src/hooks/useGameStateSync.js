@@ -38,12 +38,13 @@ export function useGameStateSync(ws, soundEnabledRef) {
 
         if (data.state.winner && data.state.winner.names !== lastWinnerRef.current) {
           lastWinnerRef.current = data.state.winner.names;
-          const winnerPlayer = data.state.players?.find((p) => p.name === data.state.winner.names);
-          if (winnerPlayer) {
+          const winnerNames = data.state.winner.names.split(', ');
+          const winnerPlayers = data.state.players?.filter(p => winnerNames.includes(p.name)) || [];
+          if (winnerPlayers.length > 0) {
             setWinnerEffect({
-              winnerId: winnerPlayer.id,
-              winnerCards: winnerPlayer.holeCards,
-              winnerName: winnerPlayer.name,
+              winnerIds: winnerPlayers.map(p => p.id),
+              winnerCards: winnerPlayers[0]?.holeCards,
+              winnerName: winnerPlayers[0]?.name,
             });
             setWinningHandName(data.state.winner.handName);
             if (soundEnabledRef.current) winnerFanfare();

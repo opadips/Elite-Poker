@@ -1,4 +1,3 @@
-// frontend/src/components/PlayerSeat.jsx
 import React, { useContext, useMemo, useState, useEffect, useRef } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
@@ -24,7 +23,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
     getTimerColor,
     turnRemainingSec,
     turnCurrentPlayerId,
-    winnerEffect,
+    winnerIds,
     speechBubbles,
     sbId,
     bbId,
@@ -43,13 +42,13 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
     });
     observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [gameState]);
 
   const isActive = gameState ? gameState.currentPlayerId === p.id : false;
-  const isWinner = winnerEffect?.winnerId === p.id;
+  const isWinner = winnerIds && winnerIds.includes(p.id);
   const isSelf = p.id === playerId;
   const isReady = p.ready && !gameState?.firstHandStarted && !gameState?.handInProgress;
-  const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0;
+  const isTimerActive = turnCurrentPlayerId === p.id && turnRemainingSec > 0 && gameState?.handInProgress && !gameState?.winner;
   const showdownActive = p.revealed && !p.folded;
   const isSB = sbId === p.id;
   const isBB = bbId === p.id;
@@ -199,6 +198,18 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               knownOpponentHands={knownOpponentHands}
               showEquity={false}
               simpleStrength={true}
+            />
+          )}
+          {showdownActive && !p.isSpectator && isSelf && showHandInfo && (
+            <HandInfo
+              holeCards={p.holeCards}
+              communityCards={gameState?.communityCards}
+              round={gameState?.currentRound}
+              playerName={p.name}
+              opponentsCount={opponentsCount}
+              knownOpponentHands={knownOpponentHands}
+              showEquity={true}
+              simpleStrength={false}
             />
           )}
           {showdownActive && !p.isSpectator && !isSelf && (

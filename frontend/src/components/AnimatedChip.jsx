@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 function easeOutQuad(t) {
@@ -8,22 +8,9 @@ function easeOutQuad(t) {
 export default function AnimatedChip({ value, from, to, onComplete, duration = 800 }) {
   const startTimeRef = useRef(null);
   const completedRef = useRef(false);
-  const onCompleteRef = useRef(onComplete);
   const [pos, setPos] = useState(from);
   const validFrom = from && typeof from.x === 'number' && typeof from.y === 'number';
   const validTo = to && typeof to.x === 'number' && typeof to.y === 'number';
-
-  useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
-
-  const finish = useCallback(() => {
-    if (completedRef.current) return;
-    completedRef.current = true;
-    if (onCompleteRef.current) {
-      onCompleteRef.current();
-    }
-  }, []);
 
   const chipSize =
     value >= 500 ? 'w-10 h-10 text-sm' :
@@ -37,7 +24,10 @@ export default function AnimatedChip({ value, from, to, onComplete, duration = 8
 
   useEffect(() => {
     if (!validFrom || !validTo) {
-      finish();
+      if (onComplete && !completedRef.current) {
+        completedRef.current = true;
+        onComplete();
+      }
       return;
     }
 
@@ -62,20 +52,29 @@ export default function AnimatedChip({ value, from, to, onComplete, duration = 8
       if (progress < 1) {
         rafId = requestAnimationFrame(animate);
       } else {
-        finish();
+        if (onComplete && !completedRef.current) {
+          completedRef.current = true;
+          onComplete();
+        }
       }
     };
 
     rafId = requestAnimationFrame(animate);
 
     const safetyTimer = setTimeout(() => {
-      finish();
-    }, duration + 400);
+      if (onComplete && !completedRef.current) {
+        completedRef.current = true;
+        onComplete();
+      }
+    }, duration + 1000);
 
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(safetyTimer);
-      finish();
+      if (onComplete && !completedRef.current) {
+        completedRef.current = true;
+        onComplete();
+      }
     };
   }, []);
 

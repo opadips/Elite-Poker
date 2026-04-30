@@ -349,6 +349,8 @@ export class Game {
       applyTournamentRules(this);
     }
 
+    if (this.onStateChange) this.onStateChange();
+
     if (!this.paused) {
       this._nextHandTimer = setTimeout(() => {
         const active = this.players.filter(p => !p.isSpectator);

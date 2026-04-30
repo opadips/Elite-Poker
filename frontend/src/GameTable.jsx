@@ -97,7 +97,7 @@ export default function GameTable({
     isPaused,
   } = useGameStateSync(ws, soundEnabledRef);
 
-  const { turnRemainingSec, turnCurrentPlayerId } = useTimerSync(ws, soundEnabledRef);
+  const { turnRemainingSec, turnCurrentPlayerId } = useTimerSync(ws, soundEnabledRef, gameState);
 
   const {
     chatMessages,
@@ -171,23 +171,10 @@ export default function GameTable({
   }, [processQueue, playLandSound]);
 
   const removeChipAnimation = useCallback((id) => {
-    setAnimatingChips((prev) => {
-      const chip = prev.find(c => c.id === id);
-      if (chip) {
-        if (chip.type === 'win') {
-          if (winLandCountRef.current < 3) {
-            playLandSound();
-            winLandCountRef.current++;
-          }
-        } else {
-          playLandSound();
-        }
-      }
-      return prev.filter((c) => c.id !== id);
-    });
+    setAnimatingChips((prev) => prev.filter((c) => c.id !== id));
     runningCountRef.current = Math.max(0, runningCountRef.current - 1);
     setTimeout(() => processQueue(), 50);
-  }, [processQueue, playLandSound]);
+  }, [processQueue]);
 
   const toScreenCoords = useCallback((relativeX, relativeY) => {
     if (!tableContainerRef.current) {
@@ -238,7 +225,7 @@ export default function GameTable({
       if (!pos) return null;
       const total = orderedPlayerIds.length;
       const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
-      const distRadius = 150;
+      const distRadius = 165;
       const offsetX = Math.cos(angle) * distRadius;
       const offsetY = Math.sin(angle) * distRadius;
       return {
@@ -374,6 +361,17 @@ export default function GameTable({
     }
   }, [winnerEffect, gameState, getPotScreenPos, getChipStackScreenPos, enqueueAnimation]);
 
+  useEffect(() => {
+    if (gameState && gameState.winner) {
+      const timeout = setTimeout(() => {
+        setAnimatingChips([]);
+        runningCountRef.current = 0;
+        queueRef.current = [];
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameState?.winner]);
+
   const getTimerColor = (sec) => {
     if (sec > TIMER_COLOR_BREAKPOINTS.BLUE) return '#3b82f6';
     if (sec > TIMER_COLOR_BREAKPOINTS.GREEN) return '#22c55e';
@@ -434,7 +432,7 @@ export default function GameTable({
     setShowHistory
   );
 
-  const contextValue = useMemo(() => ({
+    const contextValue = useMemo(() => ({
     gameState,
     playerId,
     isAdmin,
@@ -446,7 +444,7 @@ export default function GameTable({
     getTimerColor,
     turnRemainingSec,
     turnCurrentPlayerId,
-    winnerEffect,
+    winnerIds: winnerEffect?.winnerIds || [],
     speechBubbles,
     playerRefs,
     setAnimatingChips,

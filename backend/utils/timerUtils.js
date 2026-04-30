@@ -1,4 +1,3 @@
-// backend/utils/timerUtils.js
 import { TURN_TIMEOUT_MS, TIMER_BROADCAST_INTERVAL_MS } from '../constants.js';
 
 const lobbyTimers = new Map();
@@ -22,10 +21,13 @@ export function broadcastTurnTimer(lobbyId, lobbyManager, clientRegistry, broadc
   }
 }
 
-export function startTurnTimerBroadcast(lobbyId, playerId) {
-  stopTurnTimerBroadcast(lobbyId);
+export function startTurnTimerBroadcast(lobbyId, playerId, startTime = null) {
+  const existing = lobbyTimers.get(lobbyId);
+  if (existing?.interval) {
+    clearInterval(existing.interval);
+  }
   lobbyTimers.set(lobbyId, {
-    turnStartTime: Date.now(),
+    turnStartTime: startTime || Date.now(),
     lastTurnPlayerId: playerId,
     interval: setInterval(() => {
       const { lobbyManager, clientRegistry, broadcastGameState } = startTurnTimerBroadcast.refs || {};
@@ -36,10 +38,18 @@ export function startTurnTimerBroadcast(lobbyId, playerId) {
 
 export function stopTurnTimerBroadcast(lobbyId) {
   const timerData = lobbyTimers.get(lobbyId);
-  if (timerData) {
-    if (timerData.interval) clearInterval(timerData.interval);
-    lobbyTimers.delete(lobbyId);
+  if (timerData?.interval) {
+    clearInterval(timerData.interval);
+    timerData.interval = null;
   }
+}
+
+export function removeTurnTimer(lobbyId) {
+  const timerData = lobbyTimers.get(lobbyId);
+  if (timerData?.interval) {
+    clearInterval(timerData.interval);
+  }
+  lobbyTimers.delete(lobbyId);
 }
 
 export function setTurnTimerRefs(refs) {
@@ -112,12 +122,14 @@ export function ensureTurnTimer(lobbyId, lobbyManager, clientRegistry, broadcast
   if (!currentId) return;
   const timerData = lobbyTimers.get(lobbyId);
   if (!timerData || timerData.lastTurnPlayerId !== currentId) {
-    stopTurnTimerBroadcast(lobbyId);
+    removeTurnTimer(lobbyId);
     const targetWs = [...clientRegistry.entries()].find(([_, c]) => c.playerId === currentId && c.lobbyId === lobbyId)?.[0];
     if (targetWs) {
       setAutoActionTimer(targetWs, currentId, lobbyId, lobbyManager, clientRegistry, broadcastGameState);
     } else {
       startTurnTimerBroadcast(lobbyId, currentId);
     }
+  } else if (!timerData.interval) {
+    startTurnTimerBroadcast(lobbyId, currentId, timerData.turnStartTime);
   }
 }

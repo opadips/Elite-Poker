@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { timerBeep } from './useSound';
 
-export function useTimerSync(ws, soundEnabledRef) {
+export function useTimerSync(ws, soundEnabledRef, gameState) {
   const [turnRemainingSec, setTurnRemainingSec] = useState(0);
   const [turnCurrentPlayerId, setTurnCurrentPlayerId] = useState(null);
   const lastBeepSecond = useRef(0);
@@ -20,6 +20,13 @@ export function useTimerSync(ws, soundEnabledRef) {
     ws.addEventListener('message', handleMessage);
     return () => ws.removeEventListener('message', handleMessage);
   }, [ws]);
+
+  useEffect(() => {
+    if (gameState && (!gameState.handInProgress || gameState.winner || !gameState.waitingForAction)) {
+      setTurnRemainingSec(0);
+      setTurnCurrentPlayerId(null);
+    }
+  }, [gameState?.handInProgress, gameState?.winner, gameState?.waitingForAction]);
 
   useEffect(() => {
     if (turnRemainingSec > 0 && soundEnabledRef.current) {
