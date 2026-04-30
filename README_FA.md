@@ -1,4 +1,3 @@
-```markdown
 # 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
 ➡️ **click here for English Version:** [English Version](README.md)
