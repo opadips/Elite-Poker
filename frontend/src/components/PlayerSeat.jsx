@@ -1,3 +1,4 @@
+// frontend/src/components/PlayerSeat.jsx
 import React, { useContext, useMemo, useState, useEffect, useRef } from 'react';
 import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
@@ -30,7 +31,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
   } = useContext(GameContext);
 
   const cardRef = useRef(null);
-  const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
+  const [cardSize, setCardSize] = useState({ width: 200, height: 200 });
 
   useEffect(() => {
     if (!cardRef.current) return;
@@ -73,7 +74,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
       className="absolute transition-all duration-300 flex items-center"
       style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
     >
-      {isTimerActive && cardSize.width > 0 && (
+      {isTimerActive && (
         <TimerRing
           remainingSec={turnRemainingSec}
           width={cardSize.width}
