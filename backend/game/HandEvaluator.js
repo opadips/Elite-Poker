@@ -5,7 +5,9 @@ export class HandEvaluator {
     let bestHand = null;
     for (const combo of combinations) {
       const hand = this.evaluateFiveCards(combo);
-      if (!bestHand || this.compareHands(hand, bestHand) > 0) {
+      if (!bestHand || hand.score > bestHand.score) {
+        bestHand = hand;
+      } else if (hand.score === bestHand.score && this.compareKickers(hand.kickers, bestHand.kickers) > 0) {
         bestHand = hand;
       }
     }
@@ -83,12 +85,24 @@ export class HandEvaluator {
     }
 
     const name = this.getHandName(rankType);
+    const score = (14 - rankType) * 10000000000 + kickers.reduce((acc, k, i) => acc + k * Math.pow(100, 4 - i), 0);
+
     return {
       rank: rankType,
       name: name,
       kickers: kickers,
-      cmp: (other) => this.compareHands({ rank: rankType, kickers }, other)
+      score: score,
+      cmp: (other) => score - other.score
     };
+  }
+
+  compareKickers(k1, k2) {
+    for (let i = 0; i < Math.max(k1.length, k2.length); i++) {
+      const a = k1[i] || 0;
+      const b = k2[i] || 0;
+      if (a !== b) return a - b;
+    }
+    return 0;
   }
 
   rankValue(rank) {
@@ -121,14 +135,6 @@ export class HandEvaluator {
       counts[r] = (counts[r] || 0) + 1;
     }
     return counts;
-  }
-
-  compareHands(hand1, hand2) {
-    if (hand1.rank !== hand2.rank) return hand2.rank - hand1.rank;
-    for (let i = 0; i < hand1.kickers.length; i++) {
-      if (hand1.kickers[i] !== hand2.kickers[i]) return hand2.kickers[i] - hand1.kickers[i];
-    }
-    return 0;
   }
 
   getHandName(rankType) {

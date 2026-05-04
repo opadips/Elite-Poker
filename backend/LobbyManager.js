@@ -106,6 +106,12 @@ export class LobbyManager {
     if (lobby.settings.password && lobby.settings.password !== password) {
       return { success: false, message: 'Invalid password' };
     }
+
+    const nameExists = Array.from(lobby.players.values()).some(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (nameExists) {
+      return { success: false, message: 'A player with this name is already in the lobby' };
+    }
+
     if (lobby.players.size >= MAX_PLAYERS) {
       addToWaitlist(lobby, playerId, playerName);
       return { success: false, message: 'Lobby full. Added to waiting list.', waitlisted: true };
