@@ -51,15 +51,6 @@ const cardBackOptions = [
   { id: 'pearl', name: 'Pearl' },
 ];
 
-const themes = [
-  { id: 'classic', name: 'Classic', color: 'bg-emerald-800' },
-  { id: 'crimson', name: 'Royal Crimson', color: 'bg-red-950' },
-  { id: 'emerald', name: 'Emerald Luxe', color: 'bg-green-950' },
-  { id: 'sapphire', name: 'Sapphire Noir', color: 'bg-blue-950' },
-  { id: 'neonjungle', name: 'Neon Jungle', color: 'bg-green-950' },
-  { id: 'void', name: 'Void Pulse', color: 'bg-indigo-950' },
-];
-
 const ACTION_ANIMATION_WINDOW_MS = 5000;
 const WINNER_ANIMATION_WINDOW_MS = 500;
 
@@ -102,6 +93,7 @@ export default function GameTable({
   const winnerChipCountRef = useRef(WINNER_CHIP_ANIMATION_COUNT);
   const performanceModeRef = useRef(performanceMode);
   const winLandCountRef = useRef(0);
+  const nextChipIdRef = useRef(0);
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
@@ -143,6 +135,15 @@ export default function GameTable({
     seatViewFixed
   );
 
+  const themes = [
+    { id: 'classic', name: 'Classic', color: 'bg-emerald-800' },
+    { id: 'crimson', name: 'Royal Crimson', color: 'bg-red-950' },
+    { id: 'emerald', name: 'Emerald Luxe', color: 'bg-green-950' },
+    { id: 'sapphire', name: 'Sapphire Noir', color: 'bg-blue-950' },
+    { id: 'neonjungle', name: 'Neon Jungle', color: 'bg-green-950' },
+    { id: 'void', name: 'Void Pulse', color: 'bg-indigo-950' },
+  ];
+
   const sendWs = useCallback((msg) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(msg));
@@ -161,9 +162,10 @@ export default function GameTable({
 
     const item = queueRef.current.shift();
     runningCountRef.current++;
+    nextChipIdRef.current += 1;
 
     const newChip = {
-      id: Date.now() + Math.random(),
+      id: `chip-${nextChipIdRef.current}`,
       value: item.value,
       from: item.from,
       to: item.to,
