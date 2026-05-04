@@ -39,3 +39,7 @@ desktop.ini
 # Cache
 .cache/
 .parcel-cache/
+
+*.pem
+*.key
+*.crt
