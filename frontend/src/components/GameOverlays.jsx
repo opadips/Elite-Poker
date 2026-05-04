@@ -70,15 +70,15 @@ const GameOverlays = React.memo(function GameOverlays({
       {isPaused && (
         <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center pointer-events-none">
           <div className="text-white text-4xl font-black drop-shadow-lg animate-pulse">
-            ⏸️ GAME PAUSED
+            GAME PAUSED
           </div>
         </div>
       )}
 
-      {gameState?.winner && (
+      {winningHandName && (
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
           <div className="winner-themed text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider whitespace-nowrap">
-            {winningHandName || 'Winner!'}
+            {winningHandName}
           </div>
         </div>
       )}
@@ -97,19 +97,19 @@ const GameOverlays = React.memo(function GameOverlays({
 
       {sideBetWin && !sideBetWin.refunded && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-800 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
-          🎉 {sideBetWin.bettorName} won {sideBetWin.total} chips from side bet on {sideBetWin.targetName}! 🎉
+          {sideBetWin.bettorName} won {sideBetWin.total} chips from side bet on {sideBetWin.targetName}!
         </div>
       )}
 
       {sideBetWin && sideBetWin.refunded && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-gray-700 text-white font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
-          ↩️ {sideBetWin.targetName} folded – your side bet stake of {formatChips(sideBetWin.amount)} has been refunded.
+          {sideBetWin.targetName} folded – your side bet stake of {formatChips(sideBetWin.amount)} has been refunded.
         </div>
       )}
 
       {achievementToast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-bold px-6 py-3 rounded-full shadow-2xl animate-fadeInSlideDown flex items-center gap-2">
-          <span className="text-2xl">🎖️</span>
+          <span className="text-2xl">&#127942;</span>
           <div>
             <div className="text-sm">{achievementToast.player}</div>
             <div className="text-xs">
@@ -131,7 +131,7 @@ const GameOverlays = React.memo(function GameOverlays({
 
       {currentPlayer && currentPlayer.isSpectator && !gameState?.winner && (
         <div className="fixed bottom-4 right-4 z-30 bg-black/70 backdrop-blur-md rounded-xl p-4 border border-amber-700/50 text-white text-center">
-          <div className="text-amber-400 font-bold mb-2">👁️ Spectator Mode</div>
+          <div className="text-amber-400 font-bold mb-2">Spectator Mode</div>
           <button
             onClick={sitIn}
             className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold text-sm"
@@ -174,7 +174,7 @@ const GameOverlays = React.memo(function GameOverlays({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-amber-400 font-bold text-lg">Hand History</h3>
               <button onClick={() => setShowHistory(false)} className="text-white text-2xl">
-                ×
+                &times;
               </button>
             </div>
             {handHistory.length === 0 ? (

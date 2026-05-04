@@ -88,6 +88,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
 
   return (
     <div
+      id={`seat-${p.id}`}
       className="absolute transition-all duration-300 flex items-center"
       style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
     >
