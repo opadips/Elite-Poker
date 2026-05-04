@@ -274,7 +274,7 @@ export default function App() {
   const [ws, setWs] = useState(null);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AppRoutes
         ws={ws}
         playerId={playerId}
