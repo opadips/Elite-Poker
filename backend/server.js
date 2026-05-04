@@ -2,6 +2,8 @@
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import https from 'https';
+import fs from 'fs';
 import cors from 'cors';
 import { LobbyManager } from './LobbyManager.js';
 import { ClientRegistry } from './ClientRegistry.js';
@@ -14,7 +16,17 @@ import { logger } from './utils/logger.js';
 
 const app = express();
 app.use(cors());
-const server = http.createServer(app);
+
+const useHttps = process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH;
+let server;
+if (useHttps) {
+  const key = fs.readFileSync(process.env.SSL_KEY_PATH);
+  const cert = fs.readFileSync(process.env.SSL_CERT_PATH);
+  server = https.createServer({ key, cert }, app);
+} else {
+  server = http.createServer(app);
+}
+
 const wss = new WebSocketServer({ server });
 
 const lobbyManager = new LobbyManager();
@@ -177,6 +189,8 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(3000, '0.0.0.0', () => {
-  console.log('✅ Poker server running on ws://0.0.0.0:3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => {
+  const protocol = useHttps ? 'wss' : 'ws';
+  console.log(`Poker server running on ${protocol}://0.0.0.0:${PORT}`);
 });
