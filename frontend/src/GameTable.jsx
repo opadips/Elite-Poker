@@ -552,7 +552,7 @@ export default function GameTable({
                     : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
-                {currentPlayer.ready ? 'UNREADY' : 'READY'}
+                {currentPlayer.ready ? 'READY' : 'READY'}
               </button>
             </div>
           )}

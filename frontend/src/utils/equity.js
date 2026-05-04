@@ -1,4 +1,3 @@
-// frontend/src/utils/equity.js
 import { MONTE_CARLO_TRIALS } from '../constants.js';
 
 function rankValue(rank) {
@@ -140,15 +139,17 @@ function calculateExactEquity(holeCards, communityCards, knownOpponentHands) {
     const myBest = getBestHand([...holeCards, ...fullCommunity]);
     if (!myBest) continue;
     let bestOpp = null;
+    let isTie = false;
     for (const oppHand of knownOpponentHands) {
       const oppBest = getBestHand([...oppHand, ...fullCommunity]);
       if (!oppBest) continue;
       if (!bestOpp || compareHands(oppBest, bestOpp) > 0) bestOpp = oppBest;
+      if (compareHands(myBest, oppBest) === 0) isTie = true;
     }
     if (!bestOpp) continue;
     const cmp = compareHands(myBest, bestOpp);
-    if (cmp > 0) wins++;
-    else if (cmp === 0) ties++;
+    if (isTie) ties++;
+    else if (cmp > 0) wins++;
     else losses++;
   }
   const total = wins + losses + ties;
@@ -167,19 +168,23 @@ function calculateMonteCarloEquity(holeCards, communityCards, opponents) {
     const simCommunity = [...communityCards, ...shuffled.slice(0, remainingNeeded)];
     const myBest = getBestHand([...holeCards, ...simCommunity]);
     if (!myBest) continue;
-    let allWorse = true, tieFlag = false;
+
+    let isTie = false;
+    let isWin = true;
     let offset = remainingNeeded;
     for (let o = 0; o < opponents; o++) {
+      if (offset + 1 >= shuffled.length) break;
       const oppHand = [shuffled[offset], shuffled[offset+1]];
       offset += 2;
       const oppBest = getBestHand([...oppHand, ...simCommunity]);
       if (!oppBest) continue;
       const cmp = compareHands(myBest, oppBest);
-      if (cmp === 0) { tieFlag = true; allWorse = false; }
-      else if (cmp > 0) allWorse = false;
+      if (cmp === 0) isTie = true;
+      if (cmp >= 0) isWin = false;  // myBest loses or ties -> not a win
     }
-    if (tieFlag) ties++;
-    else if (!allWorse) wins++;
+
+    if (isTie) ties++;
+    else if (isWin) wins++;
     else losses++;
   }
   const total = wins + losses + ties;

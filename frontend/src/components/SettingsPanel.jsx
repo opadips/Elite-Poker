@@ -269,7 +269,7 @@ export default function SettingsPanel({
           <div className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2"><NoobIcon /> Noob Mode</div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={showHandInfo} onChange={(e) => onToggleBeginner(e.target.checked)} className="w-4 h-4" />
-            <span className="text-white text-sm">Noob Mode</span>
+            <span className="text-white text-sm">من نوب سگم </span>
           </label>
         </div>
         <div className="px-4 py-3 border-b border-gray-700/50">

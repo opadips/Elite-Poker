@@ -88,7 +88,6 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
 
   return (
     <div
-      id={`seat-${p.id}`}
       className="absolute transition-all duration-300 flex items-center"
       style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
     >
@@ -102,10 +101,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
       <div>
         {isWinner && (
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
-            <div
-              className="animate-bounce text-yellow-300 font-black text-2xl drop-shadow-lg winner-text"
-              style={{ color: 'var(--winner-text)' }}
-            >
+            <div className="font-black text-3xl drop-shadow-lg winner-themed" style={{ color: 'var(--winner-text)' }}>
               WINNER
             </div>
           </div>
@@ -115,7 +111,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           .map(bubble => (
             <div
               key={bubble.id}
-              className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999] animate-fadeIn"
+              className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999]"
             >
               <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">
                 {bubble.text}
@@ -129,10 +125,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
           ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
           ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
-          style={{
-            backgroundImage: 'none',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-          }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
         >
           <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">
             #{idx + 1}
@@ -212,19 +205,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               DEALER
             </div>
           )}
-          {showdownActive && !p.isSpectator && isSelf && !showHandInfo && (
-            <HandInfo
-              holeCards={p.holeCards}
-              communityCards={gameState?.communityCards}
-              round={gameState?.currentRound}
-              playerName={p.name}
-              opponentsCount={opponentsCount}
-              knownOpponentHands={knownOpponentHands}
-              showEquity={false}
-              simpleStrength={true}
-            />
-          )}
-          {showdownActive && !p.isSpectator && isSelf && showHandInfo && (
+          {showdownActive && !p.isSpectator && (
             <HandInfo
               holeCards={p.holeCards}
               communityCards={gameState?.communityCards}
@@ -234,18 +215,6 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               knownOpponentHands={knownOpponentHands}
               showEquity={true}
               simpleStrength={false}
-            />
-          )}
-          {showdownActive && !p.isSpectator && !isSelf && (
-            <HandInfo
-              holeCards={p.holeCards}
-              communityCards={gameState?.communityCards}
-              round={gameState?.currentRound}
-              playerName={p.name}
-              opponentsCount={opponentsCount}
-              knownOpponentHands={knownOpponentHands}
-              showEquity={false}
-              simpleStrength={true}
             />
           )}
           {isSelf && showHandInfo && !p.folded && !p.isSpectator && !showdownActive && (
