@@ -9,7 +9,7 @@
 [![Socket.io](https://img.shields.io/badge/Realtime-Socket.io-010101?style=flat&logo=socket.io)](https://socket.io/)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?style=flat&logo=node.js)](https://nodejs.org/)
 
-[🎯 Live Demo](https://YOUR-LIVE-DEMO-LINK.com) · [🐛 Report Bug](https://github.com/opadips/Elite-Poker/issues) · [💡 Request Feature](https://github.com/opadips/Elite-Poker/issues)
+[🐛 Report Bug](https://github.com/opadips/Elite-Poker/issues) · [💡 Request Feature](https://github.com/opadips/Elite-Poker/issues)
 
 </div>
 
