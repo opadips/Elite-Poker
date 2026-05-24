@@ -1,10 +1,30 @@
-# 🃏 Elite Poker – Texas Hold'em Real‑Time Multiplayer
+# ♠️ Elite Poker – Texas Hold'em Real‑Time Multiplayer
 
 ➡️ **برای دیدن نسخه فارسی کلیک کنید:[Persian version](README_FA.md)
 
-![License](https://img.shields.io/badge/license-MIT-green)
-![Node](https://img.shields.io/badge/node-%3E%3D16-brightgreen)
-![React](https://img.shields.io/badge/react-18-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/Frontend-React-61dafb?style=flat&logo=react)](https://reactjs.org/)
+[![Socket.io](https://img.shields.io/badge/Realtime-Socket.io-010101?style=flat&logo=socket.io)](https://socket.io/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?style=flat&logo=node.js)](https://nodejs.org/)
+
+[🎯 Live Demo](https://YOUR-LIVE-DEMO-LINK.com) · [🐛 Report Bug](https://github.com/opadips/Elite-Poker/issues) · [💡 Request Feature](https://github.com/opadips/Elite-Poker/issues)
+
+</div>
+
+---
+
+## 📸 Preview
+
+<div align="center">
+  <img src="screenshots/gameplay.png" alt="Elite Poker Gameplay" width="800">
+  <br/>
+  <img src="screenshots/lobby.png" alt="Lobby with live table list" width="800">
+  <br/>
+  <img src="screenshots/neon-theme.png" alt="Neon Jungle Theme" width="800">
+  <br/>
+  <img src="screenshots/showdown.png" alt="Showdown Winner Display" width="800">
+</div>
+
 ---
 ## ✨ Features
 ### 🏠 Lobby System
