@@ -1,6 +1,8 @@
-# ♠️ Elite Poker – Texas Hold'em Real‑Time Multiplayer
+<div align="center">
 
-➡️ **برای دیدن نسخه فارسی کلیک کنید:[Persian version](README_FA.md)
+# ♠️ Elite Poker
+
+### An online, real-time Texas Hold'em poker platform for 2–10 players.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/Frontend-React-61dafb?style=flat&logo=react)](https://reactjs.org/)
@@ -25,6 +27,7 @@
   <img src="screenshots/showdown.png" alt="Showdown Winner Display" width="800">
 </div>
 
+➡️ **برای دیدن نسخه فارسی کلیک کنید:[Persian version](README_FA.md)
 ---
 ## ✨ Features
 ### 🏠 Lobby System
