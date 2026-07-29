@@ -233,9 +233,6 @@ Elite-Poker/
 - Card backs and other personalisation options are stored in `localStorage`.
 
 ---
-And I would like you to know that I have used many models to build this project so far, such as:
-`Qwen3.6` `gemma-4` `deepseek` 
----
 
 ## 🤝 Contributing
 Found a bug or issue?
