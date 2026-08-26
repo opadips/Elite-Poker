@@ -1,5 +1,6 @@
 // src/components/TurnTimer.jsx
 import React, { useEffect, useState, useRef } from 'react';
+import { IconTimer } from './icons.jsx';
 
 export default function TurnTimer({ duration = 20, onTimeout, resetTrigger, onBeep, isActive = true }) {
   const [timeLeft, setTimeLeft] = useState(duration);
@@ -46,7 +47,7 @@ export default function TurnTimer({ duration = 20, onTimeout, resetTrigger, onBe
   return (
     <div className={`text-center text-sm font-mono font-bold px-2 py-1 rounded-full shadow-md
       ${timeLeft <= 3 ? 'bg-red-600 text-white animate-pulse' : 'bg-black/60 text-yellow-300'}`}>
-      ⏱️ {timeLeft}s
+      <IconTimer size={13} /> {timeLeft}s
     </div>
   );
 }

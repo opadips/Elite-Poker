@@ -5,8 +5,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Verdana"', 'sans-serif'],
-        heading: ['"Georgia"', 'serif'],
+        sans: ['"Outfit"', '"Segoe UI"', 'system-ui', 'sans-serif'],
+        display: ['"Cinzel"', '"Georgia"', 'serif'],
+        mono: ['"JetBrains Mono"', '"Consolas"', 'monospace'],
       },
     },
   },

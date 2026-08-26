@@ -3,29 +3,12 @@ import Card from './Card.jsx';
 import HandInfo from './HandInfo.jsx';
 import TimerRing from './TimerRing.jsx';
 import GameContext from '../context/GameContext';
+import { IconCrown, IconX } from './icons.jsx';
 
 function formatChips(amount) {
   if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return amount.toString();
-}
-
-function CrownIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
-      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
-      <path d="M2 20h20" />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
 }
 
 const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
@@ -113,35 +96,54 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               key={bubble.id}
               className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999]"
             >
-              <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-2xl border border-amber-400 shadow-xl max-w-[180px] break-words text-center">
+              <div
+                className="text-xs px-3 py-1.5 rounded-2xl shadow-xl max-w-[180px] break-words text-center"
+                style={{ background: 'var(--panel-bg)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+              >
                 {bubble.text}
               </div>
             </div>
           ))}
         <div
           ref={cardRef}
-          className={`rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48
+          className={`relative rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48 transition-all duration-300
           ${p.folded ? 'opacity-60 grayscale' : ''}
           ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
           ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
-          ${isReady ? 'ring-2 ring-green-400 shadow-lg shadow-green-500/50' : ''}`}
-          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          ${isReady ? 'ready-glow ring-2' : ''}`}
+          style={{
+            backgroundColor: 'var(--seat-bg)',
+            border: '1px solid var(--seat-border)',
+          }}
         >
-          <div className="absolute -top-3 left-4 bg-amber-700 text-white text-xs px-2 rounded-full font-bold">
+          <div
+            className="absolute -top-2.5 left-4 text-[10px] px-2 rounded-full font-bold tracking-wider"
+            style={{ background: 'var(--panel-bg)', border: '1px solid var(--seat-border)', color: 'var(--text-muted)' }}
+          >
             #{idx + 1}
           </div>
-          <div className="font-bold text-white text-center text-lg flex items-center justify-center gap-1">
-            {p.name}
+          <div className="font-bold text-center text-lg flex items-center justify-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+            <span className="truncate max-w-[110px]">{p.name}</span>
             {gameState?.adminId === p.id && (
-              <span className="text-xs" title="Admin">
-                <CrownIcon />
+              <span className="shrink-0" title="Admin" style={{ color: 'var(--accent)', display: 'flex' }}>
+                <IconCrown />
               </span>
             )}
             {isSB && (
-              <span className="text-xs text-blue-300 font-bold">SB</span>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                style={{ background: 'rgba(96,165,250,0.18)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.4)' }}
+              >
+                SB
+              </span>
             )}
             {isBB && (
-              <span className="text-xs text-red-300 font-bold">BB</span>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                style={{ background: 'rgba(248,113,113,0.16)', color: '#fca5a5', border: '1px solid rgba(248,113,113,0.4)' }}
+              >
+                BB
+              </span>
             )}
             {isAdmin && !isSelf && (
               <button
@@ -151,14 +153,14 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
                     sendWs({ type: 'kickPlayer', targetId: p.id });
                   }
                 }}
-                className="text-red-400 hover:text-red-300 text-xs ml-1"
+                className="text-red-400 hover:text-red-300 ml-0.5 shrink-0"
                 title="Kick player"
               >
-                <XIcon />
+                <IconX />
               </button>
             )}
           </div>
-          <div className="text-green-400 text-center">{formatChips(p.chips)}</div>
+          <div className="text-center font-mono font-semibold" style={{ color: '#5fd08a' }}>{formatChips(p.chips)}</div>
           {p.lastAction?.type && (
             <div
               className={`text-xs text-center ${
@@ -194,14 +196,27 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           </div>
           <div className="flex justify-center gap-1 mt-2 text-xs">
             {p.folded && (
-              <span className="bg-red-600 text-white px-2 py-0.5 rounded-full">FOLD</span>
+              <span
+                className="px-2 py-0.5 rounded-full font-semibold tracking-wider"
+                style={{ background: 'rgba(220,70,70,0.18)', color: '#f08080', border: '1px solid rgba(220,70,70,0.4)' }}
+              >
+                FOLD
+              </span>
             )}
             {p.isAllIn && (
-              <span className="bg-orange-600 text-white px-2 py-0.5 rounded-full animate-pulse">ALL IN</span>
+              <span
+                className="px-2 py-0.5 rounded-full font-semibold tracking-wider animate-pulse"
+                style={{ background: 'rgba(240,130,40,0.18)', color: '#f5a860', border: '1px solid rgba(240,130,40,0.45)' }}
+              >
+                ALL IN
+              </span>
             )}
           </div>
           {(gameState?.handInProgress || gameState?.firstHandStarted) && gameState?.dealerIndex === p.id && (
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[10px] px-3 py-0.5 rounded-full shadow">
+            <div
+              className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[10px] px-3 py-0.5 rounded-full shadow font-bold tracking-widest"
+              style={{ background: 'var(--button-primary)', color: '#10131c' }}
+            >
               DEALER
             </div>
           )}

@@ -2,55 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
 :root {
-  --bg-gradient: linear-gradient(135deg, #1a472a 0%, #0a2a1a 100%);
-  --table-bg: rgba(120, 70, 30, 0.3);
-  --table-border: #8b5a2b;
-  --card-bg: white;
-  --card-text: black;
-  --card-suit-red: #e74c3c;
-  --card-suit-black: #2c3e50;
-  --button-primary: #2c3e50;
-  --button-secondary: #8e44ad;
-  --pot-bg: rgba(0,0,0,0.6);
-  --winner-text: #f1c40f;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #17203a 0%, #0b0f1c 45%, #06080f 100%);
+  --accent: #d4af37;
+  --font-body: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cinzel', 'Georgia', serif;
 }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
-  transition: background 0.3s ease;
+  font-family: var(--font-body);
+  color: var(--text-primary, #f2f0ea);
+  transition: background 0.4s ease;
+  -webkit-font-smoothing: antialiased;
 }
 
-.card {
-  background-color: var(--card-bg);
-  color: var(--card-text);
-  border: 1px solid var(--table-border);
-  transition: all 0.2s;
+::selection {
+  background: rgba(212, 175, 55, 0.35);
 }
-.card-back {
-  background: repeating-linear-gradient(45deg, #4a4a4a, #4a4a4a 10px, #3a3a3a 10px, #3a3a3a 20px);
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.04));
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(180, 160, 110, 0.5));
+  border-radius: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Playing cards
+   -------------------------------------------------------------------------- */
+.card {
+  background-color: var(--card-bg, white);
+  color: var(--card-text, black);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 .suit-red {
-  color: var(--card-suit-red);
+  color: var(--card-suit-red, #c0392b);
 }
 .suit-black {
-  color: var(--card-suit-black);
+  color: var(--card-suit-black, #232a3d);
 }
 
+/* --------------------------------------------------------------------------
+   Game table
+   -------------------------------------------------------------------------- */
 .game-table {
-  background: var(--table-bg);
+  background: var(--table-felt, var(--table-bg));
   border-color: var(--table-border);
-  box-shadow: 0 0 30px rgba(0,0,0,0.5);
-  transition: all 0.3s;
+  box-shadow: var(--table-glow, 0 0 40px rgba(0, 0, 0, 0.55));
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
+.table-rim {
+  background: var(--table-rim);
+}
+
+.glass-panel {
+  background: var(--panel-bg, rgba(10, 14, 24, 0.92));
+  border: 1px solid var(--panel-border, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* --------------------------------------------------------------------------
+   Keyframes
+   -------------------------------------------------------------------------- */
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
+  from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.25s ease-out;
 }
 
 @keyframes bounce {
@@ -69,47 +100,6 @@ body {
   animation: spinOnce 0.6s ease-out;
 }
 
-@keyframes sparkleCenter {
-  0% { opacity: 0; transform: scale(0.8) translateY(10px); }
-  20% { opacity: 1; transform: scale(1.1) translateY(0); }
-  40% { opacity: 1; transform: scale(1) translateY(0); }
-  80% { opacity: 1; transform: scale(1) translateY(0); }
-  100% { opacity: 0; transform: scale(1.2) translateY(-10px); }
-}
-.animate-sparkleCenter {
-  animation: sparkleCenter 2.5s ease-out forwards;
-}
-
-@keyframes sparkle {
-  0% { opacity: 0; transform: scale(0); }
-  50% { opacity: 1; transform: scale(1.2); }
-  100% { opacity: 0; transform: scale(0); }
-}
-.animate-sparkle {
-  animation: sparkle 1.5s ease-in-out infinite;
-}
-.delay-75 {
-  animation-delay: 0.075s;
-}
-.delay-150 {
-  animation-delay: 0.15s;
-}
-.delay-300 {
-  animation-delay: 0.3s;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #2d1f0c;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb {
-  background: #b87c3a;
-  border-radius: 10px;
-}
-
 @keyframes cardReveal {
   0% {
     opacity: 0;
@@ -117,7 +107,7 @@ body {
   }
   60% {
     opacity: 1;
-    transform: scale(1.1) translateY(5px);
+    transform: scale(1.08) translateY(4px);
   }
   100% {
     opacity: 1;
@@ -125,27 +115,31 @@ body {
   }
 }
 .animate-cardReveal {
-  animation: cardReveal 0.5s ease-out forwards;
+  animation: cardReveal 0.45s ease-out forwards;
 }
 
 @keyframes fadeInSlideDown {
-  0% {
-    opacity: 0;
-    transform: scale(0.95) translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 .animate-fadeInSlideDown {
   animation: fadeInSlideDown 0.2s ease-out forwards;
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce,
+  .animate-spin-once,
+  .animate-cardReveal,
+  .animate-fadeIn,
+  .animate-fadeInSlideDown {
+    animation: none !important;
+  }
 }
 
+/* --------------------------------------------------------------------------
+   Chips — classic poker chip: colored base, white edge spots, inner ring.
+   Colors come from --chip-base / --chip-face set per denomination.
+   -------------------------------------------------------------------------- */
 .chip-stack {
   display: flex;
   flex-direction: column;
@@ -155,44 +149,68 @@ body {
 
 .chip-pile {
   position: relative;
-  width: 40px;
-  height: 30px;
+  width: 44px;
+  height: 34px;
 }
 
 .chips {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #f0e68c, #b8860b);
-  border: 2px solid #daa520;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  background: repeating-conic-gradient(
+    var(--chip-spot, #f3efe4) 0deg 16deg,
+    var(--chip-base, #b0322e) 16deg 60deg
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
-.chips1 { bottom: 0; left: 8px; }
-.chips2 { bottom: 6px; left: 4px; }
-.chips3 { bottom: 12px; left: 0; }
+.chips::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.28) 0%, transparent 45%),
+    var(--chip-face, var(--chip-base, #b0322e));
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+}
+
+.chips::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 255, 255, 0.5);
+}
+
+.chips1 { bottom: 0; left: 9px; }
+.chips2 { bottom: 5px; left: 4px; }
+.chips3 { bottom: 11px; left: 0; }
 
 .chip-amount-text {
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: white;
-  text-shadow: 1px 1px 2px black;
-  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-primary, white);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  margin-top: 3px;
 }
 
 .bet-badge {
   position: absolute;
   top: -10px;
-  right: -14px;
-  background: #b91c1c;
-  color: #fde68a;
+  right: -16px;
+  background: linear-gradient(180deg, #c43d3d 0%, #9c2626 100%);
+  color: #ffe9e0;
   font-size: 0.6rem;
-  font-weight: bold;
-  padding: 1px 5px;
+  font-weight: 700;
+  padding: 1px 6px;
   border-radius: 999px;
-  border: 1px solid #f59e0b;
-  box-shadow: 0 0 6px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255, 220, 200, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
   z-index: 10;
   white-space: nowrap;
 }

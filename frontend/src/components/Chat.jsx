@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
+import { IconChevronDown, IconSend } from './icons.jsx';
 
 const QUICK_CHATS = [
   { text: 'Nice hand' },
@@ -111,17 +112,27 @@ export default function Chat({ messages, playerName, onSendMessage }) {
 
   const chatElement = (
     <div
-      className={`fixed bottom-16 left-4 w-80 bg-black/70 backdrop-blur-md rounded-xl border border-amber-700/40 flex flex-col shadow-2xl transition-all duration-300 ${
+      className={`fixed bottom-16 left-4 w-80 backdrop-blur-md rounded-xl flex flex-col shadow-2xl transition-all duration-300 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
-      style={{ zIndex: 2147483647, isolation: 'isolate', pointerEvents: 'auto' }}
+      style={{
+        zIndex: 2147483647,
+        isolation: 'isolate',
+        pointerEvents: 'auto',
+        background: 'var(--panel-bg)',
+        border: '1px solid var(--panel-border)',
+      }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="text-amber-400 font-bold text-center border-b border-amber-700/50 py-1 text-sm cursor-pointer" onClick={resetActivity}>
+      <div
+        className="font-bold text-center py-1.5 text-xs cursor-pointer tracking-widest uppercase"
+        style={{ borderBottom: '1px solid var(--panel-border)', color: 'var(--accent)' }}
+        onClick={resetActivity}
+      >
         Table Chat
       </div>
-      <div className="h-48 overflow-y-auto p-2 text-xs space-y-1">
+      <div className="h-48 overflow-y-auto p-2 text-xs space-y-1 settings-scroll">
         {messages.map((msg, idx) => (
           <div
             key={idx}
@@ -131,9 +142,16 @@ export default function Chat({ messages, playerName, onSendMessage }) {
                 : msg.sender === 'Dealer'
                 ? 'dealer-chat'
                 : msg.sender === playerName
-                ? 'text-green-300'
-                : 'text-white'
+                ? ''
+                : ''
             } break-words`}
+            style={
+              !msg.isPrivate && msg.sender !== 'Dealer' && msg.sender === playerName
+                ? { color: '#5fd08a' }
+                : !msg.isPrivate && msg.sender !== 'Dealer'
+                ? { color: 'var(--text-primary)' }
+                : undefined
+            }
           >
             {msg.isPrivate ? (
               <>
@@ -144,7 +162,7 @@ export default function Chat({ messages, playerName, onSendMessage }) {
               </>
             ) : (
               <>
-                {msg.sender !== 'Dealer' && <span className="font-bold text-amber-400">[{msg.sender}]</span>}{' '}
+                {msg.sender !== 'Dealer' && <span className="font-bold" style={{ color: 'var(--accent)' }}>[{msg.sender}]</span>}{' '}
                 <span>{msg.text || msg.message}</span>
               </>
             )}
@@ -153,14 +171,17 @@ export default function Chat({ messages, playerName, onSendMessage }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-amber-700/50">
+      <div style={{ borderTop: '1px solid var(--panel-border)' }}>
         <div
-          className="flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-gray-800/50"
+          className="flex items-center justify-between px-2 py-1 cursor-pointer transition-colors hover:bg-white/5"
           onClick={() => setQuickChatOpen(!quickChatOpen)}
         >
-          <span className="text-xs text-amber-300 font-medium">Quick Chat</span>
-          <span className="text-xs text-amber-300" style={{ transform: quickChatOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-            &#9660;
+          <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Quick Chat</span>
+          <span
+            className="transition-transform duration-200"
+            style={{ color: 'var(--text-muted)', transform: quickChatOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'flex' }}
+          >
+            <IconChevronDown size={13} />
           </span>
         </div>
         {quickChatOpen && (
@@ -170,7 +191,8 @@ export default function Chat({ messages, playerName, onSendMessage }) {
                 <button
                   key={item.text}
                   onClick={() => sendQuickMessage(item.text)}
-                  className="chat-quick-btn flex items-center justify-center p-1.5 rounded-lg border text-gray-200 text-xs font-medium"
+                  className="chat-quick-btn flex items-center justify-center p-1.5 rounded-lg border text-xs font-medium"
+                  style={{ color: 'var(--text-primary)' }}
                 >
                   {item.text}
                 </button>
@@ -180,7 +202,7 @@ export default function Chat({ messages, playerName, onSendMessage }) {
         )}
       </div>
 
-      <div className="p-2 border-t border-amber-700/50 flex gap-2">
+      <div className="p-2 flex gap-2" style={{ borderTop: '1px solid var(--panel-border)' }}>
         <input
           type="text"
           value={input}
@@ -188,13 +210,20 @@ export default function Chat({ messages, playerName, onSendMessage }) {
           onKeyPress={handleKeyPress}
           onFocus={resetActivity}
           placeholder="/w name msg"
-          className="flex-1 bg-gray-800/80 rounded-lg px-3 py-1 text-white text-sm outline-none focus:ring-1 focus:ring-amber-500"
+          className="flex-1 rounded-lg px-3 py-1 text-sm outline-none focus:ring-1"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid var(--panel-border)',
+            color: 'var(--text-primary)',
+            ['--tw-ring-color']: 'var(--accent)',
+          }}
         />
         <button
           onClick={sendMessage}
-          className="bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-sm font-bold"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-bold transition-all hover:brightness-110"
+          style={{ background: 'var(--button-primary)', color: '#10131c' }}
         >
-          Send
+          <IconSend size={13} /> Send
         </button>
       </div>
     </div>

@@ -1,10 +1,31 @@
-// src/components/Leaderboard.jsx
 import React, { useState } from 'react';
+import {
+  IconTrophy,
+  IconMedal,
+  IconCoins,
+  IconCards,
+  IconX,
+  IconSparkles,
+  IconTrendingUp,
+  IconChevronDown,
+  IconChevronUp,
+} from './icons.jsx';
 
 function formatChips(amount) {
   if (amount >= 1000000) return (amount / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (amount >= 1000) return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return amount.toString();
+}
+
+function StatRow({ icon: Icon, label, value }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+        <Icon size={12} /> {label}
+      </span>
+      <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</span>
+    </div>
+  );
 }
 
 export default function Leaderboard({ players, currentRound }) {
@@ -18,53 +39,76 @@ export default function Leaderboard({ players, currentRound }) {
   };
 
   return (
-    <div className={`fixed top-2 left-2 z-30 bg-black/70 backdrop-blur-md rounded-xl shadow-2xl border border-amber-700/50 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-72'}`}>
-      <div 
-        className="flex justify-between items-center text-amber-400 font-bold border-b border-amber-700/50 px-3 py-2 cursor-pointer hover:bg-amber-900/20"
+    <div
+      className={`fixed top-2 left-2 z-30 rounded-xl shadow-2xl backdrop-blur-md transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-72'}`}
+      style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}
+    >
+      <div
+        className="flex justify-between items-center font-bold px-3 py-2 cursor-pointer rounded-t-xl transition-colors"
+        style={{ borderBottom: isMinimized ? 'none' : '1px solid var(--panel-border)', color: 'var(--accent)' }}
         onClick={() => setIsMinimized(!isMinimized)}
       >
-        <span>🏆 LEADERBOARD</span>
-        <span className="text-sm">{isMinimized ? '▼' : '▲'}</span>
+        <span className="flex items-center gap-2 text-sm tracking-wide uppercase">
+          <IconTrophy size={15} /> Leaderboard
+        </span>
+        {isMinimized ? <IconChevronDown size={14} /> : <IconChevronUp size={14} />}
       </div>
-      
+
       {!isMinimized && (
         <>
-          <div className="text-white text-xs text-center mt-1 mb-1">Round: {currentRound}</div>
+          <div className="text-xs text-center mt-1.5 mb-1" style={{ color: 'var(--text-muted)' }}>
+            Round: <span style={{ color: 'var(--text-primary)' }} className="font-semibold capitalize">{currentRound}</span>
+          </div>
           <div className="max-h-80 overflow-y-auto px-2 pb-2 space-y-1">
             {sorted.map((p, i) => (
               <div key={p.id}>
                 <div
-                  className="flex justify-between items-center text-sm bg-gray-800/50 rounded-lg px-2 py-1 cursor-pointer hover:bg-gray-700/50"
+                  className="flex justify-between items-center text-sm rounded-lg px-2 py-1.5 cursor-pointer transition-colors hover:brightness-125"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid transparent' }}
                   onClick={() => togglePlayer(p.id)}
                 >
-                  <div className="flex gap-2 items-center">
-                    <span className="text-amber-500 font-bold w-5">{i+1}</span>
-                    <span className="text-white truncate max-w-[80px]">{p.name}</span>
+                  <div className="flex gap-2 items-center min-w-0">
+                    <span className="font-bold w-5" style={{ color: 'var(--accent)' }}>{i + 1}</span>
+                    <span className="truncate max-w-[90px]" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
                   </div>
-                  <div className="flex gap-3 text-xs">
-                    <span className="text-yellow-400">🏅 {p.score || 0}</span>
-                    <span className="text-green-400 font-mono">💰 {formatChips(p.chips)}</span>
+                  <div className="flex gap-3 text-xs shrink-0">
+                    <span className="flex items-center gap-1" style={{ color: '#e8c96a' }}>
+                      <IconMedal size={12} /> {p.score || 0}
+                    </span>
+                    <span className="flex items-center gap-1 font-mono" style={{ color: '#5fd08a' }}>
+                      <IconCoins size={12} /> {formatChips(p.chips)}
+                    </span>
                   </div>
                 </div>
                 {expandedPlayer === p.id && p.stats && (
-                  <div className="bg-gray-900/80 rounded-lg mt-1 p-2 text-xs text-gray-300 space-y-1">
-                    <div>🃏 Hands: {p.stats.handsPlayed}</div>
-                    <div>🏆 Pots Won: {p.stats.potsWon}</div>
-                    <div>❌ Losses: {p.stats.losses}</div>
-                    <div>💰 Biggest Pot: {formatChips(p.stats.biggestPot)}</div>
-                    <div>✨ Best Hand: {p.stats.bestHand || 'N/A'}</div>
+                  <div
+                    className="rounded-lg mt-1 mb-1 p-2 text-xs space-y-1"
+                    style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid var(--panel-border)' }}
+                  >
+                    <StatRow icon={IconCards} label="Hands" value={p.stats.handsPlayed} />
+                    <StatRow icon={IconTrophy} label="Pots Won" value={p.stats.potsWon} />
+                    <StatRow icon={IconX} label="Losses" value={p.stats.losses} />
+                    <StatRow icon={IconCoins} label="Biggest Pot" value={formatChips(p.stats.biggestPot)} />
+                    <StatRow icon={IconSparkles} label="Best Hand" value={p.stats.bestHand || 'N/A'} />
                     {p.stats.handsPlayed > 0 && (
-                      <div>📈 Win Rate: {Math.round((p.stats.potsWon / p.stats.handsPlayed) * 100)}%</div>
+                      <StatRow
+                        icon={IconTrendingUp}
+                        label="Win Rate"
+                        value={`${Math.round((p.stats.potsWon / p.stats.handsPlayed) * 100)}%`}
+                      />
                     )}
                   </div>
                 )}
               </div>
             ))}
             {activePlayers.length === 0 && (
-              <div className="text-center text-gray-400 text-xs py-2">No active players</div>
+              <div className="text-center text-xs py-2" style={{ color: 'var(--text-muted)' }}>No active players</div>
             )}
           </div>
-          <div className="text-[10px] text-center text-gray-400 mt-1 mb-1 border-t border-gray-700 pt-1">
+          <div
+            className="text-[10px] text-center py-1.5"
+            style={{ borderTop: '1px solid var(--panel-border)', color: 'var(--text-muted)' }}
+          >
             Score = rounds won
           </div>
         </>

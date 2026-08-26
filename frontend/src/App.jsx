@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import GameTable from './GameTable.jsx';
 import LobbyList from './LobbyList.jsx';
+import { SuitSpade } from './components/icons.jsx';
 import { WS_PORT } from './constants.js';
 
 function LoginPage({ onLogin }) {
@@ -17,16 +18,49 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-      <div className="bg-gray-900/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-gray-700 max-w-md w-full mx-4">
-        <h1 className="text-4xl font-extrabold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500">
-          Elite Poker
-        </h1>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-gradient)' }}>
+      <div
+        className="w-full max-w-md rounded-2xl shadow-2xl p-8 animate-fadeIn"
+        style={{
+          background: 'var(--panel-bg)',
+          border: '1px solid var(--panel-border)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+        }}
+      >
+        <div className="flex flex-col items-center mb-7">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{
+              background: 'linear-gradient(150deg, rgba(212,175,55,0.28), rgba(212,175,55,0.06))',
+              border: '1px solid var(--accent-soft)',
+              color: 'var(--accent)',
+              boxShadow: '0 0 40px var(--accent-soft)',
+            }}
+          >
+            <SuitSpade size={34} />
+          </div>
+          <h1
+            className="text-3xl font-bold tracking-[0.18em] uppercase"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+          >
+            Elite Poker
+          </h1>
+          <p className="text-xs mt-2 tracking-[0.25em] uppercase" style={{ color: 'var(--text-muted)' }}>
+            Texas Hold&rsquo;em
+          </p>
+        </div>
+
         <input
           ref={nameInputRef}
           type="text"
           placeholder="Enter your username"
-          className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 mb-4"
+          className="w-full px-4 py-3 rounded-xl outline-none mb-4 transition-colors focus:border-[var(--accent)]"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--panel-border)',
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSubmit();
           }}
@@ -34,7 +68,12 @@ function LoginPage({ onLogin }) {
         />
         <button
           onClick={handleSubmit}
-          className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-bold py-3 rounded-xl transition-all shadow-lg"
+          className="w-full font-bold py-3 rounded-xl transition-all hover:brightness-110 active:scale-[0.98]"
+          style={{
+            background: 'var(--button-primary)',
+            color: '#10131c',
+            boxShadow: '0 6px 20px var(--accent-soft)',
+          }}
         >
           Enter Lobby
         </button>
@@ -46,8 +85,11 @@ function LoginPage({ onLogin }) {
 function ProtectedRoute({ isConnected, isConnecting, playerName, children }) {
   if (isConnecting && playerName) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Connecting...
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-gradient)', color: 'var(--text-muted)' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+          <span className="text-sm tracking-widest uppercase">Connecting</span>
+        </div>
       </div>
     );
   }
@@ -57,7 +99,9 @@ function ProtectedRoute({ isConnected, isConnecting, playerName, children }) {
   return children;
 }
 
-function AppRoutes({ ws, playerId, playerName, setPlayerId, setPlayerName, setWs }) {
+const THEMES = ['midnight', 'emerald', 'crimson', 'frost', 'neon', 'aurora'];
+
+function AppRoutes({ ws, playerId, playerName, setPlayerId, setPlayerName, setWs, theme, onThemeChange }) {
   const navigate = useNavigate();
   const location = useLocation();
   const reconnectAttempted = useRef(false);
@@ -207,6 +251,8 @@ function AppRoutes({ ws, playerId, playerName, setPlayerId, setPlayerName, setWs
             ws={ws}
             playerId={playerId}
             playerName={playerName}
+            theme={theme}
+            onThemeChange={onThemeChange}
             handleReturnToLobby={handleReturnToLobby}
             handleLeaveLobby={handleLeaveLobby}
             handleLogout={handleLogout}
@@ -217,22 +263,9 @@ function AppRoutes({ ws, playerId, playerName, setPlayerId, setPlayerName, setWs
   );
 }
 
-function GamePage({ ws, playerId, playerName, handleReturnToLobby, handleLeaveLobby, handleLogout }) {
+function GamePage({ ws, playerId, playerName, theme, onThemeChange, handleReturnToLobby, handleLeaveLobby, handleLogout }) {
   const { lobbyId } = useParams();
-  const [theme, setTheme] = useState(() => localStorage.getItem('pokerTheme') || 'classic');
   const [isAdmin, setIsAdmin] = useState(false);
-
-  const onThemeChange = useCallback((t) => {
-    setTheme(t);
-    localStorage.setItem('pokerTheme', t);
-  }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const themeClass = `theme-${theme}`;
-    root.className = root.className.replace(/theme-\w+/g, '').trim();
-    root.classList.add(themeClass);
-  }, [theme]);
 
   useEffect(() => {
     if (!ws) return;
@@ -248,8 +281,11 @@ function GamePage({ ws, playerId, playerName, handleReturnToLobby, handleLeaveLo
 
   if (!ws || !playerId) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Connecting...
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-gradient)', color: 'var(--text-muted)' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+          <span className="text-sm tracking-widest uppercase">Loading table</span>
+        </div>
       </div>
     );
   }
@@ -272,6 +308,21 @@ export default function App() {
   const [playerId, setPlayerId] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [ws, setWs] = useState(null);
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('pokerTheme');
+    return THEMES.includes(saved) ? saved : 'midnight';
+  });
+
+  const onThemeChange = useCallback((t) => {
+    setTheme(t);
+    localStorage.setItem('pokerTheme', t);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.className = root.className.replace(/theme-\w+/g, '').trim();
+    root.classList.add(`theme-${theme}`);
+  }, [theme]);
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -282,6 +333,8 @@ export default function App() {
         setPlayerId={setPlayerId}
         setPlayerName={setPlayerName}
         setWs={setWs}
+        theme={theme}
+        onThemeChange={onThemeChange}
       />
     </BrowserRouter>
   );

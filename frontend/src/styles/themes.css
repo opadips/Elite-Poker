@@ -1,404 +1,519 @@
-/* ==============================================
-   Classic (default :root)
-============================================== */
+/* ==========================================================================
+   ELITE POKER — THEME SYSTEM
+   Six hand-crafted professional themes driven by CSS custom properties.
+   Theme ids must be single words (\w+) — App.jsx swaps `theme-*` classes.
+
+   Lineup:
+     midnight  · Midnight Gold    (default — charcoal & warm gold)
+     emerald   · Emerald Royale   (casino green felt & brass)
+     crimson   · Crimson Dynasty  (oxblood & champagne)
+     frost     · Arctic Frost     (slate blue & silver)
+     neon      · Neon Circuit     (cyberpunk cyan & magenta)
+     aurora    · Aurora           (violet & teal ribbons)
+
+   The full default (midnight) set lives on :root so every page renders
+   correctly even before a theme class is applied. Fonts load via
+   index.html <link>; fallbacks below keep things working offline.
+
+   Action buttons use standardized, semantic colors in EVERY theme:
+   fold = red · check/call = green · raise = blue · all-in = orange
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Shared tokens + full default variable set (:root fallback = midnight)
+   -------------------------------------------------------------------------- */
 :root {
-  --bg-gradient: linear-gradient(135deg, #1a472a 0%, #0a2a1a 100%);
-  --table-bg: rgba(120, 70, 30, 0.3);
-  --table-border: #8b5a2b;
-  --card-bg: white;
-  --card-text: black;
-  --card-suit-red: #e74c3c;
-  --card-suit-black: #2c3e50;
-  --button-primary: #2c3e50;
-  --button-secondary: #8e44ad;
-  --pot-bg: rgba(0, 0, 0, 0.6);
-  --winner-text: #f1c40f;
-  --sidebet-bg: rgba(0, 0, 0, 0.7);
-  --sidebet-border: #8b5a2b;
-  --sidebet-text: #f1c40f;
-  --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0, 0, 0, 0.7);
-  --handinfo-border: #8b5a2b;
+  --font-body: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cinzel', 'Georgia', serif;
 
-  --btn-fold-bg: #dc2626;
-  --btn-check-bg: #4b5563;
-  --btn-call-bg: #16a34a;
-  --btn-raise-bg: #2563eb;
-  --btn-allin-bg: #ea580c;
-  --btn-disabled-bg: #6b7280;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #17203a 0%, #0b0f1c 45%, #06080f 100%);
+  --bg-solid: #06080f;
+  --accent: #d4af37;
+  --accent-soft: rgba(212, 175, 55, 0.16);
+  --text-primary: #f2f0ea;
+  --text-muted: #8b93a7;
+
+  --table-bg: rgba(13, 20, 36, 0.85);
+  --table-border: #c9a227;
+  --table-felt: radial-gradient(ellipse at center, #1e2f55 0%, #131f3a 55%, #0c1526 100%);
+  --table-rim: linear-gradient(160deg, #3a3220 0%, #c9a227 30%, #7a6420 60%, #2e2617 100%);
+  --table-glow: 0 0 60px rgba(201, 162, 39, 0.14), inset 0 0 80px rgba(0, 0, 0, 0.55);
+
+  --card-bg: #f7f2e7;
+  --card-text: #1c2130;
+  --card-suit-red: #c0392b;
+  --card-suit-black: #232a3d;
+
+  --button-primary: #d4af37;
+  --button-secondary: #3d4661;
+
+  --pot-bg: rgba(5, 8, 15, 0.78);
+  --winner-text: #f0d060;
+  --winner-font: var(--font-display);
+
+  --sidebet-bg: rgba(10, 14, 24, 0.88);
+  --sidebet-border: rgba(201, 162, 39, 0.45);
+  --sidebet-text: #ecd28a;
+
+  --handinfo-bg: rgba(8, 11, 19, 0.88);
+  --handinfo-border: rgba(201, 162, 39, 0.35);
+
+  --seat-bg: rgba(9, 13, 23, 0.86);
+  --seat-border: rgba(201, 162, 39, 0.28);
+
+  --panel-bg: rgba(10, 14, 24, 0.92);
+  --panel-border: rgba(201, 162, 39, 0.25);
+
+  --btn-fold-bg: linear-gradient(180deg, #c43d3d 0%, #9c2626 100%);
+  --btn-check-bg: linear-gradient(180deg, #4b5568 0%, #363f52 100%);
+  --btn-call-bg: linear-gradient(180deg, #2e9a5c 0%, #1f7844 100%);
+  --btn-raise-bg: linear-gradient(180deg, #3d74c9 0%, #2b57a0 100%);
+  --btn-allin-bg: linear-gradient(180deg, #e08227 0%, #b86214 100%);
+  --btn-disabled-bg: #3a4356;
   --btn-text: #ffffff;
-  --action-bar-bg: rgba(0, 0, 0, 0.6);
-  --action-bar-border: rgba(255, 255, 255, 0.1);
-  --raise-panel-bg: rgba(0, 0, 0, 0.7);
+  --action-bar-bg: rgba(8, 11, 20, 0.82);
+  --action-bar-border: rgba(201, 162, 39, 0.3);
+  --raise-panel-bg: rgba(8, 11, 20, 0.94);
+
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(201, 162, 39, 0.55);
 }
 
-body {
-  font-family: 'Verdana', sans-serif;
+/* --------------------------------------------------------------------------
+   MIDNIGHT GOLD (default)
+   -------------------------------------------------------------------------- */
+.theme-midnight {
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #17203a 0%, #0b0f1c 45%, #06080f 100%);
+  --bg-solid: #06080f;
+  --accent: #d4af37;
+  --accent-soft: rgba(212, 175, 55, 0.16);
+  --text-primary: #f2f0ea;
+  --text-muted: #8b93a7;
+
+  --table-bg: rgba(13, 20, 36, 0.85);
+  --table-border: #c9a227;
+  --table-felt: radial-gradient(ellipse at center, #1e2f55 0%, #131f3a 55%, #0c1526 100%);
+  --table-rim: linear-gradient(160deg, #3a3220 0%, #c9a227 30%, #7a6420 60%, #2e2617 100%);
+  --table-glow: 0 0 60px rgba(201, 162, 39, 0.14), inset 0 0 80px rgba(0, 0, 0, 0.55);
+
+  --card-bg: #f7f2e7;
+  --card-text: #1c2130;
+  --card-suit-red: #c0392b;
+  --card-suit-black: #232a3d;
+
+  --button-primary: #d4af37;
+  --button-secondary: #3d4661;
+
+  --pot-bg: rgba(5, 8, 15, 0.78);
+  --winner-text: #f0d060;
+  --winner-font: var(--font-display);
+
+  --sidebet-bg: rgba(10, 14, 24, 0.88);
+  --sidebet-border: rgba(201, 162, 39, 0.45);
+  --sidebet-text: #ecd28a;
+
+  --handinfo-bg: rgba(8, 11, 19, 0.88);
+  --handinfo-border: rgba(201, 162, 39, 0.35);
+
+  --seat-bg: rgba(9, 13, 23, 0.86);
+  --seat-border: rgba(201, 162, 39, 0.28);
+
+  --panel-bg: rgba(10, 14, 24, 0.92);
+  --panel-border: rgba(201, 162, 39, 0.25);
+
+  --action-bar-bg: rgba(8, 11, 20, 0.82);
+  --action-bar-border: rgba(201, 162, 39, 0.3);
+  --raise-panel-bg: rgba(8, 11, 20, 0.94);
+
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(201, 162, 39, 0.55);
 }
 
-.theme-classic body {
-  background: var(--bg-gradient);
-}
-
-/* ==============================================
-   Neon Jungle
-============================================== */
-.theme-neonjungle {
-  --bg-gradient: none;
-  --table-bg: rgba(0, 50, 20, 0.4);
-  --table-border: #39ff14;
-  --card-bg: #0a1a0a;
-  --card-text: #b8ffb8;
-  --card-suit-red: #ff3399;
-  --card-suit-black: #39ff14;
-  --button-primary: #006600;
-  --button-secondary: #cc00cc;
-  --pot-bg: rgba(0, 0, 0, 0.8);
-  --winner-text: #ffd700;
-  --sidebet-bg: rgba(0, 20, 0, 0.8);
-  --sidebet-border: #39ff14;
-  --sidebet-text: #aaffaa;
-  --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0, 20, 0, 0.8);
-  --handinfo-border: #39ff14;
-
-  --btn-fold-bg: #ff3399;
-  --btn-check-bg: #2e7d32;
-  --btn-call-bg: #39ff14;
-  --btn-raise-bg: #9c27b0;
-  --btn-allin-bg: #ffd700;
-  --btn-disabled-bg: #4a5568;
-  --btn-text: #000000;
-  --action-bar-bg: rgba(0, 20, 0, 0.8);
-  --action-bar-border: #39ff14;
-  --raise-panel-bg: rgba(0, 20, 0, 0.9);
-}
-
-.theme-neonjungle body {
-  background: #020a03;
-  overflow: hidden;
-}
-
-.theme-neonjungle body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(circle at 20% 50%, rgba(57, 255, 20, 0.3) 0%, transparent 30%),
-    radial-gradient(circle at 80% 30%, rgba(0, 255, 128, 0.2) 0%, transparent 40%),
-    radial-gradient(circle at 40% 80%, rgba(128, 0, 255, 0.3) 0%, transparent 45%);
-  background-size: 200% 200%;
-  animation: neonVines 10s infinite alternate ease-in-out;
-  pointer-events: none;
-  z-index: -1;
-}
-
-@keyframes neonVines {
-  0% {
-    background-position: 0% 0%;
-    opacity: 0.9;
-  }
-  100% {
-    background-position: 100% 100%;
-    opacity: 0.7;
-  }
-}
-
-.theme-neonjungle body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, rgba(57, 255, 20, 0.8) 50%, transparent),
-    radial-gradient(1px 1px at 90% 30%, rgba(255, 20, 147, 0.7) 50%, transparent),
-    radial-gradient(2px 2px at 50% 70%, rgba(128, 0, 255, 0.8) 50%, transparent),
-    radial-gradient(1px 1px at 30% 80%, rgba(57, 255, 20, 0.6) 50%, transparent),
-    radial-gradient(2px 2px at 70% 10%, rgba(0, 255, 255, 0.7) 50%, transparent),
-    radial-gradient(1px 1px at 80% 60%, rgba(255, 20, 147, 0.6) 50%, transparent),
-    radial-gradient(1px 1px at 20% 90%, rgba(57, 255, 20, 0.5) 50%, transparent),
-    radial-gradient(2px 2px at 60% 40%, rgba(128, 0, 255, 0.4) 50%, transparent);
-  background-size: 300% 300%;
-  animation: neonFloating 15s linear infinite;
-  pointer-events: none;
-  z-index: -2;
-}
-
-@keyframes neonFloating {
-  0% {
-    background-position: 0% 0%;
-    opacity: 0.6;
-  }
-  50% {
-    background-position: 100% 50%;
-    opacity: 0.9;
-  }
-  100% {
-    background-position: 0% 0%;
-    opacity: 0.6;
-  }
-}
-
-.theme-neonjungle .game-table {
-  border: 2px solid #39ff14;
-  box-shadow: 0 0 60px rgba(57, 255, 20, 0.5), inset 0 0 30px rgba(0, 100, 0, 0.8);
-  background: radial-gradient(circle at center, rgba(0, 40, 0, 0.9) 0%, rgba(0, 10, 0, 0.95) 100%);
-}
-
-/* ==============================================
-   Void Pulse
-============================================== */
-.theme-void {
-  --bg-gradient: none;
-  --table-bg: rgba(10, 10, 30, 0.5);
-  --table-border: #8a2be2;
-  --card-bg: #111133;
-  --card-text: #e0e0ff;
-  --card-suit-red: #ff4466;
-  --card-suit-black: #aaccff;
-  --button-primary: #6a0dad;
-  --button-secondary: #1e90ff;
-  --pot-bg: rgba(0, 0, 0, 0.8);
-  --winner-text: #da70d6;
-  --sidebet-bg: rgba(10, 10, 30, 0.8);
-  --sidebet-border: #8a2be2;
-  --sidebet-text: #da70d6;
-  --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(10, 10, 30, 0.8);
-  --handinfo-border: #8a2be2;
-
-  --btn-fold-bg: #ff4466;
-  --btn-check-bg: #4a4a8a;
-  --btn-call-bg: #6a0dad;
-  --btn-raise-bg: #1e90ff;
-  --btn-allin-bg: #da70d6;
-  --btn-disabled-bg: #4a5568;
-  --btn-text: #ffffff;
-  --action-bar-bg: rgba(10, 10, 30, 0.8);
-  --action-bar-border: #8a2be2;
-  --raise-panel-bg: rgba(10, 10, 30, 0.9);
-}
-
-.theme-void body {
-  background: #050510;
-  overflow: hidden;
-}
-
-.theme-void body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(circle at 60% 40%, rgba(120, 0, 255, 0.4) 0%, transparent 40%),
-    radial-gradient(circle at 30% 70%, rgba(0, 100, 255, 0.3) 0%, transparent 45%),
-    radial-gradient(circle at 80% 80%, rgba(200, 100, 255, 0.25) 0%, transparent 35%);
-  background-size: 150% 150%;
-  animation: voidPulse 8s infinite alternate ease-in-out;
-  pointer-events: none;
-  z-index: -1;
-}
-
-@keyframes voidPulse {
-  0% {
-    background-position: 0% 0%;
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    background-position: 80% 20%;
-    transform: scale(1.1);
-    opacity: 0.9;
-  }
-  100% {
-    background-position: 100% 100%;
-    transform: scale(1);
-    opacity: 0.8;
-  }
-}
-
-.theme-void body::after {
-  content: '';
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  box-shadow: 0 0 200px 100px rgba(100, 0, 255, 0.3);
-  animation: voidRing 4s infinite ease-out;
-  pointer-events: none;
-  z-index: -2;
-}
-
-@keyframes voidRing {
-  0% {
-    box-shadow: 0 0 100px 60px rgba(100, 0, 255, 0.5);
-    width: 300px;
-    height: 300px;
-    opacity: 0.6;
-  }
-  100% {
-    box-shadow: 0 0 300px 150px rgba(100, 0, 255, 0);
-    width: 900px;
-    height: 900px;
-    opacity: 0;
-  }
-}
-
-.theme-void .game-table {
-  border: 2px solid #8a2be2;
-  box-shadow: 0 0 60px rgba(138, 43, 226, 0.6), inset 0 0 20px rgba(100, 0, 255, 0.5);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(20, 20, 60, 0.9) 0%,
-    rgba(5, 5, 20, 0.95) 100%
-  );
-}
-
-/* ==============================================
-   Royal Crimson
-============================================== */
-.theme-crimson {
-  --bg-gradient: linear-gradient(135deg, #1f0808 0%, #0d0404 100%);
-  --table-bg: rgba(139, 0, 0, 0.3);
-  --table-border: #c49a2a;
-  --card-bg: #fdf5e6;
-  --card-text: #3a1a1a;
-  --card-suit-red: #b22222;
-  --card-suit-black: #2c2c2c;
-  --button-primary: #8b4513;
-  --button-secondary: #b8860b;
-  --pot-bg: rgba(0, 0, 0, 0.8);
-  --winner-text: #ffd700;
-  --sidebet-bg: rgba(0, 0, 0, 0.8);
-  --sidebet-border: #c49a2a;
-  --sidebet-text: #ffd700;
-  --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0, 0, 0, 0.8);
-  --handinfo-border: #c49a2a;
-
-  --btn-fold-bg: #8b3a3a;
-  --btn-check-bg: #5a3a3a;
-  --btn-call-bg: #8b7500;
-  --btn-raise-bg: #6b3a8b;
-  --btn-allin-bg: #cc5500;
-  --btn-disabled-bg: #5a5a5a;
-  --btn-text: #ffffff;
-  --action-bar-bg: rgba(0, 0, 0, 0.8);
-  --action-bar-border: #c49a2a;
-  --raise-panel-bg: rgba(0, 0, 0, 0.9);
-}
-
-.theme-crimson body {
-  background: var(--bg-gradient);
-}
-
-.theme-crimson .game-table {
-  border: 2px solid #c49a2a;
-  box-shadow: 0 0 50px rgba(196, 154, 42, 0.3), inset 0 0 30px rgba(139, 0, 0, 0.3);
-  background: radial-gradient(circle at center, rgba(139, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
-}
-
-/* ==============================================
-   Emerald Luxe
-============================================== */
+/* --------------------------------------------------------------------------
+   EMERALD ROYALE
+   -------------------------------------------------------------------------- */
 .theme-emerald {
-  --bg-gradient: linear-gradient(135deg, #0a2a1a 0%, #051a10 100%);
-  --table-bg: rgba(0, 120, 0, 0.25);
-  --table-border: #2e7d32;
-  --card-bg: #f0f8e8;
-  --card-text: #1a3a1a;
-  --card-suit-red: #cc3333;
-  --card-suit-black: #2d3a2d;
-  --button-primary: #1b5e20;
-  --button-secondary: #388e3c;
-  --pot-bg: rgba(0, 0, 0, 0.8);
-  --winner-text: #ffd700;
-  --sidebet-bg: rgba(0, 0, 0, 0.8);
-  --sidebet-border: #2e7d32;
-  --sidebet-text: #ffd700;
-  --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0, 0, 0, 0.8);
-  --handinfo-border: #2e7d32;
+  --bg-gradient: radial-gradient(ellipse at 50% 0%, #0e2f21 0%, #071b13 55%, #030a07 100%);
+  --bg-solid: #030a07;
+  --accent: #e3c06a;
+  --accent-soft: rgba(227, 192, 106, 0.15);
+  --text-primary: #eef4ef;
+  --text-muted: #7fa08d;
 
-  --btn-fold-bg: #b71c1c;
-  --btn-check-bg: #2e4a2e;
-  --btn-call-bg: #2e7d32;
-  --btn-raise-bg: #8b7500;
-  --btn-allin-bg: #e65100;
-  --btn-disabled-bg: #5a6b5a;
-  --btn-text: #ffffff;
-  --action-bar-bg: rgba(0, 0, 0, 0.8);
-  --action-bar-border: #2e7d32;
-  --raise-panel-bg: rgba(0, 0, 0, 0.9);
+  --table-bg: rgba(8, 38, 27, 0.85);
+  --table-border: #b08d3e;
+  --table-felt: radial-gradient(ellipse at center, #1a6247 0%, #10452f 55%, #0a2f20 100%);
+  --table-rim: linear-gradient(160deg, #4a3a1c 0%, #c8a04a 30%, #85682c 60%, #3a2d14 100%);
+  --table-glow: 0 0 60px rgba(16, 64, 45, 0.5), inset 0 0 90px rgba(0, 0, 0, 0.55);
+
+  --card-bg: #f5f2e8;
+  --card-text: #16301f;
+  --card-suit-red: #b03a30;
+  --card-suit-black: #1d3a29;
+
+  --button-primary: #c8a04a;
+  --button-secondary: #14532d;
+
+  --pot-bg: rgba(3, 14, 9, 0.78);
+  --winner-text: #eccf74;
+  --winner-font: var(--font-display);
+
+  --sidebet-bg: rgba(4, 18, 12, 0.88);
+  --sidebet-border: rgba(176, 141, 62, 0.45);
+  --sidebet-text: #dcc684;
+
+  --handinfo-bg: rgba(3, 12, 8, 0.88);
+  --handinfo-border: rgba(176, 141, 62, 0.35);
+
+  --seat-bg: rgba(4, 15, 10, 0.86);
+  --seat-border: rgba(176, 141, 62, 0.26);
+
+  --panel-bg: rgba(4, 14, 10, 0.92);
+  --panel-border: rgba(176, 141, 62, 0.24);
+
+  --action-bar-bg: rgba(3, 12, 8, 0.82);
+  --action-bar-border: rgba(176, 141, 62, 0.3);
+  --raise-panel-bg: rgba(3, 12, 8, 0.94);
+
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(176, 141, 62, 0.55);
 }
 
-.theme-emerald body {
-  background: var(--bg-gradient);
-}
-
+/* Felt weave texture */
 .theme-emerald .game-table {
-  border: 2px solid #2e7d32;
-  box-shadow: 0 0 40px rgba(46, 125, 50, 0.3), inset 0 0 20px rgba(0, 120, 0, 0.2);
-  background: radial-gradient(circle at center, rgba(0, 120, 0, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.035) 0 2px, transparent 2px 6px),
+    var(--table-felt);
 }
 
-/* ==============================================
-   Sapphire Noir
-============================================== */
-.theme-sapphire {
-  --bg-gradient: linear-gradient(135deg, #0a0a2a 0%, #05051a 100%);
-  --table-bg: rgba(0, 0, 139, 0.2);
-  --table-border: #191970;
-  --card-bg: #e6e6fa;
-  --card-text: #0a0a2a;
-  --card-suit-red: #b22222;
-  --card-suit-black: #1a1a4a;
-  --button-primary: #191970;
-  --button-secondary: #4169e1;
-  --pot-bg: rgba(0, 0, 0, 0.8);
-  --winner-text: #e6e6fa;
-  --sidebet-bg: rgba(0, 0, 0, 0.8);
-  --sidebet-border: #191970;
-  --sidebet-text: #e6e6fa;
-  --winner-font: 'Georgia', serif;
-  --handinfo-bg: rgba(0, 0, 0, 0.8);
-  --handinfo-border: #191970;
+/* --------------------------------------------------------------------------
+   CRIMSON DYNASTY
+   -------------------------------------------------------------------------- */
+.theme-crimson {
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #33101a 0%, #17060b 55%, #0a0305 100%);
+  --bg-solid: #0a0305;
+  --accent: #e0b45c;
+  --accent-soft: rgba(224, 180, 92, 0.15);
+  --text-primary: #f6efe6;
+  --text-muted: #a58a8a;
 
-  --btn-fold-bg: #8b0000;
-  --btn-check-bg: #2a2a4a;
-  --btn-call-bg: #191970;
-  --btn-raise-bg: #4169e1;
-  --btn-allin-bg: #c71585;
-  --btn-disabled-bg: #4a4a6a;
-  --btn-text: #ffffff;
-  --action-bar-bg: rgba(0, 0, 0, 0.8);
-  --action-bar-border: #191970;
-  --raise-panel-bg: rgba(0, 0, 0, 0.9);
+  --table-bg: rgba(48, 14, 22, 0.85);
+  --table-border: #caa04a;
+  --table-felt: radial-gradient(ellipse at center, #6b2130 0%, #4d1522 55%, #330d16 100%);
+  --table-rim: linear-gradient(160deg, #4d3a18 0%, #d4ab52 30%, #93743a 60%, #40300f 100%);
+  --table-glow: 0 0 70px rgba(120, 26, 44, 0.35), inset 0 0 90px rgba(0, 0, 0, 0.6);
+
+  --card-bg: #faf4e6;
+  --card-text: #33141c;
+  --card-suit-red: #a8262d;
+  --card-suit-black: #2b1a20;
+
+  --button-primary: #caa04a;
+  --button-secondary: #5c1f2b;
+
+  --pot-bg: rgba(12, 4, 7, 0.78);
+  --winner-text: #f2ce72;
+  --winner-font: var(--font-display);
+
+  --sidebet-bg: rgba(16, 5, 8, 0.88);
+  --sidebet-border: rgba(202, 160, 74, 0.45);
+  --sidebet-text: #e8ca84;
+
+  --handinfo-bg: rgba(12, 4, 7, 0.88);
+  --handinfo-border: rgba(202, 160, 74, 0.35);
+
+  --seat-bg: rgba(14, 5, 8, 0.86);
+  --seat-border: rgba(202, 160, 74, 0.26);
+
+  --panel-bg: rgba(14, 5, 8, 0.92);
+  --panel-border: rgba(202, 160, 74, 0.24);
+
+  --action-bar-bg: rgba(12, 4, 7, 0.82);
+  --action-bar-border: rgba(202, 160, 74, 0.3);
+  --raise-panel-bg: rgba(12, 4, 7, 0.94);
+
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(202, 160, 74, 0.55);
 }
 
-.theme-sapphire body {
-  background: var(--bg-gradient);
+/* Ember glow rising from below */
+.theme-crimson body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 115%, rgba(190, 60, 40, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse at 15% 110%, rgba(140, 30, 50, 0.12) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: -1;
 }
 
-.theme-sapphire .game-table {
-  border: 2px solid #191970;
-  box-shadow: 0 0 40px rgba(25, 25, 112, 0.3), inset 0 0 20px rgba(0, 0, 139, 0.2);
-  background: radial-gradient(circle at center, rgba(0, 0, 139, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+/* --------------------------------------------------------------------------
+   ARCTIC FROST
+   -------------------------------------------------------------------------- */
+.theme-frost {
+  --bg-gradient: linear-gradient(165deg, #101b2a 0%, #0a111c 50%, #060a12 100%);
+  --bg-solid: #060a12;
+  --accent: #7ec3e8;
+  --accent-soft: rgba(126, 195, 232, 0.14);
+  --text-primary: #edf2f7;
+  --text-muted: #7d8ba0;
+
+  --table-bg: rgba(17, 30, 46, 0.85);
+  --table-border: #9fb4c7;
+  --table-felt: radial-gradient(ellipse at center, #24405e 0%, #182c44 55%, #101e30 100%);
+  --table-rim: linear-gradient(160deg, #3c4a5c 0%, #b8c9d9 30%, #6d7f94 60%, #2e3947 100%);
+  --table-glow: 0 0 50px rgba(126, 195, 232, 0.12), inset 0 0 80px rgba(0, 0, 0, 0.5);
+
+  --card-bg: #fbfdff;
+  --card-text: #17222e;
+  --card-suit-red: #cc4444;
+  --card-suit-black: #22303f;
+
+  --button-primary: #9fb4c7;
+  --button-secondary: #2b3f57;
+
+  --pot-bg: rgba(5, 9, 15, 0.78);
+  --winner-text: #dcedff;
+  --winner-font: var(--font-display);
+
+  --sidebet-bg: rgba(9, 15, 24, 0.88);
+  --sidebet-border: rgba(159, 180, 199, 0.4);
+  --sidebet-text: #bcd4e8;
+
+  --handinfo-bg: rgba(6, 10, 17, 0.88);
+  --handinfo-border: rgba(159, 180, 199, 0.3);
+
+  --seat-bg: rgba(7, 12, 20, 0.86);
+  --seat-border: rgba(159, 180, 199, 0.22);
+
+  --panel-bg: rgba(7, 12, 20, 0.92);
+  --panel-border: rgba(159, 180, 199, 0.2);
+
+  --action-bar-bg: rgba(6, 10, 17, 0.82);
+  --action-bar-border: rgba(159, 180, 199, 0.26);
+  --raise-panel-bg: rgba(6, 10, 17, 0.94);
+
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(159, 180, 199, 0.5);
 }
 
-/* ==============================================
-   Card styles
-============================================== */
+/* Slow drifting polar sheen */
+.theme-frost body::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  background:
+    conic-gradient(from 210deg at 70% 20%, transparent 0deg, rgba(126, 195, 232, 0.05) 60deg, transparent 130deg),
+    conic-gradient(from 30deg at 20% 80%, transparent 0deg, rgba(180, 220, 245, 0.04) 80deg, transparent 150deg);
+  animation: frostSheen 26s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes frostSheen {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   NEON CIRCUIT
+   -------------------------------------------------------------------------- */
+.theme-neon {
+  --bg-gradient: none;
+  --bg-solid: #030509;
+  --accent: #2de2ff;
+  --accent-soft: rgba(45, 226, 255, 0.14);
+  --text-primary: #e8faff;
+  --text-muted: #5f7d8c;
+
+  --table-bg: rgba(6, 14, 22, 0.85);
+  --table-border: #2de2ff;
+  --table-felt: radial-gradient(ellipse at center, #12324e 0%, #0b2236 55%, #061624 100%);
+  --table-rim: linear-gradient(160deg, #0a3a4a 0%, #2de2ff 35%, #b04df0 70%, #3a1060 100%);
+  --table-glow: 0 0 45px rgba(45, 226, 255, 0.22), inset 0 0 70px rgba(2, 8, 14, 0.8);
+
+  --card-bg: #0b1420;
+  --card-text: #d8f6ff;
+  --card-suit-red: #ff4d9d;
+  --card-suit-black: #2de2ff;
+
+  --button-primary: #2de2ff;
+  --button-secondary: #b04df0;
+
+  --pot-bg: rgba(2, 6, 10, 0.85);
+  --winner-text: #5ff5ff;
+  --winner-font: var(--font-body);
+
+  --sidebet-bg: rgba(4, 10, 16, 0.9);
+  --sidebet-border: rgba(45, 226, 255, 0.45);
+  --sidebet-text: #9feaf9;
+
+  --handinfo-bg: rgba(3, 8, 13, 0.9);
+  --handinfo-border: rgba(45, 226, 255, 0.35);
+
+  --seat-bg: rgba(3, 8, 13, 0.88);
+  --seat-border: rgba(45, 226, 255, 0.28);
+
+  --panel-bg: rgba(3, 8, 13, 0.94);
+  --panel-border: rgba(45, 226, 255, 0.26);
+
+  --action-bar-bg: rgba(3, 8, 13, 0.85);
+  --action-bar-border: rgba(45, 226, 255, 0.3);
+  --raise-panel-bg: rgba(3, 8, 13, 0.96);
+
+  --scrollbar-track: rgba(45, 226, 255, 0.06);
+  --scrollbar-thumb: rgba(45, 226, 255, 0.5);
+}
+
+.theme-neon body {
+  background: var(--bg-solid);
+  overflow: hidden;
+}
+
+/* Perspective grid floor */
+.theme-neon body::before {
+  content: '';
+  position: fixed;
+  left: -25%;
+  right: -25%;
+  bottom: -42%;
+  height: 90%;
+  background-image:
+    linear-gradient(rgba(45, 226, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 226, 255, 0.07) 1px, transparent 1px);
+  background-size: 46px 46px;
+  transform: perspective(520px) rotateX(58deg);
+  transform-origin: top center;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 35%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 35%);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Horizon haze pulse */
+.theme-neon body::after {
+  content: '';
+  position: fixed;
+  left: 50%;
+  top: 62%;
+  width: 120vw;
+  height: 40vh;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(176, 77, 240, 0.14) 0%, transparent 60%);
+  animation: neonHaze 7s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes neonHaze {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   AURORA
+   -------------------------------------------------------------------------- */
+.theme-aurora {
+  --bg-gradient: none;
+  --bg-solid: #070512;
+  --accent: #a78bfa;
+  --accent-soft: rgba(167, 139, 250, 0.16);
+  --text-primary: #f1eefb;
+  --text-muted: #857da3;
+
+  --table-bg: rgba(18, 14, 38, 0.85);
+  --table-border: #8b5cf6;
+  --table-felt: radial-gradient(ellipse at center, #2c2260 0%, #1e1745 55%, #140f30 100%);
+  --table-rim: linear-gradient(160deg, #2b2150 0%, #8b5cf6 35%, #2dd4bf 70%, #14343a 100%);
+  --table-glow: 0 0 55px rgba(139, 92, 246, 0.2), inset 0 0 80px rgba(0, 0, 0, 0.55);
+
+  --card-bg: #141126;
+  --card-text: #ece8fb;
+  --card-suit-red: #f472b6;
+  --card-suit-black: #7dd3fc;
+
+  --button-primary: #8b5cf6;
+  --button-secondary: #2dd4bf;
+
+  --pot-bg: rgba(5, 4, 12, 0.82);
+  --winner-text: #cabffd;
+  --winner-font: var(--font-body);
+
+  --sidebet-bg: rgba(9, 7, 20, 0.9);
+  --sidebet-border: rgba(139, 92, 246, 0.45);
+  --sidebet-text: #c4b5fd;
+
+  --handinfo-bg: rgba(6, 5, 14, 0.9);
+  --handinfo-border: rgba(139, 92, 246, 0.35);
+
+  --seat-bg: rgba(6, 5, 14, 0.88);
+  --seat-border: rgba(139, 92, 246, 0.28);
+
+  --panel-bg: rgba(6, 5, 14, 0.94);
+  --panel-border: rgba(139, 92, 246, 0.26);
+
+  --action-bar-bg: rgba(6, 5, 14, 0.85);
+  --action-bar-border: rgba(139, 92, 246, 0.3);
+  --raise-panel-bg: rgba(6, 5, 14, 0.96);
+
+  --scrollbar-track: rgba(139, 92, 246, 0.06);
+  --scrollbar-thumb: rgba(139, 92, 246, 0.5);
+}
+
+.theme-aurora body {
+  background: var(--bg-solid);
+  overflow: hidden;
+}
+
+/* Drifting aurora ribbons */
+.theme-aurora body::before {
+  content: '';
+  position: fixed;
+  inset: -30%;
+  background:
+    radial-gradient(ellipse 60% 22% at 30% 18%, rgba(139, 92, 246, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 18% at 75% 30%, rgba(45, 212, 191, 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 20% at 55% 8%, rgba(244, 114, 182, 0.12) 0%, transparent 70%);
+  filter: blur(30px);
+  animation: auroraDrift 22s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes auroraDrift {
+  0% { transform: translate(-3%, -2%) rotate(-2deg) scale(1); opacity: 0.85; }
+  50% { transform: translate(2%, 1%) rotate(1.5deg) scale(1.06); opacity: 1; }
+  100% { transform: translate(-1%, 3%) rotate(-1deg) scale(1.02); opacity: 0.8; }
+}
+
+/* Starfield specks */
+.theme-aurora body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(255, 255, 255, 0.5) 50%, transparent),
+    radial-gradient(1.5px 1.5px at 68% 12%, rgba(196, 181, 253, 0.6) 50%, transparent),
+    radial-gradient(1px 1px at 84% 42%, rgba(125, 211, 252, 0.5) 50%, transparent),
+    radial-gradient(1px 1px at 32% 64%, rgba(255, 255, 255, 0.35) 50%, transparent),
+    radial-gradient(1.5px 1.5px at 52% 82%, rgba(196, 181, 253, 0.4) 50%, transparent);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* ==========================================================================
+   TABLE & CARDS
+   ========================================================================== */
+
+.game-table {
+  background: var(--table-felt);
+  border-color: var(--table-border);
+  box-shadow: var(--table-glow);
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
 .community-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -406,42 +521,52 @@ body {
 .community-card:hover {
   transform: scale(1.5);
   z-index: 20;
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
 }
 
 .self-card {
-  box-shadow: 0 0 12px 2px rgba(255, 215, 0, 0.7);
+  box-shadow: 0 0 14px 2px rgba(255, 214, 102, 0.55);
 }
 
-/* ==============================================
-   Winner display
-============================================== */
+/* ==========================================================================
+   WINNER DISPLAY
+   ========================================================================== */
+
 @keyframes winnerReveal {
   0% {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.85) translateY(8px);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
 .winner-themed {
   color: var(--winner-text);
   font-family: var(--winner-font);
-  animation: winnerReveal 0.4s ease-out forwards;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.65);
+  animation: winnerReveal 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.15) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .winner-themed {
-    animation: none;
+  .winner-themed,
+  .animate-fadeInSlideDown {
+    animation: none !important;
+  }
+  .theme-frost body::before,
+  .theme-neon body::before,
+  .theme-neon body::after,
+  .theme-aurora body::before {
+    animation: none !important;
   }
 }
 
-/* ==============================================
-   Achievement toast animation
-============================================== */
+/* ==========================================================================
+   TOASTS & MISC
+   ========================================================================== */
+
 @keyframes fadeInSlideDown {
   0% {
     opacity: 0;
@@ -457,50 +582,38 @@ body {
   animation: fadeInSlideDown 0.3s ease-out forwards;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-fadeInSlideDown {
-    animation: none;
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-/* ==============================================
-   Settings scroll
-============================================== */
 .settings-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 
 .settings-scroll::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--scrollbar-track, rgba(0, 0, 0, 0.2));
   border-radius: 4px;
 }
 
 .settings-scroll::-webkit-scrollbar-thumb {
-  background: #b87c3a;
+  background: var(--scrollbar-thumb, rgba(180, 140, 60, 0.6));
   border-radius: 4px;
 }
 
 .ready-glow {
-  box-shadow: 0 0 15px 3px rgba(34, 197, 94, 0.7) !important;
-  border-color: #22c55e !important;
+  box-shadow: 0 0 16px 3px rgba(46, 204, 113, 0.6) !important;
+  border-color: rgba(46, 204, 113, 0.8) !important;
 }
 
 .dealer-chat {
   font-style: italic;
-  color: #fbbf24;
+  color: var(--accent, #d4af37);
   font-weight: 500;
   font-size: 0.75rem;
 }
 
-/* Quick Chat Buttons (text-only) */
 .chat-quick-btn {
-  border: 1px solid #4b5563;
-  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--panel-border, rgba(255, 255, 255, 0.12));
+  background: var(--accent-soft, rgba(255, 255, 255, 0.05));
   transition: background 0.15s ease;
 }
 
 .chat-quick-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.12);
 }

@@ -8,6 +8,7 @@ import Table from './components/Table.jsx';
 import GameOverlays from './components/GameOverlays.jsx';
 import ChipStack from './components/ChipStack.jsx';
 import GameContext from './context/GameContext';
+import { IconChat, IconGear } from './components/icons.jsx';
 import { usePlayerPositions } from './hooks/usePlayerPositions';
 import { useGameActions } from './hooks/useGameActions';
 import { useGameStateSync } from './hooks/useGameStateSync';
@@ -25,25 +26,8 @@ import {
 } from './constants.js';
 import './styles/animations.css';
 
-function ChatBubbleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function GearIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  );
-}
-
 const cardBackOptions = [
-  { id: 'classic', name: 'Amber' },
+  { id: 'classic', name: 'Midnight' },
   { id: 'royal', name: 'Royal' },
   { id: 'emerald', name: 'Emerald' },
   { id: 'sapphire', name: 'Sapphire' },
@@ -136,12 +120,12 @@ export default function GameTable({
   );
 
   const themes = [
-    { id: 'classic', name: 'Classic', color: 'bg-emerald-800' },
-    { id: 'crimson', name: 'Royal Crimson', color: 'bg-red-950' },
-    { id: 'emerald', name: 'Emerald Luxe', color: 'bg-green-950' },
-    { id: 'sapphire', name: 'Sapphire Noir', color: 'bg-blue-950' },
-    { id: 'neonjungle', name: 'Neon Jungle', color: 'bg-green-950' },
-    { id: 'void', name: 'Void Pulse', color: 'bg-indigo-950' },
+    { id: 'midnight', name: 'Midnight Gold', swatch: 'linear-gradient(135deg, #0b0f1c 0%, #c9a227 100%)' },
+    { id: 'emerald', name: 'Emerald Royale', swatch: 'linear-gradient(135deg, #051d13 0%, #b08d3e 100%)' },
+    { id: 'crimson', name: 'Crimson Dynasty', swatch: 'linear-gradient(135deg, #17060b 0%, #caa04a 100%)' },
+    { id: 'frost', name: 'Arctic Frost', swatch: 'linear-gradient(135deg, #0a111c 0%, #9fb4c7 100%)' },
+    { id: 'neon', name: 'Neon Circuit', swatch: 'linear-gradient(135deg, #030509 0%, #2de2ff 55%, #b04df0 100%)' },
+    { id: 'aurora', name: 'Aurora', swatch: 'linear-gradient(135deg, #070512 0%, #8b5cf6 50%, #2dd4bf 100%)' },
   ];
 
   const sendWs = useCallback((msg) => {
@@ -497,8 +481,11 @@ export default function GameTable({
   if (!gameState)
     return (
       <GameContext.Provider value={contextValue}>
-        <div className="min-h-screen flex items-center justify-center text-white">
-          Waiting...
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-gradient)' }}>
+          <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-muted)' }}>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+            <span className="text-sm tracking-widest uppercase">Waiting</span>
+          </div>
         </div>
       </GameContext.Provider>
     );
@@ -532,27 +519,40 @@ export default function GameTable({
       >
         <button
           onClick={handleChatToggle}
-          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-amber-700 hover:bg-amber-600 shadow-lg flex items-center justify-center text-white transition-all"
+          className="fixed bottom-4 left-4 rounded-full shadow-lg flex items-center justify-center transition-all hover:brightness-110"
           title={showChat ? 'Close chat' : 'Open chat'}
-          style={{ zIndex: 70 }}
+          style={{
+            zIndex: 70,
+            width: '42px',
+            height: '42px',
+            background: 'var(--panel-bg)',
+            border: '1px solid var(--panel-border)',
+            color: 'var(--accent)',
+          }}
         >
-          <ChatBubbleIcon />
+          <IconChat />
         </button>
 
         {!gameState.firstHandStarted &&
           !gameState.handInProgress &&
           currentPlayer &&
           !currentPlayer.isSpectator && (
-            <div className="fixed bottom-4 right-4 z-50 backdrop-blur-md bg-black/60 rounded-2xl p-2 border border-amber-500/50 shadow-2xl">
+            <div
+              className="fixed bottom-4 right-4 z-50 backdrop-blur-md rounded-2xl p-2 shadow-xl"
+              style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}
+            >
               <button
                 onClick={toggleReady}
-                className={`px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${
-                  currentPlayer.ready
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
+                className={`px-6 py-3 rounded-xl font-extrabold text-sm tracking-widest transition-all ${
+                  currentPlayer.ready ? '' : ''
                 }`}
+                style={
+                  currentPlayer.ready
+                    ? { background: 'var(--btn-fold-bg)', color: '#fff' }
+                    : { background: 'var(--btn-call-bg)', color: '#fff', boxShadow: '0 0 18px rgba(46,204,113,0.35)' }
+                }
               >
-                {currentPlayer.ready ? 'READY' : 'READY'}
+                {currentPlayer.ready ? 'CANCEL READY' : 'READY'}
               </button>
             </div>
           )}
@@ -561,10 +561,17 @@ export default function GameTable({
           <div className="relative">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 shadow-lg flex items-center justify-center text-white transition-all"
+              className="rounded-full shadow-lg flex items-center justify-center transition-all hover:brightness-110"
               title="Settings"
+              style={{
+                width: '42px',
+                height: '42px',
+                background: 'var(--panel-bg)',
+                border: '1px solid var(--panel-border)',
+                color: showSettings ? 'var(--accent)' : 'var(--text-muted)',
+              }}
             >
-              <GearIcon />
+              <IconGear />
             </button>
             <SettingsPanel
               showSettings={showSettings}

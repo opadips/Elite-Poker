@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-
-function DiceIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
+import { IconDices } from './icons.jsx';
 
 export default function BettingPanel({ ws, playerId, players, currentRound, chipAmount }) {
   const [selectedTarget, setSelectedTarget] = useState('');
@@ -48,34 +39,49 @@ export default function BettingPanel({ ws, playerId, players, currentRound, chip
   };
 
   if (!isEligible) return null;
-  if (hasBet) return <div className="fixed bottom-24 right-4 z-20 bg-black/60 p-2 rounded text-green-400 text-xs">Bet placed</div>;
+  if (hasBet) return (
+    <div
+      className="fixed bottom-24 right-4 z-20 p-2 rounded-lg text-xs backdrop-blur-md"
+      style={{ background: 'var(--seat-bg)', border: '1px solid var(--panel-border)', color: '#5fd08a' }}
+    >
+      Bet placed
+    </div>
+  );
 
   const activePlayers = players.filter(p => !p.folded && !p.isAllIn && p.id !== playerId);
 
   return (
     <div
-      className="fixed bottom-24 right-4 z-20 backdrop-blur-md rounded-xl p-3 w-72 text-white text-sm shadow-lg"
+      className="fixed bottom-24 right-4 z-20 backdrop-blur-md rounded-xl p-3 w-72 text-sm shadow-xl"
       style={{
         backgroundColor: 'var(--sidebet-bg)',
         border: '1px solid var(--sidebet-border)',
-        color: 'var(--sidebet-text)'
+        color: 'var(--sidebet-text)',
       }}
     >
-      <div className="font-bold text-center mb-2" style={{ color: 'var(--sidebet-text)' }}>
-        <DiceIcon /> Side Bet (50% profit)
+      <div className="font-bold text-center mb-2 flex items-center justify-center gap-2" style={{ color: 'var(--sidebet-text)' }}>
+        <IconDices /> Side Bet (50% profit)
       </div>
       <select
-        className="w-full bg-gray-800 rounded p-1 mb-2 text-white"
+        className="w-full rounded p-1.5 mb-2 outline-none"
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--panel-border)', color: 'var(--text-primary)' }}
         value={selectedTarget}
         onChange={(e) => setSelectedTarget(e.target.value)}
       >
-        <option value="">Select player to win...</option>
-        {activePlayers.map(p => <option key={p.id} value={p.id}>{p.name} ({p.chips})</option>)}
+        <option value="" style={{ color: '#111' }}>Select player to win...</option>
+        {activePlayers.map(p => <option key={p.id} value={p.id} style={{ color: '#111' }}>{p.name} ({p.chips})</option>)}
       </select>
       <div className="flex gap-2 mb-2">
-        <button onClick={() => setPercentage(10)} className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs">10%</button>
-        <button onClick={() => setPercentage(20)} className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs">20%</button>
-        <button onClick={() => setPercentage(50)} className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs">50%</button>
+        {[10, 20, 50].map(pct => (
+          <button
+            key={pct}
+            onClick={() => setPercentage(pct)}
+            className="flex-1 px-2 py-1 rounded text-xs font-semibold transition-all hover:brightness-125"
+            style={{ background: 'var(--accent-soft)', border: '1px solid var(--panel-border)', color: 'var(--accent)' }}
+          >
+            {pct}%
+          </button>
+        ))}
       </div>
       <div className="flex gap-2">
         <input
@@ -83,18 +89,21 @@ export default function BettingPanel({ ws, playerId, players, currentRound, chip
           placeholder="Amount"
           value={betAmount}
           onChange={(e) => setBetAmount(e.target.value)}
-          className="flex-1 bg-gray-800 rounded p-1 text-white"
+          className="flex-1 rounded p-1.5 outline-none"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--panel-border)', color: 'var(--text-primary)' }}
         />
         <button
           onClick={handlePlaceBet}
-          className="px-3 py-1 rounded font-bold"
-          style={{ backgroundColor: 'var(--button-primary)', color: 'white' }}
+          className="px-4 py-1 rounded font-bold transition-all hover:brightness-110"
+          style={{ background: 'var(--button-primary)', color: '#10131c' }}
         >
           Bet
         </button>
       </div>
-      {message && <div className="text-xs text-center mt-2 text-yellow-300">{message}</div>}
-      <div className="text-xs text-gray-400 mt-1">You win 1.5x if your pick wins!</div>
+      {message && (
+        <div className="text-xs text-center mt-2" style={{ color: 'var(--accent)' }}>{message}</div>
+      )}
+      <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>You win 1.5x if your pick wins!</div>
     </div>
   );
 }

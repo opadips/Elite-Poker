@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { chipTier } from './ChipStack.jsx';
 
 function easeOutQuad(t) {
   return t * (2 - t);
@@ -12,15 +13,8 @@ export default function AnimatedChip({ value, from, to, onComplete, duration = 8
   const validFrom = from && typeof from.x === 'number' && typeof from.y === 'number';
   const validTo = to && typeof to.x === 'number' && typeof to.y === 'number';
 
-  const chipSize =
-    value >= 500 ? 'w-10 h-10 text-sm' :
-    value >= 200 ? 'w-9 h-9 text-xs' :
-    'w-8 h-8 text-xs';
-
-  const chipColor =
-    value >= 500 ? 'from-red-500 to-rose-700 border-rose-300' :
-    value >= 200 ? 'from-amber-400 to-amber-700 border-yellow-300' :
-    'from-emerald-400 to-emerald-600 border-green-300';
+  const tier = chipTier(value || 0);
+  const chipSize = value >= 500 ? 40 : value >= 200 ? 36 : 32;
 
   useEffect(() => {
     if (!validFrom || !validTo) {
@@ -94,8 +88,30 @@ export default function AnimatedChip({ value, from, to, onComplete, duration = 8
         transition: 'none',
       }}
     >
-      <div className={`${chipSize} rounded-full bg-gradient-to-br ${chipColor} shadow-lg border-2 flex items-center justify-center font-bold text-white`}>
-        {value}
+      <div
+        className="rounded-full flex items-center justify-center font-bold"
+        style={{
+          width: chipSize,
+          height: chipSize,
+          fontSize: chipSize >= 40 ? '0.8rem' : '0.7rem',
+          background: `repeating-conic-gradient(#f3efe4 0deg 16deg, ${tier.base} 16deg 60deg)`,
+          boxShadow: '0 3px 8px rgba(0,0,0,0.5)',
+        }}
+      >
+        <span
+          className="rounded-full flex items-center justify-center"
+          style={{
+            width: chipSize - 10,
+            height: chipSize - 10,
+            background: tier.face,
+            boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.4)',
+            border: '1.5px dashed rgba(255,255,255,0.55)',
+            color: '#fff',
+            textShadow: '0 1px 2px rgba(0,0,0,0.7)',
+          }}
+        >
+          {value >= 1000 ? `${Math.round(value / 1000)}K` : value}
+        </span>
       </div>
     </div>
   );

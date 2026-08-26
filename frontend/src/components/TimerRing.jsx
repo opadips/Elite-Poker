@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useId } from 'react';
 
 const TOTAL_SECONDS = 20;
 
 export default function TimerRing({ remainingSec, width, height }) {
+  const filterId = `timer-glow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   if (!width || !height || remainingSec <= 0) return null;
 
   const progress = Math.max(0, Math.min(remainingSec / TOTAL_SECONDS, 1));
@@ -31,7 +32,7 @@ export default function TimerRing({ remainingSec, width, height }) {
       style={{ zIndex: 25 }}
     >
       <defs>
-        <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -52,7 +53,7 @@ export default function TimerRing({ remainingSec, width, height }) {
         strokeLinecap="round"
         strokeDasharray={perimeter}
         strokeDashoffset={dashOffset}
-        filter="url(#neonGlow)"
+        filter={`url(#${filterId})`}
         style={{ transition: 'stroke-dashoffset 0.5s linear, stroke 0.5s linear' }}
       />
     </svg>

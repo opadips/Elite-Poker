@@ -1,118 +1,105 @@
-export function cardDeal() {
+/* Shared AudioContext — browsers cap concurrent contexts (~6), so every
+   sound must reuse one instance or audio silently stops working. */
+
+let sharedCtx = null;
+let masterGain = null;
+
+function getCtx() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const bufferSize = ctx.sampleRate * 0.08;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+    if (!sharedCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      sharedCtx = new AC();
+      masterGain = sharedCtx.createGain();
+      masterGain.gain.value = 0.9;
+      masterGain.connect(sharedCtx.destination);
     }
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 2000;
-    filter.Q.value = 0.5;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start(ctx.currentTime);
-    source.stop(ctx.currentTime + 0.08);
-  } catch (e) {}
+    if (sharedCtx.state === 'suspended') {
+      sharedCtx.resume();
+    }
+    return sharedCtx;
+  } catch (e) {
+    return null;
+  }
+}
+
+function tone({ type = 'sine', freq = 440, endFreq = null, start = 0, duration = 0.15, volume = 0.2 }) {
+  const ctx = getCtx();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  if (endFreq) osc.frequency.exponentialRampToValueAtTime(Math.max(endFreq, 1), t0 + duration);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(volume, t0 + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+}
+
+function noiseBurst({ duration = 0.08, volume = 0.15, filterFreq = 2200, start = 0 }) {
+  const ctx = getCtx();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + start;
+  const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-4 * (i / bufferSize));
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = filterFreq;
+  filter.Q.value = 0.8;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, t0);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  source.start(t0);
+  source.stop(t0 + duration);
+}
+
+export function cardDeal() {
+  noiseBurst({ duration: 0.09, volume: 0.14, filterFreq: 1800 });
+  noiseBurst({ duration: 0.05, volume: 0.07, filterFreq: 3200, start: 0.03 });
 }
 
 export function chipClick() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.06);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.1);
-  } catch (e) {}
+  tone({ type: 'triangle', freq: 1900, endFreq: 1100, duration: 0.045, volume: 0.14 });
+  tone({ type: 'sine', freq: 950, endFreq: 620, duration: 0.07, volume: 0.1, start: 0.02 });
 }
 
 export function winnerFanfare() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523.25, 659.25, 783.99, 1046.5];
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const startTime = ctx.currentTime + i * 0.12;
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + 0.3);
-    });
-  } catch (e) {}
+  const notes = [523.25, 659.25, 783.99, 1046.5];
+  notes.forEach((freq, i) => {
+    tone({ type: 'triangle', freq, duration: 0.32, volume: 0.14, start: i * 0.11 });
+    tone({ type: 'sine', freq: freq * 2, duration: 0.22, volume: 0.05, start: i * 0.11 });
+  });
+  tone({ type: 'sine', freq: 1318.5, duration: 0.5, volume: 0.1, start: notes.length * 0.11 });
 }
 
 export function timerBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = 440;
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.15);
-  } catch (e) {}
+  tone({ type: 'sine', freq: 880, duration: 0.09, volume: 0.1 });
+  tone({ type: 'sine', freq: 880, duration: 0.09, volume: 0.08, start: 0.14 });
 }
 
 export function allInSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const now = ctx.currentTime;
-    for (let i = 0; i < 12; i++) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      const freq = 600 + Math.random() * 400;
-      osc.frequency.setValueAtTime(freq, now + i * 0.03);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + i * 0.03 + 0.1);
-      gain.gain.setValueAtTime(0.2, now + i * 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.03 + 0.2);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + i * 0.03);
-      osc.stop(now + i * 0.03 + 0.2);
-    }
-  } catch (e) {}
+  for (let i = 0; i < 10; i++) {
+    const freq = 900 + Math.random() * 900;
+    tone({ type: 'triangle', freq, endFreq: freq * 0.55, duration: 0.16, volume: 0.08, start: i * 0.035 });
+  }
+  noiseBurst({ duration: 0.35, volume: 0.06, filterFreq: 5000, start: 0.05 });
 }
 
 export function chipLandSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(1200, now);
-    osc.frequency.exponentialRampToValueAtTime(600, now + 0.05);
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.06);
-  } catch (e) {}
+  tone({ type: 'sine', freq: 1300, endFreq: 700, duration: 0.055, volume: 0.12 });
+  tone({ type: 'triangle', freq: 2400, endFreq: 1600, duration: 0.03, volume: 0.06 });
 }

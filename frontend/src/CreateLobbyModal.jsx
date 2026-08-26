@@ -4,6 +4,13 @@ import {
   DEFAULT_BIG_BLIND,
   MAX_STARTING_CHIPS,
 } from './constants.js';
+import { IconX } from './components/icons.jsx';
+
+const inputStyle = {
+  background: 'rgba(255,255,255,0.05)',
+  color: 'var(--text-primary)',
+  border: '1px solid var(--panel-border)',
+};
 
 export default function CreateLobbyModal({ onClose, onCreate }) {
   const [name, setName] = useState('');
@@ -39,102 +46,125 @@ export default function CreateLobbyModal({ onClose, onCreate }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn" onClick={onClose}>
       <div
-        className="bg-gray-900/95 backdrop-blur-md rounded-2xl p-6 border border-amber-500/50 shadow-2xl w-full max-w-md"
+        className="glass-panel rounded-2xl p-6 shadow-2xl w-full max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-extrabold text-amber-400 mb-4">Create New Table</h2>
+        <div className="flex justify-between items-center mb-5">
+          <h2
+            className="text-xl font-bold tracking-wide"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}
+          >
+            Create New Table
+          </h2>
+          <button
+            onClick={onClose}
+            className="transition-opacity hover:opacity-70"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <IconX size={18} />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-gray-400 block mb-1">Table Name</label>
+            <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Table Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
+              className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+              style={inputStyle}
               placeholder="My Table"
               required
             />
           </div>
           <div>
-            <label className="text-sm text-gray-400 block mb-1">Description (optional)</label>
+            <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Description (optional)</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
+              className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+              style={inputStyle}
               placeholder="Fun cash game"
             />
           </div>
           <div>
-            <label className="text-sm text-gray-400 block mb-1">Password (optional)</label>
+            <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Password (optional)</label>
             <input
               type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
+              className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+              style={inputStyle}
               placeholder="Leave blank for public"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-gray-400 block mb-1">Starting Chips</label>
+              <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Starting Chips</label>
               <input
                 type="number"
                 value={startingChips}
                 onChange={handleStartingChipsChange}
-                className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
+                className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+                style={inputStyle}
                 min={100}
                 step={100}
                 max={MAX_STARTING_CHIPS}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-400 block mb-1">Small Blind</label>
-              <input
-                type="number"
-                value={smallBlind}
-                onChange={(e) => setSmallBlind(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
-                min={1}
-                step={1}
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-400 block mb-1">Big Blind</label>
-              <input
-                type="number"
-                value={bigBlind}
-                onChange={(e) => setBigBlind(Math.max(2, parseInt(e.target.value) || 2))}
-                className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
-                min={2}
-                step={1}
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-400 block mb-1">Game Mode</label>
+              <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Game Mode</label>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value)}
-                className="w-full bg-gray-800 rounded-xl px-4 py-2 text-white border border-gray-600 focus:border-amber-500 outline-none"
+                className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+                style={inputStyle}
               >
                 <option value="tournament">Tournament</option>
                 <option value="cash" disabled>Cash Game (Coming Soon)</option>
               </select>
             </div>
+            <div>
+              <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Small Blind</label>
+              <input
+                type="number"
+                value={smallBlind}
+                onChange={(e) => setSmallBlind(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+                style={inputStyle}
+                min={1}
+                step={1}
+              />
+            </div>
+            <div>
+              <label className="text-xs block mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Big Blind</label>
+              <input
+                type="number"
+                value={bigBlind}
+                onChange={(e) => setBigBlind(Math.max(2, parseInt(e.target.value) || 2))}
+                className="w-full rounded-xl px-4 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+                style={inputStyle}
+                min={2}
+                step={1}
+              />
+            </div>
           </div>
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              className="flex-1 bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 rounded-xl transition-all"
+              className="flex-1 font-bold py-3 rounded-xl transition-all hover:brightness-110 active:scale-[0.98]"
+              style={{ background: 'var(--button-primary)', color: '#10131c' }}
             >
               Create Table
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-all"
+              className="flex-1 font-semibold py-3 rounded-xl transition-all hover:brightness-125"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--panel-border)', color: 'var(--text-muted)' }}
             >
               Cancel
             </button>
