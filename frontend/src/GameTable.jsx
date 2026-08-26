@@ -8,7 +8,7 @@ import Table from './components/Table.jsx';
 import GameOverlays from './components/GameOverlays.jsx';
 import ChipStack from './components/ChipStack.jsx';
 import GameContext from './context/GameContext';
-import { IconChat, IconGear } from './components/icons.jsx';
+import { IconChat, IconGear, IconCheck } from './components/icons.jsx';
 import { usePlayerPositions } from './hooks/usePlayerPositions';
 import { useGameActions } from './hooks/useGameActions';
 import { useGameStateSync } from './hooks/useGameStateSync';
@@ -220,22 +220,22 @@ export default function GameTable({
 
   const chipStacks = useMemo(() => {
     if (!playerPositions || !orderedPlayerIds || !gameState) return [];
-    return orderedPlayerIds.map((id, idx) => {
+    const container = tableContainerRef.current;
+    const cx = container ? container.clientWidth / 2 : 0;
+    const cy = container ? container.clientHeight / 2 : 0;
+    /* Bet chips sit on the felt, 58% of the way from table center to each seat. */
+    const t = 0.58;
+    return orderedPlayerIds.map((id) => {
       const p = activePlayersList.find(ap => ap.id === id);
       if (!p) return null;
       const pos = playerPositions[id];
       if (!pos) return null;
-      const total = orderedPlayerIds.length;
-      const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
-      const distRadius = 165;
-      const offsetX = Math.cos(angle) * distRadius;
-      const offsetY = Math.sin(angle) * distRadius;
       return {
         id,
         chips: p.chips,
         currentBet: p.folded ? 0 : (p.currentBet || 0),
-        x: pos.x + offsetX,
-        y: pos.y + offsetY,
+        x: cx + (pos.x - cx) * t,
+        y: cy + (pos.y - cy) * t,
       };
     }).filter(Boolean);
   }, [playerPositions, orderedPlayerIds, gameState, activePlayersList]);
@@ -543,16 +543,10 @@ export default function GameTable({
             >
               <button
                 onClick={toggleReady}
-                className={`px-6 py-3 rounded-xl font-extrabold text-sm tracking-widest transition-all ${
-                  currentPlayer.ready ? '' : ''
-                }`}
-                style={
-                  currentPlayer.ready
-                    ? { background: 'var(--btn-fold-bg)', color: '#fff' }
-                    : { background: 'var(--btn-call-bg)', color: '#fff', boxShadow: '0 0 18px rgba(46,204,113,0.35)' }
-                }
+                className={`action-btn ${currentPlayer.ready ? 'action-btn--fold' : 'action-btn--call'}`}
               >
-                {currentPlayer.ready ? 'CANCEL READY' : 'READY'}
+                <IconCheck size={14} />
+                {currentPlayer.ready ? 'Cancel Ready' : 'Ready'}
               </button>
             </div>
           )}

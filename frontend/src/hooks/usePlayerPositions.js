@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+/* Seats sit outside the table ellipse. Offset = half the seat frame
+   (~88px wide / ~76px tall) plus a clear gap so frames never overlap the felt. */
+const SEAT_OFFSET_X = 122;
+const SEAT_OFFSET_Y = 128;
+
 export function usePlayerPositions(gameState, playerId, seatViewFixed) {
   const [playerPositions, setPlayerPositions] = useState({});
   const [orderedPlayerIds, setOrderedPlayerIds] = useState([]);
@@ -38,8 +43,8 @@ export function usePlayerPositions(gameState, playerId, seatViewFixed) {
     orderedPlayers.forEach((p, idx) => {
       const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
       newPositions[p.id] = {
-        x: centerX_abs - containerX + (a + 30) * Math.cos(angle),
-        y: centerY_abs - containerY + (b + 30) * Math.sin(angle)
+        x: centerX_abs - containerX + (a + SEAT_OFFSET_X) * Math.cos(angle),
+        y: centerY_abs - containerY + (b + SEAT_OFFSET_Y) * Math.sin(angle)
       };
       ids.push(p.id);
     });

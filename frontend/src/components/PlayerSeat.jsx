@@ -69,6 +69,18 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
 
   if (!pos) return null;
 
+  const lastActionType = p.lastAction?.type;
+  const actionLabel = lastActionType
+    ? `${lastActionType.toUpperCase()}${p.lastAction.amount > 0 ? ` ${formatChips(p.lastAction.amount)}` : ''}`
+    : null;
+  const actionColor =
+    lastActionType === 'fold' ? '#f08080'
+    : lastActionType === 'check' ? '#9aa5b5'
+    : lastActionType === 'call' ? '#5fd08a'
+    : lastActionType === 'raise' ? '#f5a860'
+    : lastActionType === 'allin' ? '#ff6b6b'
+    : 'var(--text-muted)';
+
   return (
     <div
       className="absolute transition-all duration-300 flex items-center"
@@ -81,10 +93,10 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           height={cardSize.height}
         />
       )}
-      <div>
+      <div className="relative">
         {isWinner && (
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
-            <div className="font-black text-3xl drop-shadow-lg winner-themed" style={{ color: 'var(--winner-text)' }}>
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 pointer-events-none">
+            <div className="font-black text-2xl drop-shadow-lg winner-themed" style={{ color: 'var(--winner-text)' }}>
               WINNER
             </div>
           </div>
@@ -94,7 +106,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           .map(bubble => (
             <div
               key={bubble.id}
-              className="absolute -top-24 left-1/2 -translate-x-1/2 z-[999]"
+              className="absolute -top-20 left-1/2 -translate-x-1/2 z-[999]"
             >
               <div
                 className="text-xs px-3 py-1.5 rounded-2xl shadow-xl max-w-[180px] break-words text-center"
@@ -106,7 +118,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
           ))}
         <div
           ref={cardRef}
-          className={`relative rounded-2xl p-3 shadow-xl backdrop-blur-sm w-48 transition-all duration-300
+          className={`relative w-44 rounded-xl p-2 shadow-xl backdrop-blur-sm transition-all duration-300
           ${p.folded ? 'opacity-60 grayscale' : ''}
           ${p.isAllIn ? 'ring-2 ring-red-500' : ''}
           ${isWinner ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50' : ''}
@@ -116,22 +128,18 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
             border: '1px solid var(--seat-border)',
           }}
         >
-          <div
-            className="absolute -top-2.5 left-4 text-[10px] px-2 rounded-full font-bold tracking-wider"
-            style={{ background: 'var(--panel-bg)', border: '1px solid var(--seat-border)', color: 'var(--text-muted)' }}
-          >
-            #{idx + 1}
-          </div>
-          <div className="font-bold text-center text-lg flex items-center justify-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-            <span className="truncate max-w-[110px]">{p.name}</span>
+          {/* Name row */}
+          <div className="flex items-center justify-center gap-1 px-0.5">
+            <span className="text-[9px] font-bold shrink-0" style={{ color: 'var(--text-muted)' }}>#{idx + 1}</span>
+            <span className="text-sm font-bold truncate max-w-[88px]" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
             {gameState?.adminId === p.id && (
               <span className="shrink-0" title="Admin" style={{ color: 'var(--accent)', display: 'flex' }}>
-                <IconCrown />
+                <IconCrown size={12} />
               </span>
             )}
             {isSB && (
               <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                className="text-[9px] font-bold px-1 py-px rounded-full shrink-0"
                 style={{ background: 'rgba(96,165,250,0.18)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.4)' }}
               >
                 SB
@@ -139,7 +147,7 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
             )}
             {isBB && (
               <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                className="text-[9px] font-bold px-1 py-px rounded-full shrink-0"
                 style={{ background: 'rgba(248,113,113,0.16)', color: '#fca5a5', border: '1px solid rgba(248,113,113,0.4)' }}
               >
                 BB
@@ -153,35 +161,38 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
                     sendWs({ type: 'kickPlayer', targetId: p.id });
                   }
                 }}
-                className="text-red-400 hover:text-red-300 ml-0.5 shrink-0"
+                className="text-red-400 hover:text-red-300 shrink-0"
                 title="Kick player"
               >
-                <IconX />
+                <IconX size={11} />
               </button>
             )}
           </div>
-          <div className="text-center font-mono font-semibold" style={{ color: '#5fd08a' }}>{formatChips(p.chips)}</div>
-          {p.lastAction?.type && (
-            <div
-              className={`text-xs text-center ${
-                p.lastAction.type === 'fold'
-                  ? 'text-red-400'
-                  : p.lastAction.type === 'check'
-                  ? 'text-gray-400'
-                  : p.lastAction.type === 'call'
-                  ? 'text-green-400'
-                  : p.lastAction.type === 'raise'
-                  ? 'text-orange-400'
-                  : p.lastAction.type === 'allin'
-                  ? 'text-red-500 animate-pulse'
-                  : 'text-white'
-              }`}
-            >
-              {p.lastAction.type.toUpperCase()}
-              {p.lastAction.amount > 0 ? ` ${p.lastAction.amount}` : ''}
-            </div>
-          )}
-          <div className="flex justify-center gap-1 mt-2">
+          {/* Chips + action row */}
+          <div className="flex items-center justify-between px-1.5 mt-0.5 h-5">
+            <span className="text-xs font-mono font-semibold" style={{ color: '#5fd08a' }}>{formatChips(p.chips)}</span>
+            {p.folded ? (
+              <span
+                className="text-[9px] font-bold px-1.5 py-px rounded-full tracking-wider"
+                style={{ background: 'rgba(220,70,70,0.18)', color: '#f08080', border: '1px solid rgba(220,70,70,0.4)' }}
+              >
+                FOLD
+              </span>
+            ) : p.isAllIn ? (
+              <span
+                className="text-[9px] font-bold px-1.5 py-px rounded-full tracking-wider animate-pulse"
+                style={{ background: 'rgba(240,130,40,0.18)', color: '#f5a860', border: '1px solid rgba(240,130,40,0.45)' }}
+              >
+                ALL IN
+              </span>
+            ) : actionLabel ? (
+              <span className="text-[10px] font-bold tracking-wide" style={{ color: actionColor }}>
+                {actionLabel}
+              </span>
+            ) : null}
+          </div>
+          {/* Cards */}
+          <div className="flex justify-center gap-1.5 mt-1">
             {p.holeCards?.map((card, ci) => (
               <Card
                 key={ci}
@@ -194,27 +205,9 @@ const PlayerSeat = React.memo(function PlayerSeat({ p, idx, pos }) {
               />
             ))}
           </div>
-          <div className="flex justify-center gap-1 mt-2 text-xs">
-            {p.folded && (
-              <span
-                className="px-2 py-0.5 rounded-full font-semibold tracking-wider"
-                style={{ background: 'rgba(220,70,70,0.18)', color: '#f08080', border: '1px solid rgba(220,70,70,0.4)' }}
-              >
-                FOLD
-              </span>
-            )}
-            {p.isAllIn && (
-              <span
-                className="px-2 py-0.5 rounded-full font-semibold tracking-wider animate-pulse"
-                style={{ background: 'rgba(240,130,40,0.18)', color: '#f5a860', border: '1px solid rgba(240,130,40,0.45)' }}
-              >
-                ALL IN
-              </span>
-            )}
-          </div>
           {(gameState?.handInProgress || gameState?.firstHandStarted) && gameState?.dealerIndex === p.id && (
             <div
-              className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[10px] px-3 py-0.5 rounded-full shadow font-bold tracking-widest"
+              className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] px-2.5 py-px rounded-full shadow font-bold tracking-widest"
               style={{ background: 'var(--button-primary)', color: '#10131c' }}
             >
               DEALER

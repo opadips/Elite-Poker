@@ -7,8 +7,8 @@ export default function TimerRing({ remainingSec, width, height }) {
   if (!width || !height || remainingSec <= 0) return null;
 
   const progress = Math.max(0, Math.min(remainingSec / TOTAL_SECONDS, 1));
-  const rx = 16;
-  const ry = 16;
+  const rx = 14;
+  const ry = 14;
 
   const perimeter =
     2 * (width - 2 * rx) +

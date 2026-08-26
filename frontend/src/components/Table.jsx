@@ -15,7 +15,7 @@ export default function Table({
       {/* Outer rail */}
       <div
         ref={tableRef}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[55%] rounded-[50%] game-table"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[62%] h-[48%] rounded-[50%] game-table"
         style={{
           padding: '16px',
           background: 'var(--table-rim)',
@@ -51,12 +51,12 @@ export default function Table({
             }}
           />
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-10">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-10">
             <div className="pot-chip-stack">
               <ChipStack amount={gameState.totalPot} />
             </div>
             <div
-              className="flex gap-3 p-4 rounded-3xl backdrop-blur-sm"
+              className="flex gap-2.5 p-3 rounded-2xl backdrop-blur-sm"
               style={{
                 background: 'var(--pot-bg)',
                 border: '1px solid var(--panel-border)',

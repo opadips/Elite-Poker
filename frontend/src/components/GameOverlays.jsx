@@ -142,12 +142,8 @@ const GameOverlays = React.memo(function GameOverlays({
           style={{ background: 'var(--seat-bg)', border: '1px solid var(--panel-border)' }}
         >
           <div className="font-bold mb-2 text-sm" style={{ color: 'var(--accent)' }}>Spectator Mode</div>
-          <button
-            onClick={sitIn}
-            className="px-4 py-2 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: 'var(--btn-call-bg)', color: '#fff' }}
-          >
-            Sit In ({formatChips(gameState.startingChips || 1000)})
+          <button className="action-btn action-btn--call" onClick={sitIn}>
+            Sit In · {formatChips(gameState.startingChips || 1000)}
           </button>
           <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Wait for current hand to end</div>
         </div>
